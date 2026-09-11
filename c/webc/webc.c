@@ -20,7 +20,7 @@
 #define NOB_NO_ECHO
 #include "nob.h"
 
-#include "core/http/serve.h"
+#include "core/serve.h"
 #include "src/db/db.h"
 #include "build/bundle.h"
 
@@ -51,7 +51,7 @@ static bool dev_visit_file(Walk_Entry entry) {
     String_View path = sv_from_cstr(entry.path);
     // Generate / vendored files that must nerver trigger a rebuild
     if (sv_ends_with(path, sv_from_cstr("css/output.css"))) return true;
-    if (sv_starts_with(path, sv_from_cstr("module/sqlite-amalgamation-3460100/"))) return true;
+    if (sv_starts_with(path, sv_from_cstr("src/sqlite-amalgamation-3460100/"))) return true;
     struct stat st;
     if (stat(entry.path, &st) != 0) return true;
     uint64_t h = (uint64_t)st.st_mtime;
@@ -85,8 +85,8 @@ bool dev_run_build(void) {
     pid_t pid = fork();
     if (pid < 0) return -1;
     if (pid == 0) {
-        execl("./build/bin/nob", "./build/bin/nob", (char *)NULL);
-        perror("dev: execl ./build/bin/nob");
+        execl("./bin/nob", "./bin/nob", (char *)NULL);
+        perror("dev: execl ./bin/nob");
         _exit(127);
     }
 
@@ -149,8 +149,8 @@ static Dev_Launch_Result dev_launch_server(pid_t      *server_pid,
     if (pid == 0) {
         char port_buf[16] = {0};
         snprintf(port_buf, sizeof(port_buf), "%d", port);
-        execl("./build/bin/webc", "webc", "serve", port_buf, (char *)NULL);
-        perror("dev: execl ./build/bin/webc");
+        execl("./bin/webc", "webc", "serve", port_buf, (char *)NULL);
+        perror("dev: execl ./bin/webc");
         _exit(1);
     }
 
@@ -343,10 +343,10 @@ int main(int argc, char **argv) {
     HOME_PATH = getenv("HOME");
     if (HOME_PATH == NULL) {
         fprintf(stderr, "ERROR: No $HOME environment variable is setup. We "
-                "need it to find the location of ~/.sqlite3/webc/ directory.\n");
+                "need it to find the location of ~/.sqlite3/webc_clenic/ directory.\n");
         return 1;
     }
-    WEBC_DIR_PATH = strdup(temp_sprintf("%s/.sqlite3/webc", HOME_PATH));
+    WEBC_DIR_PATH = strdup(temp_sprintf("%s/.sqlite3/webc_clenic", HOME_PATH));
     WEBC_DB_PATH = strdup(temp_sprintf("%s/db", WEBC_DIR_PATH));
     WEBC_TRACE_MIGRATION_QUERIES = getenv("WEBC_TRACE_MIGRATION_QUERIES") != NULL;
 

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schul SYS - ({ STR(PAGE_TITLE); })</title>
+    <link href="/css/output.css" rel="stylesheet">
+    <script>
+        window.themeController = {
+            get() {
+                let t = localStorage.getItem('theme');
+                if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                return t;
+            },
+            apply(t) {
+                if (t === 'device') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                document.documentElement.classList.toggle('dark', t === 'dark');
+            },
+            setTheme(t) {
+                localStorage.setItem('theme', t);
+                this.apply(t);
+            }
+        };
+        window.themeController.apply(window.themeController.get());
+        window.sidebarController = {
+            get() {
+                return localStorage.getItem('sidebarCollapsed') === 'true';
+            },
+            apply(collapsed) {
+                document.body.classList.toggle('sidebar-collapsed', collapsed);
+            },
+            toggle() {
+                const collapsed = !this.get();
+                localStorage.setItem('sidebarCollapsed', collapsed ? 'true' : 'false');
+                this.apply(collapsed);
+            }
+        };
+        window.sidebarController.apply(window.sidebarController.get());
+    </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen flex flex-col">
+
+<header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30">
+    <div class="flex items-center justify-between px-4 py-3">
+
+        <div class="flex items-center gap-4">
+            <button onclick="window.sidebarController.toggle()"
+                    class="p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+
+            <div class="hidden md:flex items-center gap-2">
+                <span class="font-bold text-xl text-gray-800 dark:text-white tracking-tight">
+                    Schul SYS
+                </span>
+            </div>
+
+            <div class="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-2 hidden md:block"></div>
+
+            <h1 class="text-lg font-semibold text-gray-800 dark:text-white truncate">
+                ({ STR(PAGE_TITLE); })
+            </h1>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <div class="flex items-center gap-1">
+                <button onclick="window.themeController.setTheme('light')"
+                        class="px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">Light</button>
+                <button onclick="window.themeController.setTheme('dark')"
+                        class="px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">Dark</button>
+                <button onclick="window.themeController.setTheme('device')"
+                        class="px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700">System</button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="flex flex-1 overflow-hidden">
+    ({ #include "component/sidebar.h" })
+
+    <div class="flex-1 flex flex-col min-w-0">
+<main class="flex-1 min-h-0 w-full max-w-5xl mx-auto p-6 overflow-y-auto">

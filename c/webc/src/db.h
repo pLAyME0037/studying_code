@@ -16,11 +16,4 @@ bool txn_commit(sqlite3 *db);
 bool create_schema(sqlite3 *db, const char *webc_path);
 sqlite3 *open_webc_db(void);
 
-// Connection pool
-#define DB_POOL_SIZE 8
-sqlite3 *db_pool_get(void);
-void db_pool_put(sqlite3 *db);
-void db_pool_init(void);
-void db_pool_cleanup(void);
-
 #endif // SRC_DB_H_

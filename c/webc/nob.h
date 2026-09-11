@@ -348,33 +348,6 @@ NOBDEF void nob_dir_entry_close(Nob_Dir_Entry dir);
 #define NOB_DECLTYPE_CAST(T)
 #endif // __cplusplus
 
-// dynamic type with da_{new, add, free}
-#define INIT_CAPACITY 8
-#define DA_NEW(Type, Name)                                                \
-    typedef struct {                                                      \
-        Type  *items;                                                     \
-        size_t count;                                                     \
-        size_t capacity;                                                  \
-    } Name;                                                               \
-    static inline Name *Name##_new(void) {                                \
-        Name *da = malloc(sizeof(*da));                                   \
-        assert(da != NULL);                                               \
-        da->capacity = INIT_CAPACITY;                                     \
-        da->items = malloc(INIT_CAPACITY * sizeof(*da->items));           \
-        assert(da->items != NULL);                                        \
-        da->count = 0;                                                    \
-        return da;                                                        \
-    }                                                                     \
-    static inline void Name##_add(Name *da, Type item) {                  \
-        if (da->count >= da->capacity) {                                  \
-            da->capacity = da->capacity == 0 ? 16 : da->capacity * 2;     \
-            da->items = realloc(da->items, da->capacity * sizeof(Type));  \
-            assert((da)->items != NULL && "Ran out of memory");           \
-        }                                                                 \
-        da->items[da->count++] = item;                                    \
-    }                                                                     \
-    static inline void Name##_free(Name *da) { free(da->items); free(da); }
-
 #define nob_da_reserve(da, expected_capacity)                                              \
     do {                                                                                   \
         if ((expected_capacity) > (da)->capacity) {                                        \

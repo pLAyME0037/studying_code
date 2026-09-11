@@ -1,7 +1,7 @@
 #ifndef BUNDLE_H_ // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:99
 #define BUNDLE_H_ // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:100
 #include <stddef.h> // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:101
-#define WEBC_BUILD_TIME "Fri, 11 Sep 2026 03:57:52 UTF" // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:102
+#define WEBC_BUILD_TIME "Wed, 09 Sep 2026 11:59:24 UTF" // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:102
 typedef struct { // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:103
     const char *file_path; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:104
     size_t offset; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:105

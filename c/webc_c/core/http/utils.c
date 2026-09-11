@@ -1,6 +1,6 @@
 #include <stddef.h>
 
-#include "nob.h"
+#include "../../nob.h"
 #include "utils.h"
 
 static int hex_to_int(char c) {

@@ -3,11 +3,11 @@
 #include <string.h>
 
 #define NOB_STRIP_PREFIX
-#include "../../nob.h"
+#include "../nob.h"
 
 #include "sqlite3.h"
 #include "notes.h"
-#include "../db/db.h"
+#include "db.h"
 
 bool load_notes(sqlite3 *db, Notes *notes) {
     bool result = true;

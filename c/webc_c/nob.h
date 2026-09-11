@@ -349,7 +349,6 @@ NOBDEF void nob_dir_entry_close(Nob_Dir_Entry dir);
 #endif // __cplusplus
 
 // dynamic type with da_{new, add, free}
-#define INIT_CAPACITY 8
 #define DA_NEW(Type, Name)                                                \
     typedef struct {                                                      \
         Type  *items;                                                     \
