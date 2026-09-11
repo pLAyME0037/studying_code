@@ -1,0 +1,170 @@
+<div class="max-w-full mx-auto">
+    <form method="POST" action="({ STR(config->crud_path); })/create"
+          class="mb-6 p-5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
+            Add ({ ESCAPED(config->title); })
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            ({ for (size_t fi = 0; fi < form_cols.count; ++fi) { })
+                <div class="mb-3">
+                    <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+                        ({ ESCAPED(form_cols.items[fi].col->label); })
+                    </label>
+                    ({ if (form_cols.items[fi].col->type == COL_TYPE_FK_SELECT) { })
+                        <select name="({ ESCAPED(form_cols.items[fi].col->name); })" required
+                                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                            <option value="">None</option>
+                            ({ for (size_t o = 0; o < form_cols.items[fi].count; ++o) { })
+                                <option value="({ LLINT(form_cols.items[fi].items[o].id); })">
+                                    ({ ESCAPED(form_cols.items[fi].items[o].label); })
+                                </option>
+                            ({ } })
+                        </select>
+                    ({ } else if (form_cols.items[fi].col->type == COL_TYPE_TEXTAREA) { })
+                        <textarea name="({ ESCAPED(form_cols.items[fi].col->name); })" rows="1"
+                                  class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"></textarea>
+                    ({ } else { })
+                        <input name="({ ESCAPED(form_cols.items[fi].col->name); })"
+                               type="({ if (form_cols.items[fi].col->type == COL_TYPE_DATE) { })date({ } else if (form_cols.items[fi].col->type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
+                               ({ if (form_cols.items[fi].col->type == COL_TYPE_NUM) { })step="any" ({ } })
+                               class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    ({ } })
+                </div>
+            ({ } })
+        </div>
+        <button type="submit" class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+            Confirm
+        </button>
+        <button type="reset" class="ml-2 px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+            Discard
+        </button>
+    </form>
+
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full text-left border-collapse master-table">
+            <thead class="bg-indigo-600 text-white">
+                <tr>
+                    ({ for (size_t i = 0; i < config->column_count; ++i) { })
+                        <th class="px-2 py-2 font-semibold">
+                            ({ ESCAPED(config->columns[i].label); })
+                        </th>
+                    ({ } })
+                    <th class="px-2 py-2 font-semibold">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                ({ if (rows->count == 0) { })
+                    <tr>
+                        <td colspan="({ INT(config->column_count + 1); })"
+                            class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                            No ({ ESCAPED(config->title); }) yet.
+                        </td>
+                    </tr>
+                ({ } else { })
+                    ({ for (size_t ri = 0; ri < rows->count; ++ri) { })
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
+                                <td class="px-4 py-2 text-gray-700 dark:text-gray-200">
+                                    ({ ESCAPED(rows->items[ri].disp[ci + 1]); })
+                                </td>
+                            ({ } })
+                            <td class="px-4 py-2 whitespace-nowrap">
+                                <div class="flex items-center gap-1">
+                                    <button type="button"
+                                            class="master-edit-btn p-1 rounded text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                                            title="Edit" aria-label="Edit"
+                                            data-master-id="({ LLINT(rows->items[ri].id); })">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="expand-btn px-2 py-1 rounded text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
+                                        data-master-id="({ LLINT(rows->items[ri].id); })"
+                                        aria-expanded="false">
+                                        ▼ Detail
+                                    </button>
+                                    <form method="POST"
+                                          action="({ STR(config->crud_path); })/({ LLINT(rows->items[ri].id); })/delete" class="inline">
+                                        <button type="submit" title="Delete" aria-label="Delete"
+                                                class="p-1 rounded text-red-600 hover:bg-red-100 dark:hover:bg-red-900/40">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="md-master-edit-row hidden">
+                            <td colspan="({ INT(config->column_count + 1); })" class="px-2 py-1 bg-amber-50/50 dark:bg-gray-900/40">
+                                <form id="md-m-({ STR(config->table); })-({ LLINT(rows->items[ri].id); })"
+                                      method="POST"
+                                      action="({ STR(config->crud_path); })/({ LLINT(rows->items[ri].id); })/update"
+                                      class="flex flex-wrap gap-3 items-end px-2 py-1">
+                            ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
+                                    <div class="flex flex-col gap-1 min-w-[140px]">
+                                        <label class="text-xs text-gray-500 dark:text-gray-400">
+                                            ({ ESCAPED(config->columns[ci].label); })
+                                        </label>
+                                ({ if (config->columns[ci].type == COL_TYPE_FK_SELECT) { })
+                                        <select form="md-m-({ STR(config->table); })-({ LLINT(rows->items[ri].id); })"
+                                                name="({ ESCAPED(config->columns[ci].name); })" required
+                                                class="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                            ({ for (size_t o = 0; o < config->columns[ci].opt_count; ++o) { })
+                                                <option value="({ LLINT(config->columns[ci].opt[o].id); })"
+                                                    ({ if (atoll(rows->items[ri].values[ci + 1]) == config->columns[ci].opt[o].id) { })selected({ } })>
+                                                    ({ ESCAPED(config->columns[ci].opt[o].label); })
+                                                </option>
+                                            ({ } })
+                                        </select>
+                                ({ } else { })
+                                        <input form="md-m-({ STR(config->table); })-({ LLINT(rows->items[ri].id); })"
+                                               name="({ ESCAPED(config->columns[ci].name); })"
+                                               type="({ if (config->columns[ci].type == COL_TYPE_DATE) { })date({ } else if (config->columns[ci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
+                                               ({ if (config->columns[ci].type == COL_TYPE_NUM) { })step="any" ({ } })
+                                               value="({ ESCAPED(rows->items[ri].values[ci + 1]); })"
+                                               class="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                ({ } })
+                                    </div>
+                            ({ } })
+                                    <button type="submit" title="Confirm" aria-label="Confirm"
+                                            class="p-1 rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                    </button>
+                                    <button type="button" class="md-discard p-1 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                            title="Discard" aria-label="Discard">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr
+                            class="detail-panel-row" 
+                            data-master-id="({ LLINT(rows->items[ri].id); })" 
+                            style="display: none;">
+                            <td 
+                                colspan="({ INT(config->column_count + 1); })" 
+                                class="px-0 py-0">
+                                <div class="detail-panel p-4 bg-gray-50 dark:bg-gray-900/60 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="flex border-b border-gray-200 dark:border-gray-700 mb-2 flex-wrap">
+                                        ({ for (size_t ti = 0; ti < config->children_count; ++ti) { })
+                                            <button
+                                                type="button"
+                                                class="tab-btn px-4 py-2 text-sm font-medium ({ if (ti == 0) { })text-indigo-600 border-b-2 border-indigo-600({ } else { })text-gray-500 hover:text-gray-700 dark:text-gray-400({ } })"
+                                                data-tab="({ STR(config->children[ti].table); })">
+                                                ({ ESCAPED(config->children[ti].title); })
+                                            </button>
+                                        ({ } })
+                                    </div>
+                                    ({ for (size_t ti = 0; ti < config->children_count; ++ti) { })
+                                        ({ #include "./md_child_tab.h" })
+                                    ({ } })
+                                </div>
+                            </td>
+                        </tr>
+                    ({ } })
+                ({ } })
+            </tbody>
+        </table>
+    </div>
+</div>

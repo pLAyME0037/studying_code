@@ -1,0 +1,41 @@
+({
+for (size_t i = 0; i < mod->column_count; ++i) { 
+    const Crud_Column *col = &mod->columns[i];
+})
+    <div class="mb-3">
+        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+            ({ STR(col->label); })
+        </label>
+        ({ if (col->type == COL_FK_SELECT) { })
+            <select 
+                name="({ STR(col->name); })"
+                ({ if (!col->nullable) { }) required({ } })
+                class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                <option value="">none</option>
+                ({ for (size_t o = 0; o < fopts->items[i].count; ++o) { })
+                <option value="({ LLINT(fopts->items[i].items[o].id); })"({ if (values && values[i] && atoll(values[i]) == fopts->items[i].items[o].id) { }) selected({ } })>
+                    ({ ESCAPED(fopts->items[i].items[o].label); })
+                </option>
+                ({ } })
+            </select>
+        ({ } else if (col->type == COL_TEXTAREA) { })
+            <textarea
+                name="({ STR(col->name); })"
+                ({ if (!col->nullable) { }) required({ } })
+                class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">({ ESCAPED(values ? values[i] : NULL); })</textarea>
+        ({ } else { })
+            <input
+                name="({ STR(col->name); })" 
+                type="({ if (col->type == COL_NUM) { })number
+                      ({ } else if (col->type == COL_DATE) { })date
+                      ({ } else { })text
+                      ({ } })"
+               ({ if (col->type == COL_NUM) { })
+                   step="any"
+               ({ } })
+               ({ if (!col->nullable) { }) required({ } })
+                   value="({ ESCAPED(values ? values[i] : NULL); })"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        ({ } })
+    </div>
+({ } })

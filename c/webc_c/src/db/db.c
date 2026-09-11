@@ -28,6 +28,14 @@ bool txn_commit(sqlite3 *db) {
     return true;
 }
 
+bool txn_rollback(sqlite3 *db) {
+    if (sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL) != SQLITE_OK) {
+        LOG_SQLITE3_ERROR(db);
+        return false;
+    }
+    return true;
+}
+
 const char *migrations[] = {
     "CREATE TABLE IF NOT EXISTS Notes (\n"
     "    id INTEGER PRIMARY KEY ASC,\n"

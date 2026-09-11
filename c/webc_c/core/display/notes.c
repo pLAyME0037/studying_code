@@ -11,44 +11,44 @@
 #include "core/layout/footer.h"
 #include "core/http/utils.h"
 
-void render_notes_page(Serve_Context *sc, Notes notes) {
-    String_Builder *sb = &sc->body;
-    render_page_header(sb, "Notes", "/notes");
-#define OUT(buf, size) sb_append_buf(sb, buf, size);
-#define INT(x) sb_appendf(sb, "%d", (x));
-#define STR(x) sb_append_cstr(sb, (x) ? (x) : "");
-#define ESCAPED(x) sb_append_html_escaped(sb, (x) ? (x) : "");
-#define PAGE_TITLE "Notes"
-#include "build/h_to_html/notes.h"
-#undef PAGE_TITLE
-#undef ESCAPED
-#undef STR
-#undef INT
-#undef OUT
-    render_page_footer(sb);
-}
+#define DEFINE_PAGE(name, data_t, title, route)                  \
+    void render_##name##_page(Serve_Context *sc, data_t dt) {    \
+        String_Builder *sb = &sc->body;                          \
+        render_page_header(sb, title, route);                    \
+        include_body_##name(sb, dt);                             \
+        render_page_footer(sb);                                  \
+    }
 
-void render_notes_edit_page(Serve_Context *sc, Note note) {
-    String_Builder *sb = &sc->body;
-    render_page_header(sb, "Edit Note", "/notes");
+void include_body_notes(String_Builder *sb, note_da notes) {
+#include "build/h_to_html/notes.h"
+}
+DEFINE_PAGE(notes, note_da, "Note", "/notes");
+
+void include_body_notes_edit(String_Builder *sb, note_t note) {
 #define OUT(buf, size) sb_append_buf(sb, buf, size);
 #define INT(x) sb_appendf(sb, "%d", (x));
 #define STR(x) sb_append_cstr(sb, (x) ? (x) : "");
+#define CLS(cond, t, f) sb_append_cstr(sb, (cond) ? (t) : (f));
 #define ESCAPED(x) sb_append_html_escaped(sb, (x) ? (x) : "");
-#define PAGE_TITLE "Edit Note"
+#define NAV_ACTIVE(prefix) (strncmp((current_path), (prefix), strlen(prefix)) == 0)
+#define CURRENT_PATH current_path
+#define PAGE_TITLE page_title
 #include "build/h_to_html/notes_edit.h"
 #undef PAGE_TITLE
+#undef CURRENT_PATH
+#undef NAV_ACTIVE
 #undef ESCAPED
+#undef CLS
 #undef STR
 #undef INT
 #undef OUT
-    render_page_footer(sb);
 }
+DEFINE_PAGE(notes_edit, note_t, "Edit Note", "/notes");
 
 void serve_notes(Serve_Context *sc, String_View method) {
     UNUSED(method);
 
-    Notes notes = {0};
+    note_da notes = {0};
     sqlite3 *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
     if (!load_notes(db, &notes)) {
@@ -60,7 +60,7 @@ void serve_notes(Serve_Context *sc, String_View method) {
 
     sc->body.count = 0;
     render_notes_page(sc, notes);
-    free(notes.items);
+    note_da_free(&notes);
 
     http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));
 }
@@ -79,7 +79,11 @@ void serve_notes_create(Serve_Context *sc) {
     if (!db) { serve_error(sc, 500); return; }
     if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
     bool ok = insert_note(db, title, body);
-    txn_commit(db);
+    if (ok) {
+        txn_commit(db);
+    } else {
+        txn_rollback(db);
+    }
     sqlite3_close(db);
 
     if (!ok) { serve_error(sc, 500); return; }
@@ -113,7 +117,7 @@ void serve_notes_edit(Serve_Context *sc, String_View uri) {
         return;
     }
 
-    Notes notes = {0};
+    note_da notes = {0};
     sqlite3 *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
     if (!load_notes(db, &notes)) {
@@ -123,7 +127,7 @@ void serve_notes_edit(Serve_Context *sc, String_View uri) {
     }
     sqlite3_close(db);
 
-    Note *target = NULL;
+    note_t *target = NULL;
     for (size_t i = 0; i < notes.count; ++i) {
         if (notes.items[i].id == id) {
             target = &notes.items[i];
@@ -163,7 +167,11 @@ void serve_notes_update(Serve_Context *sc, String_View uri) {
     if (!db) { serve_error(sc, 500); return; }
     if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
     bool ok = update_note(db, id, title, body);
-    txn_commit(db);
+    if (ok) {
+        txn_commit(db);
+    } else {
+        txn_rollback(db);
+    }
     sqlite3_close(db);
 
     if (!ok) { serve_error(sc, 500); return; }
@@ -181,7 +189,11 @@ void serve_notes_delete(Serve_Context *sc, String_View uri) {
     if (!db) { serve_error(sc, 500); return; }
     if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
     bool ok = delete_note(db, id);
-    txn_commit(db);
+    if (ok) {
+        txn_commit(db);
+    } else {
+        txn_rollback(db);
+    }
     sqlite3_close(db);
 
     if (!ok) { serve_error(sc, 500); return; }
@@ -189,7 +201,7 @@ void serve_notes_delete(Serve_Context *sc, String_View uri) {
 }
 
 static void serve_notes_json(Serve_Context *sc) {
-    Notes notes = {0};
+    note_da notes = {0};
     sqlite3 *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
@@ -203,7 +215,7 @@ static void serve_notes_json(Serve_Context *sc) {
     String_Builder body = {0};
     sb_append_cstr(&body, "[");
     for (size_t i = 0; i < notes.count; ++i) {
-        Note *note = &notes.items[i];
+        note_t *note = &notes.items[i];
         if (i > 0) sb_append_cstr(&body, ",");
         sb_append_cstr(&body, "{\"id\":");
         sb_appendf(&body, "%d", note->id);
@@ -249,7 +261,11 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         if (!db) { serve_error(sc, 500); return; }
         if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
         bool ok = insert_note(db, title, body);
-        txn_commit(db);
+        if (ok) {
+            txn_commit(db);
+        } else {
+            txn_rollback(db);
+        }
         sqlite3_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
@@ -270,7 +286,11 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         if (!db) { serve_error(sc, 500); return; }
         if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
         bool ok = update_note(db, (int)id, title, body);
-        txn_commit(db);
+        if (ok) {
+            txn_commit(db);
+        } else {
+            txn_rollback(db);
+        }
         sqlite3_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
@@ -286,7 +306,11 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         if (!db) { serve_error(sc, 500); return; }
         if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
         bool ok = delete_note(db, (int)id);
-        txn_commit(db);
+        if (ok) {
+            txn_commit(db);
+        } else {
+            txn_rollback(db);
+        }
         sqlite3_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);

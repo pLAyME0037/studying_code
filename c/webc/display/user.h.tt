@@ -1,0 +1,130 @@
+<h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+    Users
+</h2>
+
+<form method="POST" action="/users/create"
+      class="mb-4 flex gap-2 items-end bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+    <div>
+        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+            Name
+        </label>
+        <input name="name" type="text" required
+               class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+    </div>
+    <div>
+        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+            Username
+        </label>
+        <input name="username" type="text"
+               class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+    </div>
+    <div>
+        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+            Email
+        </label>
+        <input name="email" type="text"
+               class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+    </div>
+    <button type="submit"
+            class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
+        Add user
+    </button>
+</form>
+
+<div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+                ({ const char *th_class = "px-6 py-3 text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-auto text-left"; })
+                <th class="({ STR(th_class) })">
+                    #
+                </th>
+                <th class="({ STR(th_class) })">
+                    Profile
+                </th>
+                <th class="({ STR(th_class) })">
+                    Name
+                </th>
+                <th class="({ STR(th_class) })">
+                    Username
+                </th>
+                <th class="({ STR(th_class) })">
+                    Email
+                </th>
+                <th class="({ STR(th_class) })">
+                    Action
+                </th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+            ({ if (users.count != 0) { })
+            ({ for (size_t i = 0; i < users.count; ++i) { })
+            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                <div class="flex flex-col gap-1 items-start">
+                    <td class="px-6 py-4 whitespace-nowrap dark:text-white text-left">
+                        ({ INT(users.items[i].id) })
+                    </td>
+                </div>
+                <div class="flex flex-col gap-1 items-center">
+                    <td class="px-6 py-4 whitespace-nowrap text-left">
+                        <div class="w-10 h-10 relative rounded-full ring-4 ring-white dark:ring-gray-800 shadow-sm bg-gray-100 dark:bg-gray-700 group">
+                            <img src="https://ui-avatars.com/api/?name=({ ESCAPED(users.items[i].name) })&color=7F9CF5&background=EBF4FF&bold=true"
+                                 alt="({ ESCAPED(users.items[i].profile_pic) })"
+                                 class="w-full h-full rounded-full object-cover transition-opacity duration-300 opacity-50">
+                        </div>
+                    </td>
+                </div>
+                <div class="flex flex-col gap-1 items-center">
+                    <td class="px-6 py-4 whitespace-nowrap dark:text-white text-left">
+                        ({ ESCAPED(users.items[i].name) })
+                    </td>
+                </div>
+                <div class="flex flex-col gap-1 items-center">
+                    <td class="px-6 py-4 whitespace-nowrap dark:text-white text-left">
+                        ({ ESCAPED(users.items[i].username) })
+                    </td>
+                </div>
+                <div class="flex flex-col gap-1 items-end">
+                    <td class="px-6 py-4 whitespace-nowrap dark:text-white text-left">
+                        ({ ESCAPED(users.items[i].email) })
+                    </td>
+                </div>
+                <div class="flex flex-col gap-1 items-end">
+                    <td class="px-6 py-4 whitespace-nowrap text-left">
+                        <a href="/users/({ INT(users.items[i].id); })/edit"
+                           class="mr-2 px-2 py-1 rounded text-xs bg-amber-500 hover:bg-amber-600 text-white">
+                            Edit
+                        </a>
+                        <form method="POST" action="/users/({ INT(users.items[i].id); })/delete" class="inline">
+                            <button type="submit"
+                                    class="px-2 py-1 rounded text-xs bg-red-500 hover:bg-red-600 text-white">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </div>
+            </tr>
+            ({ } })
+            ({ } else { })
+            <tr>
+                <td colspan=""
+                    class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <div class="flex flex-col items-center justify-center">
+                        <svg class="w-12 h-12 text-gray-300 mb-3"
+                             fill="none"
+                             stroke="currentColor"
+                             viewBox="0 0 24 24">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4">
+                            </path>
+                        </svg>
+                        <span class="text-lg font-medium">No records found</span>
+                    </div>
+                </td>
+            </tr>
+            ({ } })
+        </tbody>
+    </table>
+</div>
