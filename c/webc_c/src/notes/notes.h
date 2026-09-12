@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "sqlite3.h"
+#include "nob.h"
 
 typedef struct {
     int id;
@@ -12,11 +13,7 @@ typedef struct {
     const char *body;
 } Note;
 
-typedef struct {
-    Note *items;
-    size_t count;
-    size_t capacity;
-} Notes;
+DA_NEW(Note, Notes)
 
 bool load_notes(sqlite3 *db, Notes *notes);
 bool insert_note(sqlite3 *db, const char *title, const char *body);

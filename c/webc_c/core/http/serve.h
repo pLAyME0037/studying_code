@@ -2,7 +2,7 @@
 #define CORE_SERVE_H_
 
 #include <stdbool.h>
-#include "../../nob.h"
+#include "build/nob.h"
 
 typedef struct {
     int client_fd;

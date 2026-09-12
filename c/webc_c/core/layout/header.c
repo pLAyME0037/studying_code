@@ -1,4 +1,4 @@
-#include "../../nob.h"
+#include "build/nob.h"
 #include "../../src/db/db.h"
 #include "../../src/user/user.h"
 

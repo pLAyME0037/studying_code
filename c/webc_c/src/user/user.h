@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <sqlite3.h>
+#include "nob.h"
 
 typedef struct {
     int id;
@@ -12,11 +13,7 @@ typedef struct {
     const char *profile_pic;
 } User;
 
-typedef struct {
-    User *items;
-    size_t count;
-    size_t capacity;
-} Users;
+DA_NEW(User, Users)
 
 static inline User user_data(void) {
     User u = {

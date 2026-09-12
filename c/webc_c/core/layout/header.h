@@ -1,7 +1,7 @@
 #ifndef HEADER
 #define HEADER
 
-#include "../nob.h"
+#include "build/nob.h"
 
 void render_page_header(String_Builder *sb,
                         const char     *page_title,

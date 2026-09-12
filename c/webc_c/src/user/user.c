@@ -3,7 +3,7 @@
 
 #include "../db/db.h"
 #include "user.h"
-#include "../../nob.h"
+#include "build/nob.h"
 
 bool load_users(sqlite3 *db, Users *rows) {
     bool result = true;
@@ -26,7 +26,7 @@ bool load_users(sqlite3 *db, Users *rows) {
         const char *username    = (const char *)sqlite3_column_text(stmt, column++);
         const char *email       = (const char *)sqlite3_column_text(stmt, column++);
         const char *profile_pic = (const char *)sqlite3_column_text(stmt, column++);
-        da_append(rows, ((User) {
+        Users_add(rows, ((User) {
             .id          = id,
             .name        = name        ? temp_strdup(name)      : NULL,
             .username    = username    ? temp_strdup(username)  : NULL,

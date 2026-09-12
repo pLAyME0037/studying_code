@@ -1,23 +1,23 @@
-#ifndef BUNDLE_H_ // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:99
-#define BUNDLE_H_ // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:100
-#include <stddef.h> // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:101
-#define WEBC_BUILD_TIME "Wed, 09 Sep 2026 11:59:24 UTF" // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:102
-typedef struct { // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:103
-    const char *file_path; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:104
-    size_t offset; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:105
-    size_t size; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:106
-} Resource; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:107
-#ifdef BUNDLE_IMPLEMENTATION // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:108
-static size_t resources_count = 6; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:109
-static Resource resources[] = { // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:110
-    {.file_path = "./css/output.css", .offset = 0, .size = 28381}, // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:112
-    {.file_path = "./resource/image/user1.png", .offset = 28382, .size = 200846}, // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:112
-    {.file_path = "./resource/image/know_me.png", .offset = 229229, .size = 6000}, // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:112
-    {.file_path = "./js/ListExpandSwitcher.js", .offset = 235230, .size = 5834}, // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:112
-    {.file_path = "./js/sidebarSwitcher.js", .offset = 241065, .size = 477}, // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:112
-    {.file_path = "./js/themeSwitcher.js", .offset = 241543, .size = 573}, // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:112
-}; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:115
-static unsigned char bundle[] = { // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:117
+#ifndef BUNDLE_H_ // ./src/nob.c:103
+#define BUNDLE_H_ // ./src/nob.c:104
+#include <stddef.h> // ./src/nob.c:105
+#define WEBC_BUILD_TIME "Sat, 12 Sep 2026 10:42:14 GMT" // ./src/nob.c:106
+typedef struct { // ./src/nob.c:107
+    const char *file_path; // ./src/nob.c:108
+    size_t offset; // ./src/nob.c:109
+    size_t size; // ./src/nob.c:110
+} Resource; // ./src/nob.c:111
+#ifdef BUNDLE_IMPLEMENTATION // ./src/nob.c:112
+static size_t resources_count = 6; // ./src/nob.c:113
+static Resource resources[] = { // ./src/nob.c:114
+    {.file_path = "./css/output.css", .offset = 0, .size = 28381}, // ./src/nob.c:116
+    {.file_path = "./resource/image/user1.png", .offset = 28382, .size = 200846}, // ./src/nob.c:116
+    {.file_path = "./resource/image/know_me.png", .offset = 229229, .size = 6000}, // ./src/nob.c:116
+    {.file_path = "./js/ListExpandSwitcher.js", .offset = 235230, .size = 5834}, // ./src/nob.c:116
+    {.file_path = "./js/sidebarSwitcher.js", .offset = 241065, .size = 477}, // ./src/nob.c:116
+    {.file_path = "./js/themeSwitcher.js", .offset = 241543, .size = 573}, // ./src/nob.c:116
+}; // ./src/nob.c:119
+static unsigned char bundle[] = { // ./src/nob.c:121
      0x2F, 0x2A, 0x21, 0x20, 0x74, 0x61, 0x69, 0x6C, 0x77, 0x69, 0x6E, 0x64, 0x63, 0x73, 0x73, 0x20, 0x76, 0x34, 0x2E, 0x33, 
      0x2E, 0x33, 0x20, 0x7C, 0x20, 0x4D, 0x49, 0x54, 0x20, 0x4C, 0x69, 0x63, 0x65, 0x6E, 0x73, 0x65, 0x20, 0x7C, 0x20, 0x68, 
      0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x74, 0x61, 0x69, 0x6C, 0x77, 0x69, 0x6E, 0x64, 0x63, 0x73, 0x73, 0x2E, 0x63, 
@@ -12124,6 +12124,6 @@ static unsigned char bundle[] = { // /mnt/disk2/mythings/study_my_code/c/webc_c/
      0x65, 0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C, 0x6C, 0x65, 0x72, 0x2E, 0x61, 0x70, 0x70, 0x6C, 0x79, 0x28, 0x77, 0x69, 
      0x6E, 0x64, 0x6F, 0x77, 0x2E, 0x74, 0x68, 0x65, 0x6D, 0x65, 0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C, 0x6C, 0x65, 0x72, 
      0x2E, 0x67, 0x65, 0x74, 0x28, 0x29, 0x29, 0x3B, 0x0A, 0x7D, 0x29, 0x28, 0x29, 0x3B, 0x0A, 0x0A, 0x00, 
-}; // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:126
-#endif // BUNDLE_IMPLEMENTATION // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:127
-#endif // BUNDLE_H_ // /mnt/disk2/mythings/study_my_code/c/webc_c/nob.c:128
+}; // ./src/nob.c:130
+#endif // BUNDLE_IMPLEMENTATION // ./src/nob.c:131
+#endif // BUNDLE_H_ // ./src/nob.c:132

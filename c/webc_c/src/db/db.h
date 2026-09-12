@@ -13,6 +13,7 @@ extern bool WEBC_TRACE_MIGRATION_QUERIES;
 
 bool txn_begin(sqlite3 *db);
 bool txn_commit(sqlite3 *db);
+bool txn_rollback(sqlite3 *db);
 bool create_schema(sqlite3 *db, const char *webc_path);
 sqlite3 *open_webc_db(void);
 

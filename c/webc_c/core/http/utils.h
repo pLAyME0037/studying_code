@@ -1,7 +1,7 @@
 #ifndef HTTP_UTILS
 #define HTTP_UTILS
 
-#include "../../nob.h"
+#include "build/nob.h"
 
 /* 1 USD = 4000 KHR */
 #define WEBC_FX_RATE 4000.0

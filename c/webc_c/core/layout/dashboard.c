@@ -1,4 +1,4 @@
-#include "../../nob.h"
+#include "build/nob.h"
 #include "dashboard.h"
 #include "../../core/display/crud_modules.h"
 #include "../../core/layout/header.h"

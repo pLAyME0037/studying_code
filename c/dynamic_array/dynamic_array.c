@@ -9,11 +9,11 @@ typedef struct {
     char **items;
     size_t count;
     size_t capacity;
-} Events;
+} Lists;
 
-static Events *list = {0};
+static Lists *list = {0};
 
-Events *list_new(void) {
+Lists *list_new(void) {
     list = malloc(sizeof(*list));
 
     list->capacity = 5;
@@ -23,7 +23,7 @@ Events *list_new(void) {
     return list;
 }
 
-Events *add(char *item) {
+Lists *add(char *item) {
     if (list->capacity == list->count) {
         list->capacity *= 2;
         list->items = realloc(list->items, list->capacity * sizeof(char*));
@@ -33,7 +33,7 @@ Events *add(char *item) {
     return list;
 }
 
-Events *pop(void) {
+Lists *pop(void) {
     if (list->count < 1) return list;
     list->items[list->count] = NULL;
     free(list->items[list->count]);
@@ -46,7 +46,7 @@ Events *pop(void) {
     return list;
 }
 
-Events *dump(void) {
+Lists *dump(void) {
     if (list->count < 1) return list;
     if (list->capacity == list->capacity/list->count) {
         list->capacity /= 2;
@@ -65,39 +65,39 @@ typedef enum {
     NONE,
 } TYPE;
 
-Events *del(TYPE type, ...) {
-    if (list->count < 1) return list;
-    if (list->capacity == list->capacity/list->count) {
-        list->capacity /= 2;
-        list->items = realloc(list->items, list->capacity * sizeof(char*));
-    }
-
-    va_list args;
-    va_start(args, type);
-    char *item = va_arg(args, char*);
-
-    va_end(args);
-
-    switch (type) {
-    case INDEX: {
-        for (int i = 0; i < type; ++i) {
-            free(list->items[(size_t)item]);
-            memmove(&list->items[(size_t)item], &list->items[(size_t)item + 1], (list->count - 1) * sizeof(char*));
-            list->count--;
-        }
-    };
-
-    case ELEMENT: {
-    };
-
-    default: dump();
-
-    return list;
-}
+// Lists *del(TYPE type, ...) {
+//     if (list->count < 1) return list;
+//     if (list->capacity == list->capacity/list->count) {
+//         list->capacity /= 2;
+//         list->items = realloc(list->items, list->capacity * sizeof(char*));
+//     }
+//
+//     va_list args;
+//     va_start(args, type);
+//     char *item = va_arg(args, char*);
+//
+//     va_end(args);
+//
+//     switch (type) {
+//     case INDEX: {
+//         for (int i = 0; i < type; ++i) {
+//             free(list->items[(size_t)item]);
+//             memmove(&list->items[(size_t)item], &list->items[(size_t)item + 1], (list->count - 1) * sizeof(char*));
+//             list->count--;
+//         }
+//     };
+//
+//     case ELEMENT: {
+//     };
+//
+//     default: dump();
+//
+//     return list;
+// }
 
 inline Lists *peek(Lists *e) {
     if (e == NULL || e->count == 0) return NULL;
-    return &e->items[e->count - 1];
+    e->items[e->count - 1];
 }
 
 Lists *list_print(void) {
@@ -121,7 +121,7 @@ int main(void) {
     add("Hello, ");
     add("World");
     add("!");
-    del(INDEX, 1);
+    // del(INDEX, 1);
     list_print();
     //
     // list_new();

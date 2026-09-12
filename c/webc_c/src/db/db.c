@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define NOB_STRIP_PREFIX
-#include "../../nob.h"
+#include "build/nob.h"
 
 #include "sqlite3.h"
 #include "db.h"
@@ -22,6 +22,14 @@ bool txn_begin(sqlite3 *db) {
 
 bool txn_commit(sqlite3 *db) {
     if (sqlite3_exec(db, "COMMIT;", NULL, NULL, NULL) != SQLITE_OK) {
+        LOG_SQLITE3_ERROR(db);
+        return false;
+    }
+    return true;
+}
+
+bool txn_rollback(sqlite3 *db) {
+    if (sqlite3_exec(db, "ROLLBACK;", NULL, NULL, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return false;
     }

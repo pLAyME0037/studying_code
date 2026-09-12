@@ -1,13 +1,17 @@
+#include <unistd.h>
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #include "nob.h"
 
 #define BUILD_FOLDER "./build/"
 #define SQLITE3_AMALGAMATION_FOLDER "./module/sqlite-amalgamation-3460100/"
-#define SQLITE3_OBJ_PATH BUILD_FOLDER"sqlite3.o"
+
+#define SQLITE3_OBJ_PATH   BUILD_FOLDER"sqlite3.o"
 #define COROUTINE_OBJ_PATH BUILD_FOLDER"coroutine.o"
-#define BUNDLE_H_PATH BUILD_FOLDER"bundle.h"
-#define BUILD_TIME_PATH BUILD_FOLDER"build_time.txt"
+#define BUNDLE_H_PATH      BUILD_FOLDER"bundle.h"
+#define BUILD_TIME_PATH    BUILD_FOLDER"build_time.txt"
+
+#include <ctype.h>
 
 #define genf(out, ...) \
     do { \
@@ -174,13 +178,13 @@ typedef struct {
     Cmd         cmd;
     const char *display_root;
     const char *output_root;
-} h_to_html_walk_data;
+} h_to_html_walk_data_t;
 
 bool h_to_html_walk_func(Nob_Walk_Entry entry) {
     if (entry.type != NOB_FILE_REGULAR) return true;
     if (!sv_ends_with_cstr(sv_from_cstr(entry.path), ".tt")) return true;
 
-    h_to_html_walk_data *data = (h_to_html_walk_data *)entry.data;
+    h_to_html_walk_data_t *data = (h_to_html_walk_data_t *)entry.data;
 
     String_View input = sv_from_cstr(entry.path);
     size_t prefix_len = strlen(data->display_root);
@@ -216,7 +220,11 @@ bool h_to_html_walk_func(Nob_Walk_Entry entry) {
         String_Builder parent = {0};
         sb_append_buf(&parent, output.items, slash);
         sb_append_null(&parent);
-        if (!mkdir_if_not_exists(parent.items)) return false;
+        if (!mkdir_if_not_exists(parent.items)) {
+            nob_da_free(parent);
+            return false;
+        }
+        nob_da_free(parent);
     }
 
     Fd out_fd = fd_open_for_write(output.items);
@@ -226,16 +234,19 @@ bool h_to_html_walk_func(Nob_Walk_Entry entry) {
     if (!cmd_run_sync_redirect_and_reset(&data->cmd, (Nob_Cmd_Redirect) {
                 .fdout = &out_fd }))
     {
+        nob_fd_close(out_fd);
+        nob_da_free(output);
         return false;
     }
+    nob_fd_close(out_fd);
+    nob_da_free(output);
     return true;
 }
 
 int prepare_cttochtml(Cmd cmd) {
-    mkdir_if_not_exists("./build");
     mkdir_if_not_exists("./build/h_to_html");
 
-    h_to_html_walk_data data = {
+    h_to_html_walk_data_t data = {
         .cmd = cmd,
         .display_root = "./display",
         .output_root = "./build/h_to_html",
@@ -266,24 +277,28 @@ void append_c_files_from_dir(Nob_Cmd *cmd, const char *dir_path) {
         if (type == NOB_FILE_DIRECTORY) {
             append_c_files_from_dir(cmd, full_path);
         } else if (type == NOB_FILE_REGULAR && ends_with(name, ".c")) {
-            nob_cmd_append(cmd, full_path);
+            // Exclude standalone binaries (tt.c, nob.c) from webc build
+            if (strcmp(name, "tt.c") != 0 && strcmp(name, "nob.c") != 0) {
+                nob_cmd_append(cmd, full_path);
+            }
         }
     }
     nob_da_free(children);
 }
 
 int main(int argc, char **argv) {
-    NOB_GO_REBUILD_URSELF(argc, argv);
+    // nob__go_rebuild_urself(argc, argv, "src/nob.c", NULL);  // Temporarily disabled
     Cmd cmd = {0};
 
+    mkdir_if_not_exists("./build");
     mkdir_if_not_exists("./build/bin");
 
-    cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-Wswitch-enum", "-ggdb", "-o", "./build/bin/tt", "tt.c");
+    cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-Wswitch-enum", "-ggdb", "-o", "./build/bin/tt", "./src/tt.c");
     if (!cmd_run_sync_and_reset(&cmd)) return 1;
 
     if (prepare_cttochtml(cmd)) return 1;
 
-    cmd_append(&cmd, "tailwindcss-linux-x64", "-i", "css/input.css", "-o", "css/output.css", "--minify");
+    cmd_append(&cmd, "tailwindcss-linux-x64", "-i", "./css/input.css", "-o", "./css/output.css", "--minify");
     if (!cmd_run_sync_and_reset(&cmd)) {
         printf("tailwindcss-linux-x64 not found.\n"
                 "[Recommend:] Download tailwindcss-linux-x64 and keep in ~/.local/bin\n"
@@ -294,7 +309,7 @@ int main(int argc, char **argv) {
     char webc_build_time[64] = {0};
     {
         mkdir_if_not_exists(BUILD_FOLDER);
-        cmd_append(&cmd, "date", "-u", "+%a, %d %b %Y %H:%M:%S UTF");
+        cmd_append(&cmd, "date", "-u", "+%a, %d %b %Y %H:%M:%S GMT");
         if (!cmd_run(&cmd, .stdout_path = BUILD_TIME_PATH)) return 1;
         cmd.count = 0;
 
@@ -313,13 +328,13 @@ int main(int argc, char **argv) {
 
     if (build_bundle(webc_build_time)) return 1;
 
-    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-Wswitch-enum", "-ggdb",
-            "-I.",
+    mkdir_if_not_exists("./build/bin");
+
+    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-Wswitch-enum", "-ggdb", "-pedantic",
             "-I"BUILD_FOLDER,
             "-I"SQLITE3_AMALGAMATION_FOLDER,
-            "-I./src/coroutine",
-            "-o", "./build/bin/webc",
-            "webc.c");
+            "-I.",
+            "-o", "./build/bin/webc");
 
     append_c_files_from_dir(&cmd, "core");
     append_c_files_from_dir(&cmd, "src");

@@ -5,6 +5,7 @@
 
 #include "notes.h"
 
+#include "build/webc_template.h"
 #include "src/db/db.h"
 #include "src/notes/notes.h"
 #include "core/layout/header.h"
@@ -12,37 +13,15 @@
 #include "core/http/utils.h"
 
 void render_notes_page(Serve_Context *sc, Notes notes) {
-    String_Builder *sb = &sc->body;
-    render_page_header(sb, "Notes", "/notes");
-#define OUT(buf, size) sb_append_buf(sb, buf, size);
-#define INT(x) sb_appendf(sb, "%d", (x));
-#define STR(x) sb_append_cstr(sb, (x) ? (x) : "");
-#define ESCAPED(x) sb_append_html_escaped(sb, (x) ? (x) : "");
-#define PAGE_TITLE "Notes"
-#include "build/h_to_html/notes.h"
-#undef PAGE_TITLE
-#undef ESCAPED
-#undef STR
-#undef INT
-#undef OUT
-    render_page_footer(sb);
+    PAGE_BEGIN(sc, "Note", "/notes");
+    #include "build/h_to_html/notes.h"
+    PAGE_END(sc);
 }
 
 void render_notes_edit_page(Serve_Context *sc, Note note) {
-    String_Builder *sb = &sc->body;
-    render_page_header(sb, "Edit Note", "/notes");
-#define OUT(buf, size) sb_append_buf(sb, buf, size);
-#define INT(x) sb_appendf(sb, "%d", (x));
-#define STR(x) sb_append_cstr(sb, (x) ? (x) : "");
-#define ESCAPED(x) sb_append_html_escaped(sb, (x) ? (x) : "");
-#define PAGE_TITLE "Edit Note"
-#include "build/h_to_html/notes_edit.h"
-#undef PAGE_TITLE
-#undef ESCAPED
-#undef STR
-#undef INT
-#undef OUT
-    render_page_footer(sb);
+    PAGE_BEGIN(sc, "Edit Note", "/notes");
+    #include "build/h_to_html/notes_edit.h"
+    PAGE_END(sc);
 }
 
 void serve_notes(Serve_Context *sc, String_View method) {
@@ -79,7 +58,8 @@ void serve_notes_create(Serve_Context *sc) {
     if (!db) { serve_error(sc, 500); return; }
     if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
     bool ok = insert_note(db, title, body);
-    txn_commit(db);
+    if (ok) { txn_commit(db); }
+    else { txn_rollback(db); }
     sqlite3_close(db);
 
     if (!ok) { serve_error(sc, 500); return; }

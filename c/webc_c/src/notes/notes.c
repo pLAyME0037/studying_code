@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define NOB_STRIP_PREFIX
-#include "../../nob.h"
+#include "build/nob.h"
 
 #include "sqlite3.h"
 #include "notes.h"
@@ -27,7 +27,7 @@ bool load_notes(sqlite3 *db, Notes *notes) {
         const char *title = (const char *)sqlite3_column_text(stmt, column++);
         const char *created_at = (const char *)sqlite3_column_text(stmt, column++);
         const char *body = (const char *)sqlite3_column_text(stmt, column++);
-        da_append(notes, ((Note) {
+        Notes_add(notes, ((Note) {
             .id         = id,
             .title      = title      ? temp_strdup(title)      : NULL,
             .created_at = created_at ? temp_strdup(created_at) : NULL,
