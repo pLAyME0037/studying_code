@@ -5,7 +5,7 @@
 
 #include "notes.h"
 
-#include "build/webc_template.h"
+#include "module/webc_template.h"
 #include "src/db/db.h"
 #include "src/notes/notes.h"
 #include "core/layout/header.h"
@@ -24,149 +24,7 @@ void render_notes_edit_page(Serve_Context *sc, Note note) {
     PAGE_END(sc);
 }
 
-void serve_notes(Serve_Context *sc, String_View method) {
-    UNUSED(method);
-
-    Notes notes = {0};
-    sqlite3 *db = open_webc_db();
-    if (!db) { serve_error(sc, 500); return; }
-    if (!load_notes(db, &notes)) {
-        sqlite3_close(db);
-        serve_error(sc, 500);
-        return;
-    }
-    sqlite3_close(db);
-
-    sc->body.count = 0;
-    render_notes_page(sc, notes);
-    free(notes.items);
-
-    http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));
-}
-
-void serve_notes_create(Serve_Context *sc) {
-    char title[512] = {0};
-    char body[4096] = {0};
-
-    if (!form_find(sb_to_sv(sc->body), "title", title, sizeof(title)) || title[0] == '\0') {
-        serve_error(sc, 400);
-        return;
-    }
-    form_find(sb_to_sv(sc->body), "body", body, sizeof(body));
-
-    sqlite3 *db = open_webc_db();
-    if (!db) { serve_error(sc, 500); return; }
-    if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
-    bool ok = insert_note(db, title, body);
-    if (ok) { txn_commit(db); }
-    else { txn_rollback(db); }
-    sqlite3_close(db);
-
-    if (!ok) { serve_error(sc, 500); return; }
-    http_render_redirect(sc, 302, "/notes");
-}
-
-static bool parse_note_id_from_uri(String_View uri, const char *suffix, int *id) {
-    // /notes/<id>/edit, /notes/<id>/update, /notes/<id>/delete
-    const char *prefix = "/notes/";
-    size_t plen = strlen(prefix);
-    if (uri.count <= plen || memcmp(uri.data, prefix, plen) != 0) return false;
-    if (!sv_ends_with(uri, sv_from_cstr(suffix))) return false;
-
-    String_View id_sv = {
-        .data  = uri.data + plen,
-        .count = uri.count - plen - strlen(suffix),
-    };
-    char buf[32] = {0};
-    snprintf(buf, sizeof(buf), "%.*s", (int)id_sv.count, id_sv.data);
-    char *end = NULL;
-    long value = strtol(buf, &end, 10);
-    if (end == buf || *end != '\0') return false;
-    *id = (int)value;
-    return true;
-}
-
-void serve_notes_edit(Serve_Context *sc, String_View uri) {
-    int id = 0;
-    if (!parse_note_id_from_uri(uri, "/edit", &id)) {
-        serve_error(sc, 404);
-        return;
-    }
-
-    Notes notes = {0};
-    sqlite3 *db = open_webc_db();
-    if (!db) { serve_error(sc, 500); return; }
-    if (!load_notes(db, &notes)) {
-        sqlite3_close(db);
-        serve_error(sc, 500);
-        return;
-    }
-    sqlite3_close(db);
-
-    Note *target = NULL;
-    for (size_t i = 0; i < notes.count; ++i) {
-        if (notes.items[i].id == id) {
-            target = &notes.items[i];
-            break;
-        }
-    }
-    if (!target) {
-        free(notes.items);
-        serve_error(sc, 404);
-        return;
-    }
-
-    sc->body.count = 0;
-    render_notes_edit_page(sc, *target);
-    free(notes.items);
-
-    http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));
-}
-
-void serve_notes_update(Serve_Context *sc, String_View uri) {
-    int id = 0;
-    if (!parse_note_id_from_uri(uri, "/update", &id)) {
-        serve_error(sc, 404);
-        return;
-    }
-
-    char title[512] = {0};
-    char body[4096] = {0};
-
-    if (!form_find(sb_to_sv(sc->body), "title", title, sizeof(title)) || title[0] == '\0') {
-        serve_error(sc, 400);
-        return;
-    }
-    form_find(sb_to_sv(sc->body), "body", body, sizeof(body));
-
-    sqlite3 *db = open_webc_db();
-    if (!db) { serve_error(sc, 500); return; }
-    if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
-    bool ok = update_note(db, id, title, body);
-    txn_commit(db);
-    sqlite3_close(db);
-
-    if (!ok) { serve_error(sc, 500); return; }
-    http_render_redirect(sc, 302, "/notes");
-}
-
-void serve_notes_delete(Serve_Context *sc, String_View uri) {
-    int id = 0;
-    if (!parse_note_id_from_uri(uri, "/delete", &id)) {
-        serve_error(sc, 404);
-        return;
-    }
-
-    sqlite3 *db = open_webc_db();
-    if (!db) { serve_error(sc, 500); return; }
-    if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
-    bool ok = delete_note(db, id);
-    txn_commit(db);
-    sqlite3_close(db);
-
-    if (!ok) { serve_error(sc, 500); return; }
-    http_render_redirect(sc, 302, "/notes");
-}
+SERVE_CRUD(notes, note, Notes, Note, "title", "body")
 
 static void serve_notes_json(Serve_Context *sc) {
     Notes notes = {0};
@@ -200,6 +58,7 @@ static void serve_notes_json(Serve_Context *sc) {
     free(notes.items);
 
     http_render_response(sc, 200, "application/json", sb_to_sv(body));
+    sb_free(body);
 }
 
 void serve_notes_api(Serve_Context *sc, String_View method) {
@@ -210,26 +69,36 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         return;
     }
 
-    char title[512] = {0};
-    char body[4096] = {0};
+    const char *fields[] = { "title", "body" };
+    size_t field_count = sizeof(fields) / sizeof(fields[0]);
+    String_View values[field_count];
+    memset(values, 0, sizeof(values));
     long long id = 0;
     bool has_id = json_find_int(body_sv, "id", &id);
 
     if (sv_eq(method, sv_from_cstr("POST"))) {
-        String_View title_sv = {0}, body_sv2 = {0};
-        if (!json_find_string(body_sv, "title", &title_sv)) {
+        for (size_t i = 0; i < field_count; ++i) {
+            if (!json_find_string(body_sv, fields[i], &values[i])) {
+                serve_error(sc, 400);
+                return;
+            }
+        }
+
+        if (values[0].count == 0) {
             serve_error(sc, 400);
             return;
         }
-        json_find_string(body_sv, "body", &body_sv2);
-        snprintf(title, sizeof(title), "%.*s", (int)title_sv.count, title_sv.data);
-        snprintf(body, sizeof(body), "%.*s", (int)body_sv2.count, body_sv2.data);
 
         sqlite3 *db = open_webc_db();
         if (!db) { serve_error(sc, 500); return; }
-        if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
-        bool ok = insert_note(db, title, body);
-        txn_commit(db);
+        if (!txn_begin(db)) { 
+            sqlite3_close(db); 
+            serve_error(sc, 500);
+            return;
+        }
+        bool ok = insert_note(db, values, field_count);
+        if (ok) txn_commit(db);
+        else txn_rollback(db);
         sqlite3_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
@@ -237,20 +106,33 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
     }
 
     if (sv_eq(method, sv_from_cstr("PUT"))) {
-        String_View title_sv = {0}, body_sv2 = {0};
-        if (!has_id || !json_find_string(body_sv, "title", &title_sv)) {
+        if (!has_id) {
             serve_error(sc, 400);
             return;
         }
-        json_find_string(body_sv, "body", &body_sv2);
-        snprintf(title, sizeof(title), "%.*s", (int)title_sv.count, title_sv.data);
-        snprintf(body, sizeof(body), "%.*s", (int)body_sv2.count, body_sv2.data);
+
+        for (size_t i = 0; i < field_count; ++i) {
+            if (!json_find_string(body_sv, fields[i], &values[i])) {
+                serve_error(sc, 400);
+                return;
+            }
+        }
+
+        if (values[0].count == 0) {
+            serve_error(sc, 400);
+            return;
+        }
 
         sqlite3 *db = open_webc_db();
         if (!db) { serve_error(sc, 500); return; }
-        if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
-        bool ok = update_note(db, (int)id, title, body);
-        txn_commit(db);
+        if (!txn_begin(db)) { 
+            sqlite3_close(db); 
+            serve_error(sc, 500);
+            return;
+        }
+        bool ok = insert_note(db, values, field_count);
+        if (ok) txn_commit(db);
+        else txn_rollback(db);
         sqlite3_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
@@ -264,9 +146,14 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         }
         sqlite3 *db = open_webc_db();
         if (!db) { serve_error(sc, 500); return; }
-        if (!txn_begin(db)) { sqlite3_close(db); serve_error(sc, 500); return; }
+        if (!txn_begin(db)) { 
+            sqlite3_close(db); 
+            serve_error(sc, 500);
+            return;
+        }
         bool ok = delete_note(db, (int)id);
-        txn_commit(db);
+        if (ok) txn_commit(db);
+        else txn_rollback(db);
         sqlite3_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);

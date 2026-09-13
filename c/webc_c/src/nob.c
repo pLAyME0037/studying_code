@@ -1,7 +1,7 @@
 #include <unistd.h>
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
-#include "nob.h"
+#include "module/nob.h"
 
 #define BUILD_FOLDER "./build/"
 #define SQLITE3_AMALGAMATION_FOLDER "./module/sqlite-amalgamation-3460100/"

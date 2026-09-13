@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define NOB_STRIP_PREFIX
-#include "build/nob.h"
+#include "module/nob.h"
 
 #include "sqlite3.h"
 #include "notes.h"
@@ -12,10 +12,9 @@
 bool load_notes(sqlite3 *db, Notes *notes) {
     bool result = true;
     sqlite3_stmt *stmt = NULL;
+    const char *sql = "SELECT id, title, datetime(created_at, 'localtime'), body FROM Notes ORDER BY created_at DESC;";
 
-    int ret = sqlite3_prepare_v2(db,
-        "SELECT id, title, datetime(created_at, 'localtime'), body FROM Notes ORDER BY created_at DESC;",
-        -1, &stmt, NULL);
+    int ret = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (ret != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
@@ -45,20 +44,24 @@ defer:
     return result;
 }
 
-bool insert_note(sqlite3 *db, const char *title, const char *body)
-{
+bool insert_note(sqlite3 *db, String_View *values, size_t count) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
 
-    if (sqlite3_prepare_v2(db, "INSERT INTO Notes (title, body) VALUES (?, ?);", -1, &stmt, NULL) != SQLITE_OK) {
+    if (count < 2) return false;
+    String_View title = values[0];
+    String_View body  = values[1];
+    sqlite3_stmt *stmt = NULL;
+    const char *sql =  "INSERT INTO Notes (title, body) VALUES (?, ?);";
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 1, title, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 1, title.data, (int)title.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 2, body, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 2, body.data, (int)body.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
@@ -72,20 +75,24 @@ defer:
     return result;
 }
 
-bool update_note(sqlite3 *db, int id, const char *title, const char *body)
-{
+bool update_note(sqlite3 *db, String_View *values, size_t count, int id) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
 
-    if (sqlite3_prepare_v2(db, "UPDATE Notes SET title = ?, body = ? WHERE id = ?;", -1, &stmt, NULL) != SQLITE_OK) {
+    if (count < 2) return false;
+    String_View title = values[0];
+    String_View body  = values[1];
+    sqlite3_stmt *stmt = NULL;
+    const char *sql = "UPDATE Notes SET title = ?, body = ? WHERE id = ?;";
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 1, title, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 1, title.data, (int)title.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 2, body, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 2, body.data, (int)body.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
@@ -103,12 +110,12 @@ defer:
     return result;
 }
 
-bool delete_note(sqlite3 *db, int id)
-{
+bool delete_note(sqlite3 *db, int id) {
     bool result = true;
     sqlite3_stmt *stmt = NULL;
+    const char *sql = "DELETE FROM Notes WHERE id = ?;";
 
-    if (sqlite3_prepare_v2(db, "DELETE FROM Notes WHERE id = ?;", -1, &stmt, NULL) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }

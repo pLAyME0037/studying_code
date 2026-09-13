@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "route.h"
+
 #include "../display/notes.h"
 #include "../display/table.h"
 #include "../display/version.h"
@@ -13,7 +14,9 @@ static const Crud_Module *crud_find_module(String_View uri) {
     for (size_t i = 0; i < crud_modules_count; ++i) {
         String_View p = sv_from_cstr(crud_modules[i]->path);
         if (!sv_starts_with(uri, p)) continue;
-        if (!best || strlen(crud_modules[i]->path) > strlen(best->path)) best = crud_modules[i];
+        if (!best || strlen(crud_modules[i]->path) > strlen(best->path)) {
+            best = crud_modules[i];
+        }
     }
     return best;
 }
@@ -24,8 +27,9 @@ static bool parse_uri_id(String_View path,
                          const char *suffix,
                          int        *id)
 {
-    String_View prefix;
-    prefix = sv_from_cstr(temp_sprintf("%.*s/", (int)path.count, path.data));
+    char prefix_buf[128];
+    snprintf(prefix_buf, sizeof(prefix_buf), "%.*s/", (int)path.count, path.data);
+    String_View prefix = sv_from_cstr(prefix_buf);
     if (uri.count <= prefix.count
         || memcmp(uri.data, prefix.data, prefix.count) != 0) {
         return false;
@@ -120,16 +124,16 @@ void route_request(Serve_Context *sc, String_View method, String_View uri) {
         serve_dashboard(sc);
         return;
     }
+    if (CMP_URI(uri, "/version")) {
+        serve_version_page(sc);
+        return;
+    }
     if (CMP_URI(uri, "/table")) {
         serve_table(sc, method);
         return;
     }
     if (CMP_URI(uri, "/notes")) {
-        serve_notes(sc, method);
-        return;
-    }
-    if (CMP_URI(uri, "/version")) {
-        serve_version_page(sc);
+        serve_notes_read(sc, method);
         return;
     }
     if (CMP_URI(uri, "/api/notes")) {
@@ -140,8 +144,24 @@ void route_request(Serve_Context *sc, String_View method, String_View uri) {
         serve_notes_create(sc);
         return;
     }
+    int notes_id = 0;
+    if (CMP_URI(method, "GET")
+        && parse_uri_id(sv_from_cstr("/notes"), uri, "/edit", &notes_id)) {
+        serve_notes_edit(sc, uri);
+        return;
+    }
+    if (CMP_URI(method, "POST")
+        && parse_uri_id(sv_from_cstr("/notes"), uri, "/update", &notes_id)) {
+        serve_notes_update(sc, uri);
+        return;
+    }
+    if (CMP_URI(method, "POST")
+        && parse_uri_id(sv_from_cstr("/notes"), uri, "/delete", &notes_id)) {
+        serve_notes_delete(sc, uri);
+        return;
+    }
     if (CMP_URI(uri, "/users")) {
-        serve_users(sc, method);
+        serve_users_read(sc, method);
         return;
     }
     if (CMP_URI(method, "POST") && CMP_URI(uri, "/users/create")) {

@@ -12,7 +12,7 @@
 #include <poll.h>
 
 #define NOB_STRIP_PREFIX
-#include "build/nob.h"
+#include "module/nob.h"
 
 #define BUNDLE_IMPLEMENTATION
 #include "../../build/bundle.h"

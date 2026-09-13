@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include "sqlite3.h"
-#include "nob.h"
+#include "module/nob.h"
 
 typedef struct {
     int id;
@@ -16,8 +16,8 @@ typedef struct {
 DA_NEW(Note, Notes)
 
 bool load_notes(sqlite3 *db, Notes *notes);
-bool insert_note(sqlite3 *db, const char *title, const char *body);
-bool update_note(sqlite3 *db, int id, const char *title, const char *body);
+bool insert_note(sqlite3 *db, String_View *values, size_t count);
+bool update_note(sqlite3 *db, String_View *values, size_t count, int id);
 bool delete_note(sqlite3 *db, int id);
 
 #endif // SRC_NOTES_H_

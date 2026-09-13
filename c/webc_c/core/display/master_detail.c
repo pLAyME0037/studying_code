@@ -1,5 +1,5 @@
 #define NOB_STRIP_PREFIX
-#include "build/nob.h"
+#include "module/nob.h"
 
 #include "master_detail.h"
 #include "src/db/db.h"

@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 #include <sqlite3.h>
-#include "nob.h"
+#include "module/nob.h"
 
 typedef struct {
     int id;
@@ -26,17 +26,8 @@ static inline User user_data(void) {
 }
 
 bool load_users(sqlite3 *db, Users *rows);
-bool insert_user(sqlite3    *db,
-                 const char *name,
-                 const char *username,
-                 const char *email,
-                 const char *profile_pic);
-bool update_user(sqlite3    *db,
-                 const char *name,
-                 const char *username,
-                 const char *email,
-                 const char *profile_pic,
-                 int id);
+bool insert_user(sqlite3 *db, String_View *fields, size_t count);
+bool update_user(sqlite3 *db, String_View *fields, size_t count, int id);
 bool delete_user(sqlite3 *db, int id);
 
 #endif // SRC_USER_H_

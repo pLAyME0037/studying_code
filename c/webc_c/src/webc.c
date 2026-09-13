@@ -18,7 +18,7 @@
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #define NOB_NO_ECHO
-#include "nob.h"
+#include "module/nob.h"
 
 #include "core/http/serve.h"
 #include "src/db/db.h"

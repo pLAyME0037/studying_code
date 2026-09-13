@@ -3,7 +3,7 @@
 
 #include "../db/db.h"
 #include "user.h"
-#include "build/nob.h"
+#include "module/nob.h"
 
 bool load_users(sqlite3 *db, Users *rows) {
     bool result = true;
@@ -45,33 +45,34 @@ defer:
     return result;
 }
 
-bool insert_user(sqlite3    *db,
-                 const char *name,
-                 const char *username,
-                 const char *email,
-                 const char *profile_pic)
-{
+bool insert_user(sqlite3 *db, String_View *fields, size_t count) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
 
-    if (sqlite3_prepare_v2(db, "INSERT OR REPLACE INTO Users (name, username, email, profile_pic) VALUES (?, ?, ?, ?);",
-                           -1, &stmt, NULL) != SQLITE_OK) {
+    if (count < 4) return false;
+    String_View name        = fields[0];
+    String_View username    = fields[1];
+    String_View email       = fields[2];
+    String_View profile_pic = fields[3];
+    sqlite3_stmt *stmt = NULL;
+    const char *sql =  "INSERT OR REPLACE INTO Users (name, username, email, profile_pic) VALUES (?, ?, ?, ?);";
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 1, name.data, (int)name.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 2, username, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 2, username.data, (int)username.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 3, email, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 3, email.data, (int)email.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 4, profile_pic, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 4, profile_pic.data, (int)profile_pic.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
@@ -85,34 +86,33 @@ defer:
     return result;
 }
 
-bool update_user(sqlite3    *db,
-                 const char *name,
-                 const char *username,
-                 const char *email,
-                 const char *profile_pic,
-                 int id)
-{
+bool update_user(sqlite3 *db, String_View *fields, size_t count, int id) {
     bool result = true;
+    if (count < 4) return false;
+    String_View name        = fields[0];
+    String_View username    = fields[1];
+    String_View email       = fields[2];
+    String_View profile_pic = fields[3];
     sqlite3_stmt *stmt = NULL;
+    const char *sql = "UPDATE Users SET name = ?, username = ?, email = ?, profile_pic = ? WHERE id = ?;";
 
-    if (sqlite3_prepare_v2(db, "UPDATE Users SET name = ?, username = ?, email = ?, profile_pic = ? WHERE id = ?;",
-                           -1, &stmt, NULL) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 1, name, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 1, name.data, (int)name.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 2, username, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 2, username.data, (int)username.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 3, email, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 3, email.data, (int)email.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_text(stmt, 4, profile_pic, -1, SQLITE_TRANSIENT) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 4, profile_pic.data, (int)profile_pic.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
@@ -133,8 +133,9 @@ defer:
 bool delete_user(sqlite3 *db, int id) {
     bool result = true;
     sqlite3_stmt *stmt = NULL;
+    const char *sql = "DELETE FROM Users WHERE id = ?;";
 
-    if (sqlite3_prepare_v2(db, "DELETE FROM Users WHERE id = ?;", -1, &stmt, NULL) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
