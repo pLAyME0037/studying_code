@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="user_info.Views.WUCompanyRegister">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+
+            <Label 
+                Text="Create Account"
+                FontSize="28"
+                FontAttributes="Bold"
+                HorizontalOptions="Center" />
+
+            <Entry
+                x:Name="UsernameEntry"
+                Placeholder="Enter Your Username"/>
+            <Entry
+                x:Name="EmailEntry"
+                Placeholder="Enter Your Email"
+                Keyboard="Email" />
+            <Entry
+                x:Name="PasswordEntry"
+                Placeholder="Enter Your Password"
+                IsPassword="True" />
+            <Entry
+                x:Name="ConfirmPasswordEntry"
+                Placeholder="Comfirm Password"
+                IsPassword="True" />
+
+            <Button
+                Text="Register"
+                Clicked="RegisterButtonClick" />
+            <Button
+                Text="To Go Login"
+                Clicked="GoToLoginButtonClick" />
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

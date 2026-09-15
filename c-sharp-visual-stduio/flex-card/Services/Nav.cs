@@ -1,30 +1,55 @@
 using Microsoft.Maui.Controls;
+#if !(ANDROID || IOS || MACCATALYST || WINDOWS)
+using Microsoft.Maui.Platform.Linux.Hosting;
+#endif
 
 namespace user_info.Services;
 
 public static class Nav
 {
-    public static void Push(Page page) {
+    public static async Task PushAsync(Page page) {
 #if ANDROID || IOS || MACCATALYST || WINDOWS
-        Shell.Current.GoToAsync(page.GetType().Name);
+        if (Shell.Current is not null) {
+            await Shell.Current.GoToAsync(page.GetType().Name);
+        }
 #else
-        Microsoft.Maui.Platform.Linux.Hosting.LinuxViewRenderer.PushPage(page);
+        LinuxViewRenderer.PushPage(page);
+        await Task.CompletedTask;
 #endif
     }
 
-    public static void Pop() {
+    public static async Task PopAsync() {
 #if ANDROID || IOS || MACCATALYST || WINDOWS
-        Shell.Current.Navigation.PopAsync();
+        if (Shell.Current is not null) {
+            await Shell.Current.GoToAsync("..");
+        }
 #else
-        Microsoft.Maui.Platform.Linux.Hosting.LinuxViewRenderer.PopPage();
+        LinuxViewRenderer.PopPage();
+        await Task.CompletedTask;
 #endif
     }
 
-    public static void GoHome() {
+    public static async Task GoHomeAsync() {
 #if ANDROID || IOS || MACCATALYST || WINDOWS
-        Shell.Current.GoToAsync("//HomePage");
+        if (Shell.Current is not null) {
+            await Shell.Current.GoToAsync("//HomePage");
+        }
 #else
-        Microsoft.Maui.Platform.Linux.Hosting.LinuxViewRenderer.CurrentSkiaShell?.NavigateToSection(0);
+        LinuxViewRenderer.CurrentSkiaShell?.NavigateToSection(0);
+        await Task.CompletedTask;
+#endif
+    }
+
+    public static async Task GoToPageAsync(string route) {
+#if ANDROID || IOS || MACCATALYST || WINDOWS
+        if (Shell.Current is not null) {
+            await Shell.Current.GoToAsync(route);
+        }
+#else
+        // Absolute routes "//Foo" -> "Foo", relative "Foo" -> "Foo"
+        string cleanRoute = route.TrimStart('/');
+        LinuxViewRenderer.NavigateToRoute(cleanRoute);
+        await Task.CompletedTask;
 #endif
     }
 }

@@ -8,7 +8,7 @@ public partial class HomePage : ContentPage
 		InitializeComponent();
 	}
 
-    private void StudentListClicked(object sender, EventArgs e) {
-        Nav.Push(new StudentList());
+    private async void StudentListClicked(object sender, EventArgs e) {
+        await Nav.PushAsync(new StudentList());
     }
 }

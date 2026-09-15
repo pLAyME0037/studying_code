@@ -9,11 +9,11 @@ public partial class StudentList : ContentPage
         InitializeComponent();
     }
 
-    private void StudentDetail1(object sender, EventArgs e) {
-        Nav.Push(new StudentDetailPage());
+    private async void StudentDetail1(object sender, EventArgs e) {
+        await Nav.PushAsync(new StudentDetailPage());
     }
 
-    private void StudentDetail2(object sender, EventArgs e) {
-        Nav.Push(new StudentDetailPage());
+    private async void StudentDetail2(object sender, EventArgs e) {
+        await Nav.PushAsync(new StudentDetailPage());
     }
 }

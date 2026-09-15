@@ -8,6 +8,16 @@
     xmlns:views.student_db="clr-namespace:user_info.Views.StudentDB"
     Title="user_info">
 
+    <TabBar>
+        <ShellContent Title="WU Company"
+                      ContentTemplate="{DataTemplate views:WUCompanyLogin}"
+                      Route="WUCompanyLoginPage"/>
+
+        <ShellContent Title="WU Company Register"
+                      ContentTemplate="{DataTemplate views:WUCompanyRegister}"
+                      Route="WUCompanyRegisterPage"/>
+    </TabBar>
+
     <ShellContent Title="Student Management Add"
                   ContentTemplate="{DataTemplate views.student_db:StudentListAdd}"
                   Route="StudentListAdd" />
@@ -39,8 +49,8 @@
                   ContentTemplate="{DataTemplate pages:SettingPage}" />
 
     <ShellContent Title="User"
-                  ContentTemplate="{DataTemplate views:User}"
-                  Route="User" />
+                  ContentTemplate="{DataTemplate views:Users}"
+                  Route="Users" />
 
     <ShellContent Title="Staff"
                   ContentTemplate="{DataTemplate views:Staff}"

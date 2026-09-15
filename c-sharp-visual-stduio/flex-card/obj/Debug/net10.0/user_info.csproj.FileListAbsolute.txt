@@ -292,3 +292,7 @@
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/Debug/net10.0/user_info.pdb
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/Debug/net10.0/user_info.genruntimeconfig.cache
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/Debug/net10.0/ref/user_info.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.MediaElement.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/OpenMaui.Controls.Linux.MediaElement.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.Core.dll

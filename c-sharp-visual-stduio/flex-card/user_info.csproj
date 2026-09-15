@@ -73,8 +73,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="CommunityToolkit.Maui" Version="15.0.1" />
+        <PackageReference Include="CommunityToolkit.Maui.MediaElement" Version="10.0.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+        <PackageReference Include="OpenMaui.Controls.Linux.MediaElement" Version="10.0.90.1" />
         <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     </ItemGroup>
 

@@ -5,7 +5,7 @@ namespace user_info.Views.StudentDB;
 
 public partial class StudentListAdd : ContentPage
 {
-    private readonly StudentViewModel stu_vm;
+    private readonly StudentViewModel? stu_vm;
 
     public StudentListAdd() {
         InitializeComponent();

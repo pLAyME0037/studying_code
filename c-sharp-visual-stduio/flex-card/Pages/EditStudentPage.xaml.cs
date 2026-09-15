@@ -8,11 +8,11 @@ public partial class EditStudentPage : ContentPage
 		InitializeComponent();
 	}
 
-    private void GoBack(object sender, EventArgs e) {
-        Nav.Pop();
+    private async void GoBack(object sender, EventArgs e) {
+        await Nav.PopAsync();
     }
 
-    private void GoHome(object sender, EventArgs e) {
-        Nav.GoHome();
+    private async void GoHome(object sender, EventArgs e) {
+        await Nav.GoHomeAsync();
     }
 }

@@ -24,17 +24,17 @@ public class DBService
 
     public async Task AddStudentAsync(Student student) {
         await InitializeDatabaseAsync();
-        await _database.InsertAsync(student);
+        await _database!.InsertAsync(student);
     }
 
     public async Task UpdateStudentAsync(Student student) {
         await InitializeDatabaseAsync();
-        await _database.UpdateAsync(student);
+        await _database!.UpdateAsync(student);
     }
 
     public async Task DeleteStudentAsync(Student student) {
         await InitializeDatabaseAsync();
-        await _database.DeleteAsync(student);
+        await _database!.DeleteAsync(student);
     }
 
     public async Task<List<Student>> GetStudentAsync() {

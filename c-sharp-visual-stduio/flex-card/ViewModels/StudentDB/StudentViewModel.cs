@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using user_info.Models.StudentDB;
@@ -12,16 +13,11 @@ public partial class StudentViewModel : ObservableObject
 
     public ObservableCollection<Student> Students { get; }
 
-    [ObservableProperty]
-    private string name;
-    [ObservableProperty]
-    private string sex;
-    [ObservableProperty]
-    private string email;
-    [ObservableProperty]
-    private string major;
-    [ObservableProperty]
-    private int    age;
+    [ObservableProperty] private string name  = string.Empty;
+    [ObservableProperty] private string sex   = string.Empty;
+    [ObservableProperty] private string email = string.Empty;
+    [ObservableProperty] private string major = string.Empty;
+    [ObservableProperty] private int    age   = 0;
 
     public StudentViewModel(DBService db_service) {
         _db_service = db_service;

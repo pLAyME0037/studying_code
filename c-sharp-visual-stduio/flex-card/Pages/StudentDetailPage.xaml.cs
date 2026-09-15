@@ -8,7 +8,7 @@ public partial class StudentDetailPage : ContentPage
 		InitializeComponent();
 	}
 
-    private void EditStudent(object sender, EventArgs e) {
-        Nav.Push(new EditStudentPage());
+    private async void EditStudent(object sender, EventArgs e) {
+        await Nav.PushAsync(new EditStudentPage());
     }
 }

@@ -14,10 +14,10 @@ public partial class StudentListCollection : ContentPage
         BindingContext = stu_vm;
     }
 
-    public StudentListCollection(StudentViewModel stu_vm) {
-        InitializeComponent();
-        BindingContext = stu_vm;
-    }
+    // public StudentListCollection(StudentViewModel stu_vm) {
+    //     InitializeComponent();
+    //     BindingContext = stu_vm;
+    // }
 
     protected override async void OnAppearing() {
         base.OnAppearing();
