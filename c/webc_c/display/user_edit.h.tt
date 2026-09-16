@@ -1,6 +1,6 @@
 <div>
     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-        Edit User #{ ({ INT(user.id); }) }
+        Edit User ID #({ INT(user.id); })
     </h2>
 
     <form method="POST" action="/users/({ INT(user.id); })/update"
@@ -18,6 +18,11 @@
         <div>
             <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Email</label>
             <input name="email" type="text" value="({ ESCAPED(user.email); })"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">User Profile Picture</label>
+            <input name="profile_pic" type="text" value="({ ESCAPED(user.profile_pic); })"
                    class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
         </div>
         <button type="submit"

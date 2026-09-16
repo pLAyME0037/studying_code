@@ -106,7 +106,11 @@ static long parse_content_length(String_View headers) {
     return -1;
 }
 
-static bool read_body(int fd, String_Builder *request, size_t body_start, long content_length) {
+static bool read_body(int             fd,
+                      String_Builder *request,
+                      size_t          body_start,
+                      long            content_length)
+{
     char buffer[1024];
     size_t have = request->count > body_start ? request->count - body_start : 0;
     while (content_length > 0 && have < (size_t)content_length) {
@@ -167,11 +171,12 @@ static void serve_request_coro(void *arg) {
             break;
         }
     }
+    sc.uri    = uri;
+    sc.method = method;
 
-    route_request(&sc, method, uri);
+    route_request(&sc);
 
-    if (!write_entire_sv_coro(client_fd, sb_to_sv(sc.response))) {
-    }
+    if (!write_entire_sv_coro(client_fd, sb_to_sv(sc.response))) { }
 
 cleanup:
     shutdown(client_fd, SHUT_WR);
@@ -259,10 +264,17 @@ void serve_request(Serve_Context *sc) {
 }
 
 void sc_reset(Serve_Context *sc) {
-    sc->body.count = 0;
+    sc->client_fd      = 0;
+    sc->route_id       = 0;
+    sc->request.count  = 0;
+    sb_free(sc->request);
     sc->response.count = 0;
-    sc->request.count = 0;
-    sc->query_string = sv_from_cstr("");
+    sb_free(sc->response);
+    sc->body.count     = 0;
+    sb_free(sc->body);
+    sc->method         = sv_from_cstr("");
+    sc->uri            = sv_from_cstr("");
+    sc->query_string   = sv_from_cstr("");
 }
 
 const char *http_reason_phrase_by_status_code(int status_code) {
@@ -347,6 +359,7 @@ void serve_error(Serve_Context *sc, int status_code) {
     sb_append_cstr(&content, "</h1></div>");
     sc->body.count = 0;
     render_page_shell(sc, title, sb_to_sv(content));
+    sb_free(content);
     http_render_response(sc, status_code, "text/html", sb_to_sv(sc->body));
 }
 
@@ -354,11 +367,11 @@ void sb_append_html_escaped(String_Builder *sb, const char *s) {
     if (!s) return;
     for (; *s; ++s) {
         switch (*s) {
-        case '&':  sb_append_cstr(sb, "&");  break;
-        case '<':  sb_append_cstr(sb, "<");   break;
-        case '>':  sb_append_cstr(sb, ">");   break;
-        case '"':  sb_append_cstr(sb,""""); break;
-        case '\'': sb_append_cstr(sb, "'");  break;
+        case '&':  sb_append_cstr(sb, "&amp;");  break;
+        case '<':  sb_append_cstr(sb, "&lt;");   break;
+        case '>':  sb_append_cstr(sb, "&gt;");   break;
+        case '"':  sb_append_cstr(sb, "&quot;"); break;
+        case '\'': sb_append_cstr(sb, "&#39;");  break;
         default:   sb_append_buf(sb, s, 1);      break;
         }
     }
@@ -390,22 +403,22 @@ void sb_append_json_escaped(String_Builder *sb, const char *s) {
 bool json_find_string(String_View body, const char *key, String_View *out) {
     size_t key_len = strlen(key);
     for (size_t i = 0; i + key_len + 2 <= body.count; ++i) {
-        if (memcmp(body.data + i, key, key_len) == 0                &&
-            (i == 0 || body.data[i-1] != '_')                       &&
-            i + key_len < body.count && body.data[i+key_len] == '"' &&
-            body.data[i+key_len+1] == ':')
-        {
+        if (memcmp(body.data + i, key, key_len) == 0                
+            && (i == 0 || body.data[i-1] != '_')                       
+            && i + key_len < body.count 
+            && body.data[i+key_len] == '"' 
+            && body.data[i+key_len+1] == ':') {
             size_t start = i + key_len + 2;
             while (start < body.count && isspace(body.data[start])) start += 1;
             if (start >= body.count || body.data[start] != '"') return false;
             size_t begin = start + 1;
-            size_t end = begin;
+            size_t end   = begin;
             while (end < body.count && body.data[end] != '"') {
-                if (body.data[end] == '\\') end += 1;
+                if (body.data[end] == '\\' && end + 1 < body.count) end += 1;
                 end += 1;
             }
             if (end >= body.count) return false;
-            out->data = body.data + begin;
+            out->data  = body.data + begin;
             out->count = end - begin;
             return true;
         }

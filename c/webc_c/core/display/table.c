@@ -17,9 +17,7 @@ void render_table_page(Serve_Context *sc) {
     PAGE_END(sc);
 }
 
-void serve_table(Serve_Context *sc, String_View method) {
-    UNUSED(method);
-
+void serve_table(Serve_Context *sc) {
     sc->body.count = 0;
     render_table_page(sc);
 

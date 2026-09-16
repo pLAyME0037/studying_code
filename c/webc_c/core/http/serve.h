@@ -5,11 +5,14 @@
 #include "module/nob.h"
 
 typedef struct {
-    int client_fd;
+    int            client_fd;
+    int            route_id;
     String_Builder request;
     String_Builder response;
     String_Builder body;
-    String_View query_string;
+    String_View    method;
+    String_View    uri;
+    String_View    query_string;
 } Serve_Context;
 
 void sc_reset(Serve_Context *sc);

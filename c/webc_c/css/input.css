@@ -5,11 +5,11 @@
 @source "./display";
 @source "./index.html";
 
-body.sidebar-collapsed #sidebar {
+body.sidebarCollapsed #sidebar {
   width: 3rem;
 }
 
-body.sidebar-collapsed #sidebar .nav-label {
+body.sidebarCollapsed #sidebar .nav-label {
     opacity: 0;
     width: 0;
     margin-left: 0;
@@ -21,7 +21,7 @@ body.sidebar-collapsed #sidebar .nav-label {
     display: none;
 }
 
-body.sidebar-collapsed #sidebar .sidebar-tooltip {
+body.sidebarCollapsed #sidebar .sidebar-tooltip {
     display: block;
     opacity: 0;
     pointer-events: none;
@@ -41,13 +41,13 @@ body.sidebar-collapsed #sidebar .sidebar-tooltip {
     transition: opacity 0.15s ease;
 }
 
-body.sidebar-collapsed #sidebar .group\/item:hover .sidebar-tooltip,
-body.sidebar-collapsed #sidebar .user-card:hover ~ .sidebar-tooltip {
+body.sidebarCollapsed #sidebar .group\/item:hover .sidebar-tooltip,
+body.sidebarCollapsed #sidebar .user-card:hover ~ .sidebar-tooltip {
     opacity: 1;
 }
 
-body.sidebar-collapsed #sidebar .user-card,
-body.sidebar-collapsed #sidebar .nav-link {
+body.sidebarCollapsed #sidebar .user-card,
+body.sidebarCollapsed #sidebar .nav-link {
     justify-content: center;
 }
 
@@ -55,15 +55,48 @@ body.sidebar-collapsed #sidebar .nav-link {
     padding: 0.3rem 0 0.3rem 1rem;
 }
 
-body.sidebar-collapsed #sidebar #sidebar-pad {
+body.sidebarCollapsed #sidebar #sidebar-pad {
     padding: 0.3rem 0;
 }
 
 #sidebar {
     width: 15rem;
+    flex-shrink: 0;
 }
 
-body.sidebar-collapsed #page-footer {
+body.sidebarCollapsed #page-footer {
     display: none;
+}
+
+main {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+main::-webkit-scrollbar {
+    width: 8px;
+}
+
+main::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+main::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+}
+
+.dark main::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+}
+
+.dark main::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
 }
 

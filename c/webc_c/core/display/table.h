@@ -3,6 +3,6 @@
 
 #include "../http/serve.h"
 
-void serve_table(Serve_Context *sc, String_View method);
+void serve_table(Serve_Context *sc);
 
 #endif // CORE_TABLE_H_ 

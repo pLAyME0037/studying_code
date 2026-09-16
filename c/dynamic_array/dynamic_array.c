@@ -85,10 +85,10 @@ typedef enum {
 //             memmove(&list->items[(size_t)item], &list->items[(size_t)item + 1], (list->count - 1) * sizeof(char*));
 //             list->count--;
 //         }
-//     };
+//     } break;
 //
 //     case ELEMENT: {
-//     };
+//     } break;
 //
 //     default: dump();
 //

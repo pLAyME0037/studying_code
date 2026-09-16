@@ -25,6 +25,13 @@
         <input name="email" type="text"
                class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
     </div>
+    <div>
+        <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
+            Profile Pic URL
+        </label>
+        <input name="profile_pic" type="text"
+               class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+    </div>
     <button type="submit"
             class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">
         Add user

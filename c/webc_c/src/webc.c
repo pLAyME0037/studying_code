@@ -63,7 +63,7 @@ static bool dev_visit_file(Walk_Entry entry) {
 
 static uint64_t dev_watch_signature(void) {
     uint64_t hash = 0;
-    const char *roots[] = { "display", "core", "src", "css", "resource", "webc.c", "nob.c" };
+    const char *roots[] = { "display", "core", "src", "css", "resource", "src/webc.c", "src/nob.c" };
     for (size_t i = 0; i < ARRAY_LEN(roots); ++i) {
         File_Type type = get_file_type(roots[i]);
         if (type == FILE_DIRECTORY) {

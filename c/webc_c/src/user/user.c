@@ -8,12 +8,11 @@
 bool load_users(sqlite3 *db, Users *rows) {
     bool result = true;
     sqlite3_stmt *stmt = NULL;
+    const char *sql = "SELECT id, name, username, email, profile_pic "
+                      "FROM Users "
+                      "ORDER BY id ASC;";
 
-    String_View sql = sv_from_cstr("SELECT id, name, username, email, profile_pic "
-          "FROM Users "
-          "ORDER BY id ASC;");
-
-    if (sqlite3_prepare_v2(db, sql.data, -1, &stmt, NULL) != SQLITE_OK) {
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
@@ -21,7 +20,7 @@ bool load_users(sqlite3 *db, Users *rows) {
     int ret = SQLITE_DONE;
     for (ret = sqlite3_step(stmt); ret == SQLITE_ROW; ret = sqlite3_step(stmt)) {
         int column = 0;
-        int id           = sqlite3_column_int(stmt, column++);
+        int id                  = sqlite3_column_int(stmt, column++);
         const char *name        = (const char *)sqlite3_column_text(stmt, column++);
         const char *username    = (const char *)sqlite3_column_text(stmt, column++);
         const char *email       = (const char *)sqlite3_column_text(stmt, column++);

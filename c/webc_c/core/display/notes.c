@@ -61,10 +61,10 @@ static void serve_notes_json(Serve_Context *sc) {
     sb_free(body);
 }
 
-void serve_notes_api(Serve_Context *sc, String_View method) {
+void serve_notes_api(Serve_Context *sc) {
     String_View body_sv = sb_to_sv(sc->body);
 
-    if (sv_eq(method, sv_from_cstr("GET"))) {
+    if (sv_eq(sc->method, sv_from_cstr("GET"))) {
         serve_notes_json(sc);
         return;
     }
@@ -76,7 +76,7 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
     long long id = 0;
     bool has_id = json_find_int(body_sv, "id", &id);
 
-    if (sv_eq(method, sv_from_cstr("POST"))) {
+    if (sv_eq(sc->method, sv_from_cstr("POST"))) {
         for (size_t i = 0; i < field_count; ++i) {
             if (!json_find_string(body_sv, fields[i], &values[i])) {
                 serve_error(sc, 400);
@@ -105,7 +105,7 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         return;
     }
 
-    if (sv_eq(method, sv_from_cstr("PUT"))) {
+    if (sv_eq(sc->method, sv_from_cstr("PUT"))) {
         if (!has_id) {
             serve_error(sc, 400);
             return;
@@ -139,7 +139,7 @@ void serve_notes_api(Serve_Context *sc, String_View method) {
         return;
     }
 
-    if (sv_eq(method, sv_from_cstr("DELETE"))) {
+    if (sv_eq(sc->method, sv_from_cstr("DELETE"))) {
         if (!has_id) {
             serve_error(sc, 400);
             return;

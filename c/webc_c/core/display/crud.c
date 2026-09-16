@@ -95,9 +95,9 @@ static bool crud_gather_values(String_View        body,
 {
     for (size_t i = 0; i < mod->column_count; ++i) {
         const Crud_Column *col = &mod->columns[i];
-        char buf[512] = {0};
-        if (form_find(body, col->name, buf, sizeof(buf))) {
-            values[i] = temp_strdup(buf);
+        String_View buf = {0};
+        if (form_find(body, col->name, &buf)) {
+            values[i] = temp_sprintf("%.*s", (int)buf.count, buf.data);
         } else {
             values[i] = NULL;
         }
@@ -111,7 +111,7 @@ static bool crud_validate(String_View body, String_View query, const Crud_Module
         if (mod->columns[i].nullable) continue;
         if (mod->columns[i].type == COL_FK_SELECT) continue;
         char buf[512] = {0};
-        bool found = form_find(body, mod->columns[i].name, buf, sizeof(buf));
+        bool found = form_find(body, mod->columns[i].name, (void *)sizeof(buf));
         if (!found && query.count > 0) {
             char param[64];
             snprintf(param, sizeof(param), "%s=", mod->columns[i].name);
