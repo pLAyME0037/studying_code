@@ -102,7 +102,6 @@ typedef struct {
     bool         start;
     int          key_idx;
     int          semitone;
-    instrument_t instrument;
 } event_t;
 
 DA_NEW(event_t, event_da);
@@ -133,7 +132,7 @@ float note_update(note_t *note) {
     float volumn = clamp_f(age/ATTACK_FRAME, 0.0f, 1.0f);
     float time   = (float)(frame_count)/SAMPLERATE;
     float frequency = semitone_to_freq((float)note->semitone);
-    return instrument_run(note->instrument, time*frequency)*volumn;
+    return instrument_run(&note->instrument, time*frequency)*volumn;
 }
 
 typedef struct {
@@ -151,7 +150,7 @@ float note_release_update(note_release_t *note_rel) {
     float volumn = 0.5f * (1.0f + cosf(PI * prog)) * note_rel->stop_at_volumn;
     float time   = (float)(frame_count)/SAMPLERATE;
     float frequency = semitone_to_freq(note_rel->semitone);
-    return instrument_run(note_rel->instrument, time*frequency)*volumn;
+    return instrument_run(&note_rel->instrument, time*frequency)*volumn;
 }
 
 void note_releases_unordered_rm_by_idx(note_release_da *nrs, size_t idx) {
@@ -213,6 +212,7 @@ int main(void) {
     int quant_for_play           = 0;
     int quant_for_play_prev      = -1;
 
+    instrument_t instrument_back = instrument_sine();
     instrument_t instrument_curr = instrument_sine();
 
     while (!WindowShouldClose()) {
@@ -260,7 +260,6 @@ int main(void) {
                         .start      = true,
                         .key_idx    = (int)i,
                         .semitone   = notes_monitor[i].semitone,
-                        .instrument = notes_monitor[i].instrument,
                     });
                 }
             }
@@ -277,6 +276,10 @@ int main(void) {
         }
         if (IsKeyPressed(KEY_THREE)) {
             instrument_curr = instrument_saw_tooth();
+        }
+        if (IsKeyPressed(KEY_FOUR)) {
+            instrument_curr = instrument_tremolo();
+            instrument_curr.instrument = &instrument_back;
         }
         if (IsKeyPressed(KEY_SPACE)) {
             switch (state) {
@@ -315,7 +318,6 @@ int main(void) {
                         .start      = true,
                         .key_idx    = key,
                         .semitone   = pitch,
-                        .instrument = instrument_curr,
                     });
                 }
             } else if (!IsKeyDown(KEY_MAP[key]) && notes_monitor[key].playing) {
@@ -325,7 +327,6 @@ int main(void) {
                         .start      = false,
                         .key_idx    = key,
                         .semitone   = notes_monitor[key].semitone,
-                        .instrument = instrument_curr,
                     });
                 }
                 note_released(&notes_monitor[key]);
