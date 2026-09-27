@@ -288,6 +288,7 @@ void append_c_files_from_dir(Nob_Cmd *cmd, const char *dir_path) {
 
 int main(int argc, char **argv) {
     // nob__go_rebuild_urself(argc, argv, "src/nob.c", NULL);  // Temporarily disabled
+    NOB_GO_REBUILD_URSELF(argc, argv);
     Cmd cmd = {0};
 
     mkdir_if_not_exists("./build");

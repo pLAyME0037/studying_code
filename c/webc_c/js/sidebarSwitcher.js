@@ -12,9 +12,25 @@ window.SidebarManager = {
         document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
     },
 
-    // 3. Toggle state
+    // 3. Toggle state (mobile: overlay drawer, desktop: collapse rail)
+    isMobile() {
+        return window.matchMedia('(max-width: 767.98px)').matches;
+    },
+
+    isMobileOpen() {
+        return document.documentElement.classList.contains('mobile-sidebar-open');
+    },
+
+    setMobileOpen(open) {
+        document.documentElement.classList.toggle('mobile-sidebar-open', open);
+    },
+
     toggle() {
-        this.setCollapsed(!this.isCollapsed());
+        if (this.isMobile()) {
+            this.setMobileOpen(!this.isMobileOpen());
+        } else {
+            this.setCollapsed(!this.isCollapsed());
+        }
     },
 
     // 4. Highlight the current active link based on URL
@@ -95,6 +111,21 @@ window.SidebarManager = {
         // Bind toggle buttons (any element with data-sidebar-toggle)
         document.querySelectorAll('[data-sidebar-toggle]').forEach((btn) => {
             btn.addEventListener('click', () => this.toggle());
+        });
+
+        // Close the mobile overlay (backdrop / any element with data-sidebar-close)
+        document.querySelectorAll('[data-sidebar-close]').forEach((el) => {
+            el.addEventListener('click', () => this.setMobileOpen(false));
+        });
+
+        // Escape closes the mobile drawer
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.setMobileOpen(false);
+        });
+
+        // Leaving the mobile viewport closes the drawer
+        window.addEventListener('resize', () => {
+            if (!this.isMobile() && this.isMobileOpen()) this.setMobileOpen(false);
         });
     }
 };

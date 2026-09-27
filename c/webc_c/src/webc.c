@@ -27,7 +27,8 @@
 #define STR(x) STR2_ELECTRIC_BOOGALOO(x)
 #define STR2_ELECTRIC_BOOGALOO(x) #x
 #define DEFAULT_SERVER_ADDRESS "127.0.0.1"
-#define DEFAULT_SERVE_PORT 8000
+// #define DEFAULT_SERVER_ADDRESS "192.168.8.8"
+#define DEFAULT_SERVE_PORT 8080
 #define DEFAULT_COMMAND "help"
 
 // Computed at runtime in main()
@@ -63,7 +64,16 @@ static bool dev_visit_file(Walk_Entry entry) {
 
 static uint64_t dev_watch_signature(void) {
     uint64_t hash = 0;
-    const char *roots[] = { "display", "core", "src", "css", "resource", "src/webc.c", "src/nob.c" };
+    const char *roots[] = {
+        "display",
+        "core",
+        "src",
+        "css",
+        "js",
+        "resource",
+        "src/webc.c",
+        "build/nob.c"
+    };
     for (size_t i = 0; i < ARRAY_LEN(roots); ++i) {
         File_Type type = get_file_type(roots[i]);
         if (type == FILE_DIRECTORY) {

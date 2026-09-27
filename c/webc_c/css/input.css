@@ -198,3 +198,63 @@ main::-webkit-scrollbar-thumb:hover {
     background-color: #6b7280;
 }
 
+/* ===== Mobile overlay sidebar (viewport < 768px, matches Tailwind md) ===== */
+#sidebar-backdrop {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+    #sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 40;
+        width: var(--sidebar-width);
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.25s ease, visibility 0.25s ease;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+    }
+
+    html.mobile-sidebar-open #sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    html.mobile-sidebar-open #sidebar-backdrop {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    html.mobile-sidebar-open main {
+        overflow: hidden;
+    }
+
+    /* The desktop collapse state must not shrink the mobile drawer */
+    html.sidebar-collapsed #sidebar {
+        width: var(--sidebar-width);
+    }
+
+    html.sidebar-collapsed #sidebar .nav-label,
+    html.sidebar-collapsed #sidebar .nav-section {
+        opacity: 1;
+        width: auto;
+        height: auto;
+        overflow: visible;
+    }
+
+    html.sidebar-collapsed #sidebar nav {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    html.sidebar-collapsed #sidebar .user-card,
+    html.sidebar-collapsed #sidebar .nav-link {
+        justify-content: flex-start;
+    }
+}
+
