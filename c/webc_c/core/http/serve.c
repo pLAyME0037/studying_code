@@ -55,16 +55,25 @@ void serve_resource(Serve_Context *sc,
                     const char    *content_type)
 {
     Resource *resource = find_resource(resource_path);
-    if (!resource) {
-        serve_error(sc, 404);
+    if (resource) {
+        String_View body = {
+            .data  = (char *)&bundle[resource->offset],
+            .count = resource->size,
+        };
+        http_render_response(sc, 200, content_type, body);
         return;
     }
 
-    String_View body = {
-        .data  = (char *)&bundle[resource->offset],
-        .count = resource->size,
-    };
-    http_render_response(sc, 200, content_type, body);
+    // Not part of the build-time bundle (e.g. an uploaded avatar): read it
+    // from disk. Paths are built from URIs that have been checked for ".."
+    // in serve_resource_route(), so this stays inside the resource tree.
+    String_Builder file = {0};
+    if (!read_entire_file(resource_path, &file)) {
+        serve_error(sc, 404);
+        return;
+    }
+    http_render_response(sc, 200, content_type, sb_to_sv(file));
+    sb_free(file);
 }
 
 static bool read_until_double_crlf(int fd, String_Builder *request) {
@@ -129,6 +138,9 @@ static bool read_body(int             fd,
     return true;
 }
 
+// Reject oversized bodies (uploads, spam) before buffering them in memory.
+#define MAX_REQUEST_BODY (8L * 1024 * 1024)
+
 static void serve_request_coro(void *arg) {
     int client_fd = (int)(intptr_t)arg;
     Serve_Context sc = {0};
@@ -147,6 +159,11 @@ static void serve_request_coro(void *arg) {
     }
 
     long content_length = parse_content_length(sv_from_parts(sc.request.items, body_start));
+
+    if (content_length > MAX_REQUEST_BODY) {
+        serve_error(&sc, 413);
+        goto send_response;
+    }
 
     if (!read_body(client_fd, &sc.request, body_start, content_length)) {
         goto cleanup;
@@ -176,6 +193,7 @@ static void serve_request_coro(void *arg) {
 
     route_request(&sc);
 
+send_response:
     if (!write_entire_sv_coro(client_fd, sb_to_sv(sc.response))) { }
 
 cleanup:
@@ -265,7 +283,7 @@ void serve_request(Serve_Context *sc) {
 
 void sc_reset(Serve_Context *sc) {
     sc->client_fd      = 0;
-    sc->route_id       = 0;
+    sc->route_id       = (String_View) {0};
     sc->request.count  = 0;
     sb_free(sc->request);
     sc->response.count = 0;

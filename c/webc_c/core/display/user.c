@@ -22,6 +22,6 @@ void render_users_edit_page(Serve_Context *sc, User user) {
 #include "build/h_to_html/user_edit.h"
     PAGE_END(sc);
 }
-
-SERVE_CRUD(users, user, Users, User, "name", "username", "email", "profile_pic")
+static const char *fields[] = { "name", "username", "email", "profile_pic" };
+SERVE_CRUD(users, user, Users, User, fields)
 

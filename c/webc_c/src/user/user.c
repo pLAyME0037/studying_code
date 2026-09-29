@@ -20,14 +20,14 @@ bool load_users(sqlite3 *db, Users *rows) {
     int ret = SQLITE_DONE;
     for (ret = sqlite3_step(stmt); ret == SQLITE_ROW; ret = sqlite3_step(stmt)) {
         int column = 0;
-        int id                  = sqlite3_column_int(stmt, column++);
+        const char *id          = (const char *)sqlite3_column_text(stmt, column++);
         const char *name        = (const char *)sqlite3_column_text(stmt, column++);
         const char *username    = (const char *)sqlite3_column_text(stmt, column++);
         const char *email       = (const char *)sqlite3_column_text(stmt, column++);
         const char *profile_pic = (const char *)sqlite3_column_text(stmt, column++);
         Users_add(rows, ((User) {
-            .id          = id,
-            .name        = name        ? temp_strdup(name)      : NULL,
+            .id          = id          ? temp_strdup(id)          : NULL,
+            .name        = name        ? temp_strdup(name)        : NULL,
             .username    = username    ? temp_strdup(username)  : NULL,
             .email       = email       ? temp_strdup(email)     : NULL,
             .profile_pic = profile_pic ? temp_strdup(profile_pic) : NULL,
@@ -85,7 +85,7 @@ defer:
     return result;
 }
 
-bool update_user(sqlite3 *db, String_View *fields, size_t count, int id) {
+bool update_user(sqlite3 *db, String_View *fields, size_t count, String_View id) {
     bool result = true;
     if (count < 4) return false;
     String_View name        = fields[0];
@@ -93,7 +93,11 @@ bool update_user(sqlite3 *db, String_View *fields, size_t count, int id) {
     String_View email       = fields[2];
     String_View profile_pic = fields[3];
     sqlite3_stmt *stmt = NULL;
-    const char *sql = "UPDATE Users SET name = ?, username = ?, email = ?, profile_pic = ? WHERE id = ?;";
+    // profile_pic is kept as-is when the form did not carry a new file
+    // (value NULL or empty), so editing name/email never wipes the picture.
+    const char *sql = "UPDATE Users SET name = ?, username = ?, email = ?, "
+                      "profile_pic = COALESCE(NULLIF(?, ''), profile_pic) "
+                      "WHERE id = ?;";
 
     if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
@@ -115,7 +119,7 @@ bool update_user(sqlite3 *db, String_View *fields, size_t count, int id) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_int(stmt, 5, id) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 5, id.data, (int)id.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
@@ -129,7 +133,7 @@ defer:
     return result;
 }
 
-bool delete_user(sqlite3 *db, int id) {
+bool delete_user(sqlite3 *db, String_View id) {
     bool result = true;
     sqlite3_stmt *stmt = NULL;
     const char *sql = "DELETE FROM Users WHERE id = ?;";
@@ -138,7 +142,7 @@ bool delete_user(sqlite3 *db, int id) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }
-    if (sqlite3_bind_int(stmt, 1, id) != SQLITE_OK) {
+    if (sqlite3_bind_text(stmt, 1, id.data, (int)id.count, SQLITE_TRANSIENT) != SQLITE_OK) {
         LOG_SQLITE3_ERROR(db);
         return_defer(false);
     }

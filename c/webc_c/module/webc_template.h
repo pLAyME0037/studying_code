@@ -55,20 +55,49 @@
         http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));   \
     }
 
-#define SERVE_CREATE(plural, singular, ...)                               \
+// Extract all listed form fields into `values` (urlencoded or multipart).
+// File uploads are compressed/stored and values[i] is replaced with the URL
+// the image will be served from. Aborts the handler with an appropriate
+// error status when extraction or storing fails.
+#define SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count)                 \
+    do {                                                                               \
+        Nob_String_View req_sv_ = sb_to_sv((sc)->request);                             \
+        for (size_t i_ = 0; i_ < (field_count); ++i_) {                                \
+            (values)[i_] = (Nob_String_View){0};                                       \
+            Form_Field field_ = {0};                                                   \
+            if (!form_get(req_sv_, (body_sv), (fields)[i_], &field_)) {                \
+                serve_error((sc), 400);                                                \
+                return;                                                                \
+            }                                                                          \
+            (values)[i_] = field_.value;                                               \
+            if (field_.kind == FIELD_FILE && field_.value.count > 0) {                 \
+                switch (save_uploaded_image(&(values)[i_])) {                          \
+                case UPLOAD_OK: break;                                                 \
+                case UPLOAD_TOO_LARGE:                                                 \
+                    fprintf(stderr, "ERROR: upload rejected: image exceeds %d bytes\n", \
+                            MAX_UPLOAD_IMAGE_SIZE);                                    \
+                    serve_error((sc), 413);                                            \
+                    return;                                                            \
+                case UPLOAD_NOT_IMAGE:                                                 \
+                    fprintf(stderr, "ERROR: upload rejected: not a decodable "         \
+                            "png/jpeg/gif/webp image\n");                              \
+                    serve_error((sc), 400);                                            \
+                    return;                                                            \
+                case UPLOAD_IO_ERROR:                                                  \
+                    serve_error((sc), 500);                                            \
+                    return;                                                            \
+                }                                                                      \
+            }                                                                          \
+        }                                                                              \
+    } while (0)
+
+#define SERVE_CREATE(plural, singular, fields)                            \
     void serve_##plural##_create(Serve_Context *sc) {                     \
-        const char *fields[] = { __VA_ARGS__ };                           \
-        size_t field_count = sizeof(fields) / sizeof(fields[0]);          \
+        size_t field_count = ARRAY_LEN(fields);                           \
         Nob_String_View values[field_count];                              \
         Nob_String_View body_sv = sb_to_sv(sc->body);                     \
                                                                           \
-        for (size_t i = 0; i < field_count; ++i) {                        \
-            values[i] = (Nob_String_View){0};                             \
-            if (!form_find(body_sv, fields[i], &values[i])) {             \
-                serve_error(sc, 400);                                     \
-                return;                                                   \
-            }                                                             \
-        }                                                                 \
+        SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count);   \
                                                                           \
         if (field_count > 0 && values[0].count == 0) {                    \
             serve_error(sc, 400);                                         \
@@ -94,7 +123,7 @@
 
 #define SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)        \
     void serve_##plural##_edit(Serve_Context *sc) {                     \
-        int id = 0;                                                     \
+        String_View id = {0};                                           \
         if (!parse_id_from_uri(sc->uri, "/" #plural "/", "/edit", &id)) { \
             serve_error(sc, 404);                                       \
             return;                                                     \
@@ -110,7 +139,8 @@
         sqlite3_close(db);                                              \
         Singular_Type *target = NULL;                                   \
         for (size_t i = 0; i < dt.count; ++i) {                         \
-            if (dt.items[i].id == id) {                                 \
+            if (dt.items[i].id != NULL                                 \
+                && sv_eq(sv_from_cstr(dt.items[i].id), id)) {           \
                 target = &dt.items[i];                                  \
                 break;                                                  \
             }                                                           \
@@ -126,26 +156,19 @@
         http_render_response(sc, 200, "text/html", sb_to_sv(sc->body)); \
     }
 
-#define SERVE_UPDATE(plural, singular, ...)                               \
+#define SERVE_UPDATE(plural, singular, fields)                            \
     void serve_##plural##_update(Serve_Context *sc) {                     \
-        int id = 0;                                                       \
+        String_View id = {0};                                               \
         if (!parse_id_from_uri(sc->uri, "/" #plural "/", "/update", &id)) { \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
                                                                           \
-        const char *fields[] = { __VA_ARGS__ };                           \
-        size_t field_count = sizeof(fields) / sizeof(fields[0]);          \
+        size_t field_count = ARRAY_LEN(fields);                           \
         Nob_String_View values[field_count];                              \
         Nob_String_View body_sv = sb_to_sv(sc->body);                     \
                                                                           \
-        for (size_t i = 0; i < field_count; ++i) {                        \
-            values[i] = (Nob_String_View){0};                             \
-            if (!form_find(body_sv, fields[i], &values[i])) {             \
-                serve_error(sc, 400);                                     \
-                return;                                                   \
-            }                                                             \
-        }                                                                 \
+        SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count);   \
                                                                           \
         if (field_count > 0 && values[0].count == 0) {                    \
             serve_error(sc, 400);                                         \
@@ -170,7 +193,7 @@
 
 #define SERVE_DELETE(plural, singular)                                    \
     void serve_##plural##_delete(Serve_Context *sc) {                     \
-        int id = 0;                                                       \
+        String_View id = {0};                                               \
         if (!parse_id_from_uri(sc->uri, "/" #plural "/", "/delete", &id)) { \
             serve_error(sc, 404);                                         \
             return;                                                       \

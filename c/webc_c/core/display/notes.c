@@ -24,7 +24,8 @@ void render_notes_edit_page(Serve_Context *sc, Note note) {
     PAGE_END(sc);
 }
 
-SERVE_CRUD(notes, note, Notes, Note, "title", "body")
+static const char *fields[] = { "title", "body" };
+SERVE_CRUD(notes, note, Notes, Note, fields)
 
 static void serve_notes_json(Serve_Context *sc) {
     Notes notes = {0};
@@ -43,8 +44,9 @@ static void serve_notes_json(Serve_Context *sc) {
     for (size_t i = 0; i < notes.count; ++i) {
         Note *note = &notes.items[i];
         if (i > 0) sb_append_cstr(&body, ",");
-        sb_append_cstr(&body, "{\"id\":");
-        sb_appendf(&body, "%d", note->id);
+        sb_append_cstr(&body, "{\"id\":\"");
+        sb_append_json_escaped(&body, note->id ? note->id : "");
+        sb_append_cstr(&body, "\"");
         sb_append_cstr(&body, ",\"title\":");
         sb_append_json_escaped(&body, note->title);
         sb_append_cstr(&body, ",\"created_at\":");
@@ -73,8 +75,10 @@ void serve_notes_api(Serve_Context *sc) {
     size_t field_count = sizeof(fields) / sizeof(fields[0]);
     String_View values[field_count];
     memset(values, 0, sizeof(values));
-    long long id = 0;
-    bool has_id = json_find_int(body_sv, "id", &id);
+    // Ids are TEXT (legacy numeric strings or schema uuid defaults), so the
+    // API takes the id from the JSON body as a string.
+    String_View id_sv = {0};
+    bool has_id = json_find_string(body_sv, "id", &id_sv) && id_sv.count > 0;
 
     if (sv_eq(sc->method, sv_from_cstr("POST"))) {
         for (size_t i = 0; i < field_count; ++i) {
@@ -130,7 +134,7 @@ void serve_notes_api(Serve_Context *sc) {
             serve_error(sc, 500);
             return;
         }
-        bool ok = insert_note(db, values, field_count);
+        bool ok = update_note(db, values, field_count, id_sv);
         if (ok) txn_commit(db);
         else txn_rollback(db);
         sqlite3_close(db);
@@ -151,7 +155,7 @@ void serve_notes_api(Serve_Context *sc) {
             serve_error(sc, 500);
             return;
         }
-        bool ok = delete_note(db, (int)id);
+        bool ok = delete_note(db, id_sv);
         if (ok) txn_commit(db);
         else txn_rollback(db);
         sqlite3_close(db);

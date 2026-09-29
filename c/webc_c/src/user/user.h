@@ -6,7 +6,7 @@
 #include "module/nob.h"
 
 typedef struct {
-    int id;
+    const char *id;
     const char *name;
     const char *username;
     const char *email;
@@ -27,7 +27,7 @@ static inline User user_data(void) {
 
 bool load_users(sqlite3 *db, Users *rows);
 bool insert_user(sqlite3 *db, String_View *fields, size_t count);
-bool update_user(sqlite3 *db, String_View *fields, size_t count, int id);
-bool delete_user(sqlite3 *db, int id);
+bool update_user(sqlite3 *db, String_View *fields, size_t count, String_View id);
+bool delete_user(sqlite3 *db, String_View id);
 
 #endif // SRC_USER_H_

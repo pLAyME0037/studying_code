@@ -6,7 +6,7 @@
 
 typedef struct {
     int            client_fd;
-    int            route_id;
+    String_View    route_id;   // id segment of ROUTE_ID_ACTION URIs (slice of uri)
     String_Builder request;
     String_Builder response;
     String_Builder body;

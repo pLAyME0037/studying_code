@@ -11,11 +11,12 @@
 #include "core/display/user.h"
 #include "serve.h"
 
-// Extract the integer id from "/<path>/<id>/<suffix>".
+// Extract the id segment from "/<path>/<id>/<suffix>" as a slice of `uri`.
+// Ids are TEXT primary keys (legacy numeric strings or schema uuid defaults).
 static bool parse_uri_id(String_View path,
                          String_View uri,
                          const char *suffix,
-                         int        *id)
+                         String_View *id)
 {
     char prefix_buf[128];
     snprintf(prefix_buf, sizeof(prefix_buf), "%.*s/", (int)path.count, path.data);
@@ -36,16 +37,28 @@ static bool parse_uri_id(String_View path,
         .data  = uri.data + prefix.count,
         .count = uri.count - prefix.count - suffix_sv.count,
     };
-    char buf[32] = {0};
-    snprintf(buf, sizeof(buf), "%.*s", (int)id_sv.count, id_sv.data);
-    char *end = NULL;
-    long value = strtol(buf, &end, 10);
-    if (end == buf || *end != '\0') return false;
-    *id = (int)value;
+    if (id_sv.count == 0 || id_sv.count >= 128) return false;
+
+    *id = id_sv;
     return true;
 }
 
+// Reject ".." path segments anywhere in the URI (path traversal).
+static bool uri_has_dotdot(String_View uri) {
+    for (size_t i = 0; i + 1 < uri.count; ++i) {
+        if (uri.data[i] != '.' || uri.data[i + 1] != '.') continue;
+        bool seg_start = i == 0 || uri.data[i - 1] == '/';
+        bool seg_end = i + 2 == uri.count || uri.data[i + 2] == '/';
+        if (seg_start && seg_end) return true;
+    }
+    return false;
+}
+
 void serve_resource_route(Serve_Context *sc) {
+    if (uri_has_dotdot(sc->uri)) {
+        serve_error(sc, 404);
+        return;
+    }
     if (sv_starts_with(sc->uri, sv_from_cstr("/js/"))) {
         String_View rest = {
             .data  = sc->uri.data + 4,
@@ -86,6 +99,8 @@ void serve_resource_route(Serve_Context *sc) {
         if (sv_ends_with(rest, sv_from_cstr(".css")))  type_id = 4;
         if (sv_ends_with(rest, sv_from_cstr(".js")))   type_id = 5;
         if (sv_ends_with(rest, sv_from_cstr(".html"))) type_id = 6;
+        if (sv_ends_with(rest, sv_from_cstr(".webp"))) type_id = 7;
+        if (sv_ends_with(rest, sv_from_cstr(".gif")))  type_id = 8;
         const char *content_type;
         switch (type_id) {
         case 1: content_type = "image/png";                      break;
@@ -94,6 +109,8 @@ void serve_resource_route(Serve_Context *sc) {
         case 4: content_type = "text/css; charset=utf-8";        break;
         case 5: content_type = "text/javascript; charset=utf-8"; break;
         case 6: content_type = "text/html; charset=utf-8";       break;
+        case 7: content_type = "image/webp";                     break;
+        case 8: content_type = "image/gif";                      break;
         default: content_type = "application/octet-stream";      break;
         }
         serve_resource(sc, path.items, content_type);
@@ -132,7 +149,9 @@ void route_initialize(void) {
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);
     route_new(&routes, "/table", NULL, "GET", ROUTE_EXACT, serve_table);
 
-    route_new(&routes, "/api/notes", NULL,  "GET",  ROUTE_EXACT,     serve_notes_api);
+    // method NULL: serve_notes_api dispatches GET/POST/PUT/DELETE itself
+    // and answers unsupported methods with 405.
+    route_new(&routes, "/api/notes", NULL,  NULL,   ROUTE_EXACT,     serve_notes_api);
     route_new(&routes, "/notes", NULL,      "GET",  ROUTE_EXACT,     serve_notes_read);
     route_new(&routes, "/notes/create", NULL, "POST", ROUTE_EXACT,   serve_notes_create);
     route_new(&routes, "/notes", "/edit",   "GET",  ROUTE_ID_ACTION, serve_notes_edit);
@@ -175,13 +194,14 @@ void route_request(Serve_Context *sc) {
                 return;
             }
         break;
-        case ROUTE_ID_ACTION:
-            int id = 0;
+        case ROUTE_ID_ACTION: {
+            String_View id = {0};
             if (parse_uri_id(sv_from_cstr(r->prefix), sc->uri, r->suffix, &id)) {
                 sc->route_id = id;
                 r->handle(sc);
                 return;
             }
+        }
         break;
         }
     }
