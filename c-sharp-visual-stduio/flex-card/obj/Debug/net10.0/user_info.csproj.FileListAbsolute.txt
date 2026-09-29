@@ -127,6 +127,9 @@
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/user_info.runtimeconfig.json
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/user_info.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/user_info.pdb
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.Core.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.MediaElement.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Mvvm.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/ExCSS.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/HarfBuzzSharp.dll
@@ -151,6 +154,7 @@
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/Microsoft.Maui.Graphics.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/Microsoft.Maui.Graphics.Skia.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/OpenMaui.Controls.Linux.dll
+/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/OpenMaui.Controls.Linux.MediaElement.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/OpenMaui.Hosting.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/ShimSkiaSharp.dll
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/SkiaSharp.dll
@@ -292,7 +296,3 @@
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/Debug/net10.0/user_info.pdb
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/Debug/net10.0/user_info.genruntimeconfig.cache
 /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/Debug/net10.0/ref/user_info.dll
-/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.MediaElement.dll
-/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/OpenMaui.Controls.Linux.MediaElement.dll
-/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.dll
-/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/bin/Debug/net10.0/CommunityToolkit.Maui.Core.dll

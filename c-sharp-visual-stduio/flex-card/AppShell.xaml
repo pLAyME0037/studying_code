@@ -6,7 +6,45 @@
     xmlns:pages="clr-namespace:user_info.Pages"
     xmlns:views="clr-namespace:user_info.Views"
     xmlns:views.student_db="clr-namespace:user_info.Views.StudentDB"
-    Title="user_info">
+    Title="user_info"
+    Shell.FlyoutBehavior="Flyout">
+
+    <Shell.FlyoutHeader>
+        <Label Text="user_info" Margin="12" FontAttributes="Bold"/>
+    </Shell.FlyoutHeader>
+
+    <ShellContent Title="Student Database"
+                  ContentTemplate="{DataTemplate views.student_db:StudentListCollection}" />
+
+    <FlyoutItem Title="ExAboutWu" Icon="dotnet_bot.png">
+        <!-- Title="ExAboutWu" -->
+        <ShellContent
+            Route="ExAboutWu"
+            ContentTemplate="{DataTemplate views:ExAboutWu}" />
+    </FlyoutItem>
+
+    <TabBar>
+        <Tab Title="ExFaculty Of Economic">
+            <ShellContent
+                Route="ExFacultyOfEconomic"
+                ContentTemplate="{DataTemplate views:ExFacultyOfEconomic}" />
+        </Tab>
+
+        <Tab Title="ExFaculty Of Science" >
+            <ShellContent
+                Route="ExFacultyOfScience"
+                ContentTemplate="{DataTemplate views:ExFacultyOfScience}" />
+        </Tab>
+    </TabBar>
+
+    <ShellContent Title="ExOffices" Route="ExOffices"
+                  ContentTemplate="{DataTemplate views:ExOffices}" />
+
+    <ShellContent Title="ExFaculty" Route="ExFaculty"
+                  ContentTemplate="{DataTemplate views:ExFaculty}" />
+
+    <ShellContent Title="ExHome" Route="ExHome"
+                  ContentTemplate="{DataTemplate views:ExHome}" />
 
     <TabBar>
         <ShellContent Title="WU Company"
@@ -24,9 +62,6 @@
 
     <ShellContent Title="Product Cate"
                   ContentTemplate="{DataTemplate views:ProductCate}" />
-
-    <ShellContent Title="Student Database"
-                  ContentTemplate="{DataTemplate views.student_db:StudentList}" />
 
     <ShellContent Title="Student Note"
                   ContentTemplate="{DataTemplate views:StudentNote}" />

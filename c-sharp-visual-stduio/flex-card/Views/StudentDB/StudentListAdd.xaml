@@ -2,7 +2,8 @@
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    x:Class="user_info.Views.StudentDB.StudentListAdd">
+    x:Class="user_info.Views.StudentDB.StudentListAdd"
+    x:Name="root">
 
     <Grid
         RowDefinitions="Auto, Auto, Auto, *"
@@ -99,11 +100,23 @@
             </Picker>
         </VerticalStackLayout>
 
-        <Button
+        <HorizontalStackLayout
             Grid.Row="1"
-            Text="Add Student"
-            HeightRequest="50"
-            Command="{Binding AddStudentCommand}"/>
+            Spacing="10">
+            <Button
+                Text="Add Student"
+                WidthRequest="170"
+                HeightRequest="50"
+                Clicked="OnAddClicked"/>
+            <Button
+                Text="Update Student"
+                WidthRequest="170"
+                HeightRequest="50"
+                BackgroundColor="#f39c12"
+                TextColor="Black"
+                IsEnabled="{Binding IsEditing}"
+                Clicked="OnUpdateClicked"/>
+        </HorizontalStackLayout>
 
         <BoxView
             Grid.Row="2"
@@ -151,53 +164,59 @@
 
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Grid
-                        ColumnDefinitions="60,*,60,*,*,60,*"
-                        Padding="10"
-                        BackgroundColor="#1e1e2e">
-                        <Label
-                            Text="{Binding Id}"
-                            FontSize="16"
-                            Grid.Column="0"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Text="{Binding Name}"
-                            FontSize="16"
-                            Grid.Column="1"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Text="{Binding Sex}"
-                            FontSize="16"
-                            Grid.Column="2"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Text="{Binding Email}"
-                            FontSize="16"
-                            Grid.Column="3"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Text="{Binding Major}"
-                            FontSize="16"
-                            Grid.Column="4"
-                            VerticalOptions="Center"/>
-                        <Label
-                            Text="{Binding Age}"
-                            FontSize="16"
-                            Grid.Column="5"
-                            VerticalOptions="Center"/>
+                    <VerticalStackLayout Spacing="4">
+                        <Grid
+                            ColumnDefinitions="60,*,60,*,*,60"
+                            Padding="10"
+                            BackgroundColor="#1e1e2e">
+                            <Label
+                                Text="{Binding Id}"
+                                FontSize="16"
+                                Grid.Column="0"
+                                VerticalOptions="Center"/>
+                            <Label
+                                Text="{Binding Name}"
+                                FontSize="16"
+                                Grid.Column="1"
+                                VerticalOptions="Center"/>
+                            <Label
+                                Text="{Binding Sex}"
+                                FontSize="16"
+                                Grid.Column="2"
+                                VerticalOptions="Center"/>
+                            <Label
+                                Text="{Binding Email}"
+                                FontSize="16"
+                                Grid.Column="3"
+                                VerticalOptions="Center"/>
+                            <Label
+                                Text="{Binding Major}"
+                                FontSize="16"
+                                Grid.Column="4"
+                                VerticalOptions="Center"/>
+                            <Label
+                                Text="{Binding Age}"
+                                FontSize="16"
+                                Grid.Column="5"
+                                VerticalOptions="Center"/>
+                        </Grid>
 
                         <HorizontalStackLayout
-                            Grid.Column="6"
-                            Spacing="5">
+                            Spacing="5"
+                            Padding="10,0,10,6">
                             <Button
                                 Text="Edit"
-                                BackgroundColor="Orange"/>
+                                HeightRequest="36"
+                                BackgroundColor="Orange"
+                                Clicked="OnEditClicked"/>
                             <Button
                                 Text="Delete"
+                                HeightRequest="36"
                                 BackgroundColor="Red"
-                                TextColor="White"/>
+                                TextColor="White"
+                                Clicked="OnDeleteClicked"/>
                         </HorizontalStackLayout>
-                    </Grid>
+                    </VerticalStackLayout>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("remote_student_app")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+52c724794dc0579ff748282b1c0aeea707d8c2c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2b51ff40c617580417ace87f1c1311bd162d05e5")]
 [assembly: System.Reflection.AssemblyProductAttribute("remote_student_app")]
 [assembly: System.Reflection.AssemblyTitleAttribute("remote_student_app")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

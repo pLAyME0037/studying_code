@@ -13,11 +13,14 @@ public partial class StudentViewModel : ObservableObject
 
     public ObservableCollection<Student> Students { get; }
 
-    [ObservableProperty] private string name  = string.Empty;
-    [ObservableProperty] private string sex   = string.Empty;
-    [ObservableProperty] private string email = string.Empty;
-    [ObservableProperty] private string major = string.Empty;
-    [ObservableProperty] private int    age   = 0;
+    [ObservableProperty] private string   name  = string.Empty;
+    [ObservableProperty] private string   sex   = string.Empty;
+    [ObservableProperty] private string   email = string.Empty;
+    [ObservableProperty] private string   major = string.Empty;
+    [ObservableProperty] private int      age   = 0;
+
+    [ObservableProperty] private Student? selectedStudent;
+    [ObservableProperty] private bool     isEditing;
 
     public StudentViewModel(DBService db_service) {
         _db_service = db_service;
@@ -57,19 +60,47 @@ public partial class StudentViewModel : ObservableObject
         ClearFields();
     }
 
-    // [RelayCommand]
-    // public async Task UpdateStudent() {
-    //     Student student = new() {
-    //         Name  = Name,
-    //         Email = Email,
-    //         Major = Major,
-    //         Age   = Age,
-    //     };
-    //
-    //     await _db_service.UpdateStudentAsync(student);
-    //     Students.UpdateStudent(student);
-    //     ClearFields();
-    // }
+    // Load student into form for editing
+    [RelayCommand]
+    public void EditStudent(Student student) {
+        SelectedStudent = student;
+        IsEditing = true;
+        Name  = student.Name;
+        Sex   = student.Sex;
+        Email = student.Email;
+        Major = student.Major;
+        Age   = student.Age;
+    }
+
+    [RelayCommand]
+    public async Task UpdateStudent() {
+        if (SelectedStudent is not { } student) { return; }
+
+        student.Name  = Name;
+        student.Sex   = Sex;
+        student.Email = Email;
+        student.Major = Major;
+        student.Age   = Age;
+
+        await _db_service.UpdateStudentAsync(student);
+        await LoadStudentsAsync();   // Student = plain POCO, reload refreshes list labels
+
+        SelectedStudent = null;
+        IsEditing = false;
+        ClearFields();
+    }
+
+    [RelayCommand]
+    public async Task DeleteStudent(Student student) {
+        await _db_service.DeleteStudentAsync(student);
+        Students.Remove(student);
+
+        if (SelectedStudent == student) {
+            SelectedStudent = null;
+            IsEditing = false;
+            ClearFields();
+        }
+    }
 
     private void ClearFields() {
         Name  = string.Empty;

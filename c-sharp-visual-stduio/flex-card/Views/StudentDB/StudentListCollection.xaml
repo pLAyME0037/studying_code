@@ -2,7 +2,8 @@
 <ContentPage
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    x:Class="user_info.Views.StudentDB.StudentListCollection">
+    x:Class="user_info.Views.StudentDB.StudentListCollection"
+    x:Name="root">
 
     <!-- Changed from CollectionView to Grid -->
     <Grid
@@ -71,11 +72,23 @@
             </Picker>
         </VerticalStackLayout>
 
-        <Button
+        <HorizontalStackLayout
             Grid.Row="1"
-            Text="Add Student"
-            HeightRequest="50"
-            Command="{Binding AddStudentCommand}"/>
+            Spacing="10">
+            <Button
+                Text="Add Student"
+                WidthRequest="170"
+                HeightRequest="50"
+                Clicked="OnAddClicked"/>
+            <Button
+                Text="Update Student"
+                WidthRequest="170"
+                HeightRequest="50"
+                BackgroundColor="#f39c12"
+                TextColor="Black"
+                IsEnabled="{Binding IsEditing}"
+                Clicked="OnUpdateClicked"/>
+        </HorizontalStackLayout>
 
         <BoxView
             Grid.Row="2"
@@ -95,13 +108,8 @@
                         Margin="6,6"
                         StrokeShape="RoundRectangle 10">
 
-                        <Grid
-                            ColumnDefinitions="*, Auto"
-                            RowDefinitions="Auto, Auto, Auto">
-
+                        <VerticalStackLayout Spacing="4">
                             <HorizontalStackLayout
-                                Grid.Row="0"
-                                Grid.Column="0"
                                 Spacing="16">
                                 <Label
                                     Text="{Binding Name}"
@@ -124,40 +132,34 @@
                             </HorizontalStackLayout>
 
                             <Label
-                                Grid.Row="1"
-                                Grid.Column="0"
                                 Text="{Binding Email}"
                                 FontSize="21"
                                 TextColor="#9a9aa2"/>
 
                             <Label
-                                Grid.Row="2"
-                                Grid.Column="0"
                                 Text="{Binding Major}"
                                 FontSize="21"
                                 TextColor="#61afef"
                                 Margin="0,4,0,0"/>
 
-                            <!-- Action Buttons (Right) -->
                             <HorizontalStackLayout
-                                Grid.Row="0"
-                                Grid.RowSpan="3"
-                                Grid.Column="1"
                                 Spacing="16"
-                                VerticalOptions="Center">
+                                Padding="0,8,0,0">
                                 <Button
                                     Text="Edit"
                                     HeightRequest="36"
                                     Padding="12,0"
-                                    BackgroundColor="#f39c12"/>
+                                    BackgroundColor="#f39c12"
+                                    Clicked="OnEditClicked"/>
                                 <Button
                                     Text="Delete"
                                     HeightRequest="36"
                                     Padding="12,0"
                                     BackgroundColor="#e74c3c"
-                                    TextColor="White"/>
+                                    TextColor="White"
+                                    Clicked="OnDeleteClicked"/>
                             </HorizontalStackLayout>
-                        </Grid>
+                        </VerticalStackLayout>
                     </Border>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
