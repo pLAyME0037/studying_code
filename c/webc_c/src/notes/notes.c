@@ -8,7 +8,7 @@
 #include "notes.h"
 #include "../db/db.h"
 
-bool load_notes(db_t *db, Notes *notes) {
+bool read_notes(db_t *db, Notes *notes) {
     bool result = true;
     sql_stmt stmt = {0};
     // `datetime(..., 'localtime')` is SQLite-only; the other dialects
@@ -44,7 +44,7 @@ bool load_notes(db_t *db, Notes *notes) {
     }
 
     if (ret != SQL_DONE) {
-        nob_log(NOB_ERROR, "load_notes: %s", db_errmsg(db));
+        nob_log(NOB_ERROR, "read_notes: %s", db_errmsg(db));
         return_defer(false);
     }
 
@@ -53,7 +53,7 @@ defer:
     return result;
 }
 
-bool insert_note(db_t *db, String_View *values, size_t count) {
+bool create_note(db_t *db, String_View *values, size_t count) {
     bool result = true;
 
     if (count < 2) return false;

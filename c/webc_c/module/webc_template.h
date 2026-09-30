@@ -43,7 +43,7 @@
         Plural_Type dt = {0};                                             \
         db_t *db = open_webc_db();                                     \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!load_##plural(db, &dt)) {                                    \
+        if (!read_##plural(db, &dt)) {                                    \
             db_close(db);                                            \
             serve_error(sc, 500);                                         \
             return;                                                       \
@@ -112,7 +112,7 @@
             return;                                                       \
         }                                                                 \
                                                                           \
-        bool ok = insert_##singular(db, values, field_count);             \
+        bool ok = create_##singular(db, values, field_count);             \
         if (ok) { sql_txn_commit(db); }                                       \
         else    { sql_txn_rollback(db); }                                     \
         db_close(db);                                                \
@@ -131,7 +131,7 @@
         Plural_Type dt = {0};                                           \
         db_t *db = open_webc_db();                                   \
         if (!db) { serve_error(sc, 500); return; }                      \
-        if (!load_##plural(db, &dt)) {                                  \
+        if (!read_##plural(db, &dt)) {                                  \
             db_close(db);                                          \
             serve_error(sc, 500);                                       \
             return;                                                     \

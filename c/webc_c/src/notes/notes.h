@@ -16,8 +16,8 @@ typedef struct {
 
 DA_NEW(Note, Notes)
 
-bool load_notes(db_t *db, Notes *notes);
-bool insert_note(db_t *db, String_View *values, size_t count);
+bool read_notes(db_t *db, Notes *notes);
+bool create_note(db_t *db, String_View *values, size_t count);
 bool update_note(db_t *db, String_View *values, size_t count, String_View id);
 bool delete_note(db_t *db, String_View id);
 

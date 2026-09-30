@@ -4,7 +4,7 @@
 #include "user.h"
 #include "module/nob.h"
 
-bool load_users(db_t *db, Users *rows) {
+bool read_users(db_t *db, Users *rows) {
     bool result = true;
     sql_stmt stmt = {0};
     // Table name case differs: MySQL on Linux stores `users` (from the
@@ -41,7 +41,7 @@ bool load_users(db_t *db, Users *rows) {
     }
 
     if (ret != SQL_DONE) {
-        nob_log(NOB_ERROR, "load_users: %s", db_errmsg(db));
+        nob_log(NOB_ERROR, "read_users: %s", db_errmsg(db));
         return_defer(false);
     }
 
@@ -50,7 +50,7 @@ defer:
     return result;
 }
 
-bool insert_user(db_t *db, String_View *fields, size_t count) {
+bool create_user(db_t *db, String_View *fields, size_t count) {
     bool result = true;
 
     if (count < 4) return false;

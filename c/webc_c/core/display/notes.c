@@ -33,7 +33,7 @@ static void serve_notes_json(Serve_Context *sc) {
     db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
-    if (!load_notes(db, &notes)) {
+    if (!read_notes(db, &notes)) {
         db_close(db);
         serve_error(sc, 500);
         return;
@@ -103,7 +103,7 @@ void serve_notes_api(Serve_Context *sc) {
             serve_error(sc, 500);
             return;
         }
-        bool ok = insert_note(db, values, field_count);
+        bool ok = create_note(db, values, field_count);
         if (ok) sql_txn_commit(db);
         else sql_txn_rollback(db);
         db_close(db);

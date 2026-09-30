@@ -10,7 +10,7 @@ void render_page_header(String_Builder *sb,
     Users users = {0};
     db_t *db = open_webc_db();
     if (db) {
-        if (load_users(db, &users) && users.count > 0) {
+        if (read_users(db, &users) && users.count > 0) {
             User row = users.items[0];
             if (row.name        && row.name[0])        u.name        = row.name;
             if (row.username    && row.username[0])    u.username    = row.username;

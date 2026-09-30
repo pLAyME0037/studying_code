@@ -25,8 +25,8 @@ static inline User user_data(void) {
     return u;
 }
 
-bool load_users(db_t *db, Users *rows);
-bool insert_user(db_t *db, String_View *fields, size_t count);
+bool read_users(db_t *db, Users *rows);
+bool create_user(db_t *db, String_View *fields, size_t count);
 bool update_user(db_t *db, String_View *fields, size_t count, String_View id);
 bool delete_user(db_t *db, String_View id);
 
