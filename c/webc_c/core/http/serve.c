@@ -137,8 +137,7 @@ static ssize_t conn_write(Conn *c, const void *buf, size_t len) {
     }
     // On WANT_READ/WANT_WRITE the caller retries with the same arguments,
     // which is exactly what OpenSSL requires of a failed SSL_write().
-    int n = SSL_write(c->ssl, buf,
-                      len > (size_t) INT_MAX ? INT_MAX : (int) len);
+    int n = SSL_write(c->ssl, buf, len > (size_t) INT_MAX ? INT_MAX : (int) len);
     if (n > 0) return n;
     switch (SSL_get_error(c->ssl, n)) {
     case SSL_ERROR_WANT_WRITE:  return -2;
