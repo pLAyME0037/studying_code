@@ -1,6 +1,6 @@
 <div class="max-w-full mx-auto">
     <form method="POST"
-          action="({ STR(config->crud_path); })/create"
+          action="({ STR(config->crud_path); })/create?redirect=({ STR(md_path); })"
           class="mb-6 p-5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
             Add ({ ESCAPED(config->title); })
@@ -16,7 +16,7 @@
                                 class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                             <option value="">None</option>
                             ({ for (size_t o = 0; o < form_cols.items[fi].count; ++o) { })
-                                <option value="({ LLINT(form_cols.items[fi].items[o].id); })">
+                                <option value="({ STR(form_cols.items[fi].items[o].id); })">
                                     ({ ESCAPED(form_cols.items[fi].items[o].label); })
                                 </option>
                             ({ } })
@@ -79,18 +79,18 @@
                                     <button type="button"
                                             class="master-edit-btn p-1 rounded text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                                             title="Edit" aria-label="Edit"
-                                            data-master-id="({ LLINT(rows->items[ri].id); })">
+                                            data-master-id="({ STR(rows->items[ri].id); })">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </button>
                                     <button
                                         type="button"
                                         class="expand-btn px-2 py-1 rounded text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
-                                        data-master-id="({ LLINT(rows->items[ri].id); })"
+                                        data-master-id="({ STR(rows->items[ri].id); })"
                                         aria-expanded="false">
                                         ▼ Detail
                                     </button>
                                     <form method="POST"
-                                          action="({ STR(config->crud_path); })/({ LLINT(rows->items[ri].id); })/delete"
+                                          action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/delete?redirect=({ STR(md_path); })"
                                           class="inline">
                                         <button type="submit"
                                                 title="Delete"
@@ -104,9 +104,9 @@
                         </tr>
                         <tr class="md-master-edit-row hidden">
                             <td colspan="({ INT(config->column_count + 1); })" class="px-2 py-1 bg-amber-50/50 dark:bg-gray-900/40">
-                                <form id="md-m-({ STR(config->table); })-({ LLINT(rows->items[ri].id); })"
+                                <form id="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                       method="POST"
-                                      action="({ STR(config->crud_path); })/({ LLINT(rows->items[ri].id); })/update"
+                                      action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/update?redirect=({ STR(md_path); })"
                                       class="flex flex-wrap gap-3 items-end px-2 py-1">
                             ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
                                     <div class="flex flex-col gap-1 min-w-[140px]">
@@ -114,18 +114,18 @@
                                             ({ ESCAPED(config->columns[ci].label); })
                                         </label>
                                 ({ if (config->columns[ci].type == COL_TYPE_FK_SELECT) { })
-                                        <select form="md-m-({ STR(config->table); })-({ LLINT(rows->items[ri].id); })"
+                                        <select form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                                 name="({ ESCAPED(config->columns[ci].name); })" required
                                                 class="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                                             ({ for (size_t o = 0; o < config->columns[ci].opt_count; ++o) { })
-                                                <option value="({ LLINT(config->columns[ci].opt[o].id); })"
-                                                    ({ if (atoll(rows->items[ri].values[ci + 1]) == config->columns[ci].opt[o].id) { })selected({ } })>
+                                                <option value="({ STR(config->columns[ci].opt[o].id); })"
+                                                    ({ if (strcmp(rows->items[ri].values[ci + 1], config->columns[ci].opt[o].id) == 0) { })selected({ } })>
                                                     ({ ESCAPED(config->columns[ci].opt[o].label); })
                                                 </option>
                                             ({ } })
                                         </select>
                                 ({ } else { })
-                                        <input form="md-m-({ STR(config->table); })-({ LLINT(rows->items[ri].id); })"
+                                        <input form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                                name="({ ESCAPED(config->columns[ci].name); })"
                                                type="({ if (config->columns[ci].type == COL_TYPE_DATE) { })date({ } else if (config->columns[ci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
                                                ({ if (config->columns[ci].type == COL_TYPE_NUM) { })step="any" ({ } })
@@ -147,7 +147,7 @@
                         </tr>
                         <tr
                             class="detail-panel-row" 
-                            data-master-id="({ LLINT(rows->items[ri].id); })" 
+                            data-master-id="({ STR(rows->items[ri].id); })" 
                             style="display: none;">
                             <td 
                                 colspan="({ INT(config->column_count + 1); })" 

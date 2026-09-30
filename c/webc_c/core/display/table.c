@@ -13,7 +13,7 @@
 
 void render_table_page(Serve_Context *sc) {
     PAGE_BEGIN(sc, "Table", "/table");
-// #include "build/h_to_html/table.h"
+#include "build/h_to_html/table.h"
     PAGE_END(sc);
 }
 

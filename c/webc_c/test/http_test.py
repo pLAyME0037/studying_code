@@ -6,7 +6,10 @@ Uploads land in ./resource/image/upload/ (project cwd); created paths are
 recorded in $TMP/uploads.txt so run.sh can clean them up.
 """
 import os
+import socket
 import sys
+import time
+import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from testlib import Client, Checker, db_query, db_exec  # noqa: E402
@@ -31,6 +34,30 @@ def record_upload(profile_pic):
     return os.path.join(PROJECT, profile_pic.lstrip("/"))
 
 
+def split_head_get(head, cut, timeout=3.0):
+    """Send request head as two writes split at `cut`, return raw response.
+
+    Pins read_until_double_crlf(): a \\r\\n\\r\\n straddling two reads must still
+    be detected (regression: scan frontier never rewound -> connection hung
+    forever, browser spinner until refresh).
+    """
+    s = socket.create_connection((HOST, PORT), timeout=timeout)
+    try:
+        s.settimeout(timeout)
+        s.sendall(head[:cut])
+        time.sleep(0.05)  # force the server's read() to return after chunk 1
+        s.sendall(head[cut:])
+        data = b""
+        while b"\r\n\r\n" not in data:
+            chunk = s.recv(65536)
+            if not chunk:
+                break
+            data += chunk
+        return data
+    finally:
+        s.close()
+
+
 def main():
     with open(PNG_PATH, "rb") as f:
         png = f.read()
@@ -41,6 +68,13 @@ def main():
     t.chk("bundle resource", f"{st} {ct}", "200 image/png")
     t.chk("users page", c.get("/users")[0], 200)
     t.chk("notes page", c.get("/notes")[0], 200)
+
+    # ---- head terminator straddling two reads must not hang ------------
+    head = b"GET / HTTP/1.1\r\nHost: hang\r\nConnection: close\r\n\r\n"
+    term = head.rindex(b"\r\n\r\n")
+    for k in (1, 2, 3):
+        resp = split_head_get(head, term + k)
+        t.chk(f"split head at term+{k}", resp.startswith(b"HTTP/1.1"), "True")
 
     # ---- migration files pin byte-exact history for existing DBs ----------
     for mig in ("0001_notes", "0002_users"):
@@ -242,6 +276,68 @@ def main():
           c.req("POST", f"/notes/{nid}/delete")[0], 302)
     t.chk("note row gone",
           db_query(DB, "SELECT count(*) FROM notes WHERE id=?", (nid,)), 0)
+
+    # ---- /people master-detail (users master, notes child) --------------
+    def urlenc(fields):
+        return urllib.parse.urlencode(fields).encode()
+
+    def post_form(path, fields):
+        return c.req_full(
+            "POST", path, urlenc(fields),
+            {"Content-Type": "application/x-www-form-urlencoded"})
+
+    st, body, _ = c.get("/people")
+    t.chk("people page", st, 200)
+    html = body.decode()
+    t.chk("people sidebar link", 'href="/people"' in html, "True")
+    t.chk("people master create form",
+          'action="/users/create?redirect=/people"' in html, "True")
+    t.chk("people lists legacy user", "Legacy Renamed" in html, "True")
+
+    # master create via the MD form: no profile_pic key -> NULL pic
+    st, hdr, _, _ = post_form(
+        "/users/create?redirect=/people",
+        {"name": "MD Person", "username": "md_person",
+         "email": "md@p.com"})
+    t.chk("md user create", f"{st} {hdr.get('Location')}", "302 /people")
+    t.chk("md user pic NULL",
+          db_query(DB, "SELECT profile_pic FROM users "
+                       "WHERE username='md_person'"),
+          "None")
+
+    # child create: the hidden form action carries the FK in the query
+    st, hdr, _, _ = post_form(
+        "/notes/create?user_id=7&redirect=/people",
+        {"title": "md_child_note", "body": "via people"})
+    t.chk("md note create", f"{st} {hdr.get('Location')}", "302 /people")
+    t.chk("md note linked to user",
+          db_query(DB, "SELECT user_id FROM notes WHERE title='md_child_note'"),
+          "7")
+
+    st, body, _ = c.get("/people")
+    html = body.decode()
+    t.chk("md child row shown", "md_child_note" in html, "True")
+    t.chk("md fk badge shown", "user_id: 7" in html, "True")
+
+    # redirect fallback (no param) + open-redirect guard
+    st, hdr, _, _ = post_form("/notes/create",
+                              {"title": "fallback_note", "body": "x"})
+    t.chk("redirect fallback", f"{st} {hdr.get('Location')}", "302 /notes")
+    t.chk("fallback note not linked",
+          db_query(DB, "SELECT user_id FROM notes "
+                       "WHERE title='fallback_note'"),
+          "None")
+    st, hdr, _, _ = post_form("/notes/create?redirect=//evil.example",
+                              {"title": "evil_note", "body": "x"})
+    t.chk("open redirect blocked", hdr.get("Location"), "/notes")
+
+    # delete with ?redirect= comes back to /people
+    mid = db_query(DB, "SELECT id FROM notes WHERE title='md_child_note'")
+    st, hdr, _, _ = c.req_full("POST", f"/notes/{mid}/delete?redirect=/people")
+    t.chk("md delete back to people",
+          f"{st} {hdr.get('Location')}", "302 /people")
+    t.chk("md delete removed row",
+          db_query(DB, "SELECT count(*) FROM notes WHERE id=?", (mid,)), 0)
 
     ok = t.summary()
     sys.exit(0 if ok else 1)

@@ -59,16 +59,26 @@ bool create_note(db_t *db, String_View *values, size_t count) {
     if (count < 2) return false;
     String_View title  = values[0];
     String_View body   = values[1];
+    // Optional third value: user_id (the /people child form passes it, the
+    // plain /notes form and the JSON API do not -> SQL NULL). An empty
+    // value normalizes to {0} so the driver binds NULL, never ''.
+    String_View user_id = {0};
+    if (count > 2) user_id = values[2];
+    if (user_id.count == 0) user_id = (String_View){0};
     sql_stmt stmt = {0};
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "INSERT INTO Notes (title, body) VALUES (?, ?);",
-        [SQL_MYSQL]    = "INSERT INTO notes (title, body) VALUES (?, ?);",
-        [SQL_POSTGRES] = "INSERT INTO notes (title, body) VALUES ($1, $2);",
+        [SQL_SQLITE]   = "INSERT INTO Notes (user_id, title, body) "
+                         "VALUES (?, ?, ?);",
+        [SQL_MYSQL]    = "INSERT INTO notes (user_id, title, body) "
+                         "VALUES (?, ?, ?);",
+        [SQL_POSTGRES] = "INSERT INTO notes (user_id, title, body) "
+                         "VALUES ($1, $2, $3);",
     };
 
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, SQL_SV(title))) return_defer(false);
-    if (!sql_bind(&stmt, 2, SQL_SV(body)))  return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(user_id))) return_defer(false);
+    if (!sql_bind(&stmt, 2, SQL_SV(title)))   return_defer(false);
+    if (!sql_bind(&stmt, 3, SQL_SV(body)))    return_defer(false);
     if (!sql_final_step(&stmt)) return_defer(false);
 
 defer:

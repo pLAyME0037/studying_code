@@ -4,6 +4,7 @@
 #include <ctype.h>
 
 #include "notes.h"
+#include "master_child.h"
 
 #include "module/webc_template.h"
 #include "core/http/id.h"
@@ -12,6 +13,14 @@
 #include "core/layout/header.h"
 #include "core/layout/footer.h"
 #include "core/http/utils.h"
+
+// ---- /people child column shape (composed in people.c) -----------------
+MD_Column md_notes_columns[] = {
+    { .name = "title",      .label = "Title",   .type = COL_TYPE_TEXT,     .nullable = false },
+    { .name = "body",       .label = "Body",    .type = COL_TYPE_TEXTAREA, .nullable = true  },
+    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,     .nullable = false },
+};
+const size_t md_notes_columns_count = ARRAY_LEN(md_notes_columns);
 
 void render_notes_page(Serve_Context *sc, Notes notes) {
     PAGE_BEGIN(sc, "Note", "/notes");
@@ -26,7 +35,11 @@ void render_notes_edit_page(Serve_Context *sc, Note note) {
 }
 
 static const char *fields[] = { "title", "body" };
-SERVE_CRUD(notes, note, Notes, Note, fields)
+// Optional: written only on create; the /people child form supplies it as
+// ?user_id=<uuid>, the plain /notes form and JSON API leave it NULL.
+// Updates never touch user_id (update_note reads only title/body).
+static const char *opt_fields[] = { "user_id" };
+SERVE_CRUD(notes, note, Notes, Note, fields, opt_fields)
 
 static void serve_notes_json(Serve_Context *sc) {
     Notes notes = {0};

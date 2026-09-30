@@ -55,51 +55,74 @@
         http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));   \
     }
 
-// Extract all listed form fields into `values` (urlencoded or multipart).
-// File uploads are compressed/stored and values[i] is replaced with the URL
-// the image will be served from. Aborts the handler with an appropriate
-// error status when extraction or storing fails.
-#define SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count)                 \
-    do {                                                                               \
-        Nob_String_View req_sv_ = sb_to_sv((sc)->request);                             \
-        for (size_t i_ = 0; i_ < (field_count); ++i_) {                                \
-            (values)[i_] = (Nob_String_View){0};                                       \
-            Form_Field field_ = {0};                                                   \
-            if (!form_get(req_sv_, (body_sv), (fields)[i_], &field_)) {                \
-                serve_error((sc), 400);                                                \
-                return;                                                                \
-            }                                                                          \
-            (values)[i_] = field_.value;                                               \
-            if (field_.kind == FIELD_FILE && field_.value.count > 0) {                 \
-                switch (save_uploaded_image(&(values)[i_])) {                          \
-                case UPLOAD_OK: break;                                                 \
-                case UPLOAD_TOO_LARGE:                                                 \
+// Extract one form field (urlencoded or multipart). File uploads are
+// compressed/stored and values[i] is replaced with the URL the image will be
+// served from. `on_miss` runs when the key is absent from the body; it may
+// `return` (required fields answer 400) or fall back to another source.
+#define SERVE_EXTRACT_ONE(sc, body_sv, values, i_, key_, on_miss)               \
+    do {                                                                        \
+        Nob_String_View req_sv_ = sb_to_sv((sc)->request);                      \
+        (values)[i_] = (Nob_String_View){0};                                    \
+        Form_Field field_ = {0};                                                \
+        if (!form_get(req_sv_, (body_sv), (key_), &field_)) {                   \
+            on_miss                                                             \
+        } else {                                                                \
+            (values)[i_] = field_.value;                                        \
+            if (field_.kind == FIELD_FILE && field_.value.count > 0) {          \
+                switch (save_uploaded_image(&(values)[i_])) {                   \
+                case UPLOAD_OK: break;                                          \
+                case UPLOAD_TOO_LARGE:                                          \
                     fprintf(stderr, "ERROR: upload rejected: image exceeds %d bytes\n", \
-                            MAX_UPLOAD_IMAGE_SIZE);                                    \
-                    serve_error((sc), 413);                                            \
-                    return;                                                            \
-                case UPLOAD_NOT_IMAGE:                                                 \
-                    fprintf(stderr, "ERROR: upload rejected: not a decodable "         \
-                            "png/jpeg/gif/webp image\n");                              \
-                    serve_error((sc), 400);                                            \
-                    return;                                                            \
-                case UPLOAD_IO_ERROR:                                                  \
-                    serve_error((sc), 500);                                            \
-                    return;                                                            \
-                }                                                                      \
-            }                                                                          \
-        }                                                                              \
+                            MAX_UPLOAD_IMAGE_SIZE);                             \
+                    serve_error((sc), 413);                                     \
+                    return;                                                     \
+                case UPLOAD_NOT_IMAGE:                                          \
+                    fprintf(stderr, "ERROR: upload rejected: not a decodable "  \
+                            "png/jpeg/gif/webp image\n");                       \
+                    serve_error((sc), 400);                                     \
+                    return;                                                     \
+                case UPLOAD_IO_ERROR:                                           \
+                    serve_error((sc), 500);                                     \
+                    return;                                                     \
+                }                                                               \
+            }                                                                   \
+        }                                                                       \
     } while (0)
 
-#define SERVE_CREATE(plural, singular, fields)                            \
+// Required fields: a key missing from the body is a 400.
+#define SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count)          \
+    do {                                                                        \
+        for (size_t i_ = 0; i_ < (field_count); ++i_) {                         \
+            SERVE_EXTRACT_ONE(sc, body_sv, values, i_, (fields)[i_],            \
+                { serve_error((sc), 400); return; });                           \
+        }                                                                       \
+    } while (0)
+
+// Optional fields (appended after the required ones): body first, then the
+// query string, then empty. This is how the master-detail forms pass the FK
+// (`POST /notes/create?user_id=<uuid>`) while the plain /notes and /users
+// forms keep working without those keys.
+#define SERVE_EXTRACT_OPT_FIELDS(sc, body_sv, values, opt_fields, opt_count, base) \
+    do {                                                                        \
+        for (size_t i_ = 0; i_ < (opt_count); ++i_) {                           \
+            SERVE_EXTRACT_ONE(sc, body_sv, values, (base) + i_, (opt_fields)[i_], \
+                { if (!form_find((sc)->query_string, (opt_fields)[i_],          \
+                                 &(values)[(base) + i_]))                       \
+                      (values)[(base) + i_] = (Nob_String_View){0}; });         \
+        }                                                                       \
+    } while (0)
+
+#define SERVE_CREATE(plural, singular, fields, opt_fields)                \
     void serve_##plural##_create(Serve_Context *sc) {                     \
-        size_t field_count = ARRAY_LEN(fields);                           \
+        size_t field_count = ARRAY_LEN(fields) + ARRAY_LEN(opt_fields);   \
         Nob_String_View values[field_count];                              \
         Nob_String_View body_sv = sb_to_sv(sc->body);                     \
                                                                           \
-        SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count);   \
+        SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, ARRAY_LEN(fields)); \
+        SERVE_EXTRACT_OPT_FIELDS(sc, body_sv, values, opt_fields,         \
+                                 ARRAY_LEN(opt_fields), ARRAY_LEN(fields)); \
                                                                           \
-        if (field_count > 0 && values[0].count == 0) {                    \
+        if (ARRAY_LEN(fields) > 0 && values[0].count == 0) {              \
             serve_error(sc, 400);                                         \
             return;                                                       \
         }                                                                 \
@@ -118,7 +141,8 @@
         db_close(db);                                                \
                                                                           \
         if (!ok) { serve_error(sc, 500); return; }                        \
-        http_render_redirect(sc, 302, "/" #plural);                       \
+        http_render_redirect(sc, 302,                                     \
+                             http_redirect_target(sc, "/" #plural));      \
     }
 
 #define SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)        \
@@ -156,7 +180,7 @@
         http_render_response(sc, 200, "text/html", sb_to_sv(sc->body)); \
     }
 
-#define SERVE_UPDATE(plural, singular, fields)                            \
+#define SERVE_UPDATE(plural, singular, fields, opt_fields)                \
     void serve_##plural##_update(Serve_Context *sc) {                     \
         Route_Id id = sc->route_id;   /* parsed once at the route gate */ \
         if (id.kind == ID_NONE) {                                         \
@@ -164,13 +188,15 @@
             return;                                                       \
         }                                                                 \
                                                                           \
-        size_t field_count = ARRAY_LEN(fields);                           \
+        size_t field_count = ARRAY_LEN(fields) + ARRAY_LEN(opt_fields);   \
         Nob_String_View values[field_count];                              \
         Nob_String_View body_sv = sb_to_sv(sc->body);                     \
                                                                           \
-        SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, field_count);   \
+        SERVE_EXTRACT_FIELDS(sc, body_sv, values, fields, ARRAY_LEN(fields)); \
+        SERVE_EXTRACT_OPT_FIELDS(sc, body_sv, values, opt_fields,         \
+                                 ARRAY_LEN(opt_fields), ARRAY_LEN(fields)); \
                                                                           \
-        if (field_count > 0 && values[0].count == 0) {                    \
+        if (ARRAY_LEN(fields) > 0 && values[0].count == 0) {              \
             serve_error(sc, 400);                                         \
             return;                                                       \
         }                                                                 \
@@ -188,7 +214,8 @@
         db_close(db);                                                \
                                                                           \
         if (!ok) { serve_error(sc, 500); return; }                        \
-        http_render_redirect(sc, 302, "/" #plural);                       \
+        http_render_redirect(sc, 302,                                     \
+                             http_redirect_target(sc, "/" #plural));      \
     }
 
 #define SERVE_DELETE(plural, singular)                                    \
@@ -210,15 +237,16 @@
         else    { sql_txn_rollback(db); }                                     \
         db_close(db);                                                \
         if (!ok) { serve_error(sc, 500); return; }                        \
-        http_render_redirect(sc, 302, "/" #plural);                       \
+        http_render_redirect(sc, 302,                                     \
+                             http_redirect_target(sc, "/" #plural));      \
     }
 
-#define SERVE_CRUD(plural, singular, Plural_Type, Singular_Type, ...)\
+#define SERVE_CRUD(plural, singular, Plural_Type, Singular_Type, fields, opt_fields) \
     SERVE_READ(plural, Plural_Type)                                  \
     SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)         \
     SERVE_DELETE(plural, singular)                                   \
-    SERVE_CREATE(plural, singular, __VA_ARGS__)                      \
-    SERVE_UPDATE(plural, singular, __VA_ARGS__)
+    SERVE_CREATE(plural, singular, fields, opt_fields)               \
+    SERVE_UPDATE(plural, singular, fields, opt_fields)
 
 
 #endif // !WEBC_TEMPLATE

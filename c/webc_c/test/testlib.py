@@ -25,6 +25,20 @@ class Client:
         finally:
             conn.close()
 
+    def req_full(self, method, path, body=None, headers=None):
+        """Like req() but also returns the response headers as a dict."""
+        conn = http.client.HTTPConnection(
+            self.host, self.port, timeout=self.timeout
+        )
+        try:
+            conn.request(method, path, body=body, headers=headers or {})
+            resp = conn.getresponse()
+            data = resp.read()
+            return (resp.status, dict(resp.getheaders()), data,
+                    resp.getheader("Content-Type", ""))
+        finally:
+            conn.close()
+
     def get(self, path):
         return self.req("GET", path)
 

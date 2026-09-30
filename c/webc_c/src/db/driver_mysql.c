@@ -346,6 +346,14 @@ static Sql_Step mysql_drv_step(sql_stmt *stmt) {
             return SQL_ERROR;
         }
         s->executed = true;
+        // Buffer the result set on the client. The connection then stays
+        // usable while this statement is still mid-fetch: master-detail
+        // loads child rows (new statements) between master rows, which the
+        // server would otherwise reject with "Commands out of sync".
+        if (s->has_result && mysql_stmt_store_result(s->stmt) != 0) {
+            mysql_fail(db, s, "mysql_stmt_store_result");
+            return SQL_ERROR;
+        }
         if (s->has_result && mysql_stmt_bind_result(s->stmt, s->rbind) != 0) {
             mysql_fail(db, s, "mysql_stmt_bind_result");
             return SQL_ERROR;

@@ -250,6 +250,27 @@ def run_checks(t, c, env):
     t.chk("note row gone",
           env.q("SELECT COUNT(*) FROM notes WHERE id='%s'" % nid), "0")
 
+    # ---- /people master-detail on mysql -------------------------------
+    st, body, _ = c.get("/people")
+    t.chk("people page", st, 200)
+    t.chk("people lists mysql user", "mysql_nf" in body.decode(), "True")
+
+    uid2 = env.q("SELECT id FROM users WHERE username='mysql_nf'")
+    st, hdr, _, _ = c.req_full(
+        "POST", "/notes/create?user_id=%s&redirect=/people" % uid2,
+        "title=mysql_md_note&body=via+people".encode(),
+        {"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    t.chk("md note create", f"{st} {hdr.get('Location')}", "302 /people")
+    t.chk("md note linked to user",
+          env.q("SELECT user_id FROM notes WHERE title='mysql_md_note'"),
+          uid2)
+    st, body, _ = c.get("/people")
+    t.chk("md child row shown", "mysql_md_note" in body.decode(), "True")
+    st, _, _ = c.req("POST",
+                     "/notes/create?user_id=%s&redirect=/people" % uid2)
+    t.chk("md note create empty body -> 400", st, 400)
+
 
 def main():
     if not (shutil.which("mariadbd") and shutil.which("mariadb-install-db")

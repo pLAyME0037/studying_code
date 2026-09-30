@@ -7,7 +7,7 @@ window.masterDetailController = {
                 const panel = document.querySelector('.detail-panel-row[data-master-id="' + id + '"]');
                 const open = e.currentTarget.getAttribute('aria-expanded') === 'true';
                 e.currentTarget.setAttribute('aria-expanded', String(!open));
-                e.currentTarget.textContent = open ? '▼ Detail' : '▲ Detail';
+                e.currentTarget.textContent = open ? '󰈈' : '󰈉';
                 if (panel) panel.style.display = open ? 'none' : 'table-row';
             });
         });
@@ -70,7 +70,12 @@ window.masterDetailController = {
                 if (form) form.reset();
                 tr.classList.add('hidden');
                 const prev = tr.previousElementSibling;
-                if (prev && !prev.classList.contains('md-add-row') && !prev.classList.contains('md-edit-row') && !prev.classList.contains('md-master-edit-row')) prev.classList.remove('hidden');
+                if (prev 
+                    && !prev.classList.contains('md-add-row')
+                    && !prev.classList.contains('md-edit-row')
+                    && !prev.classList.contains('md-master-edit-row')) {
+                    prev.classList.remove('hidden');
+                }
             });
         });
 

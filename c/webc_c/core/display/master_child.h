@@ -1,13 +1,21 @@
-#ifndef CORE_MASTER_DETAIL_H_
-#define CORE_MASTER_DETAIL_H_
+#ifndef MASTER_CHILD_H_
+#define MASTER_CHILD_H_
 
 #include "../http/serve.h"
 #include <stddef.h>
 #include "../../src/db/sql.h"
 
+// =========================================================================
+// Master-child view interface.
+//
+// Stable API: modules compose their own MD_MasterConfig (column shapes come
+// from the entity files) and hand it to serve_master_child(). Adding another
+// master-child page never requires editing this header or its engine.
+// =========================================================================
+
 typedef struct {
-    long long id;
-    char     *label;
+    const char *id;     /* TEXT pk (legacy numeric string or uuid) */
+    char       *label;
 } MD_Option;
 
 typedef enum {
@@ -16,6 +24,7 @@ typedef enum {
     COL_TYPE_DATE,
     COL_TYPE_TEXTAREA,
     COL_TYPE_FK_SELECT,
+    COL_TYPE_BLOB,      /* stored image path; shown as its URL text */
 } Col_Type;
 
 typedef struct {
@@ -84,10 +93,10 @@ typedef struct {
 } MD_FormCols;
 
 typedef struct {
-    long long     id;
-    char        **values;   /* raw ids for FK cols (edit prefill) */
-    char        **disp;     /* display text (FK cols show label) */
-    size_t        value_count;
+    const char  *id;        /* aliases values[0] (the id column) */
+    char       **values;    /* raw ids for FK cols (edit prefill) */
+    char       **disp;      /* display text (FK cols show label) */
+    size_t       value_count;
     MD_ChildRows *children;
     size_t        children_count;
 } MD_MasterRow;
@@ -98,20 +107,7 @@ typedef struct {
     size_t        capacity;
 } MD_MasterRows;
 
-MD_MasterRows *md_master_rows_new(void);
-void md_master_rows_free(MD_MasterRows *rows);
-bool md_load_master_with_children(db_t                  *db,
-                                  const MD_MasterConfig *config,
-                                  MD_MasterRows         *rows);
-bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCols *out);
+/* Load, render and respond 200 with the master-child page for `config`. */
+void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config);
 
-void md_render_master_detail_list(Serve_Context         *sc,
-                                  const MD_MasterConfig *config,
-                                  MD_MasterRows         *rows);
-
-void serve_master_detail_list(Serve_Context *sc, const MD_MasterConfig *config);
-
-void serve_master_detail_by_table(Serve_Context *sc, const char *master_table);
-const MD_MasterConfig *find_master_config(const char *table);
-
-#endif // CORE_MASTER_DETAIL_H_
+#endif // MASTER_CHILD_H_

@@ -22,6 +22,7 @@
 #include "../../build/bundle.h"
 #include "serve.h"
 #include "route.h"
+#include "utils.h"
 
 #include "../../src/user/user.h"
 #include "../../module/coroutine/coroutine.h"
@@ -204,6 +205,11 @@ static bool read_until_double_crlf(Conn *c, String_Builder *request) {
         if (n == -2) { coroutine_sleep_write(c->fd); continue; }
         if (n <= 0) return false;  // EOF or hard error (logged by conn_read)
         sb_append_buf(request, buffer, n);
+        // The terminator may straddle this read boundary: a position that had
+        // fewer than suffix.count bytes left failed sv_starts_with() but was
+        // still advanced past, so rewind the frontier by suffix.count-1 to
+        // re-check those tail positions against the newly appended bytes.
+        cur = cur >= suffix.count - 1 ? cur - (suffix.count - 1) : 0;
         for (; cur < request->count && !finish; cur += 1) {
             finish = sv_starts_with(sv_from_parts(request->items + cur, request->count - cur), suffix);
         }
@@ -488,6 +494,20 @@ void http_render_redirect(Serve_Context *sc,
     sb_append_cstr(response, "Content-Length: 0\r\n");
     sb_append_cstr(response, "Connection: close\r\n");
     sb_append_cstr(response, "\r\n");
+}
+
+const char *http_redirect_target(Serve_Context *sc, const char *fallback) {
+    // ?redirect= must be a same-site absolute path: "/x" yes, "//x", "/\x"
+    // and scheme-qualified targets no (open-redirect guard).
+    String_View target = {0};
+    if (form_find(sc->query_string, "redirect", &target)
+        && target.count > 1
+        && target.data[0] == '/'
+        && target.data[1] != '/'
+        && target.data[1] != '\\') {
+        return temp_sprintf("%.*s", (int)target.count, target.data);
+    }
+    return fallback;
 }
 
 void render_page_shell(Serve_Context *sc,

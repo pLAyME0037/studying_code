@@ -6,8 +6,7 @@
 #include "core/display/notes.h"
 #include "core/display/table.h"
 #include "core/display/version.h"
-#include "core/display/crud.h"
-#include "core/display/crud_modules.h"
+#include "core/display/people.h"
 #include "core/display/user.h"
 #include "serve.h"
 
@@ -146,6 +145,8 @@ void route_initialize(void) {
     route_new(&routes, "/", NULL, "GET", ROUTE_EXACT, serve_dashboard);
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);
     route_new(&routes, "/table", NULL, "GET", ROUTE_EXACT, serve_table);
+    // users master + their notes, one master-detail page
+    route_new(&routes, "/people", NULL, "GET", ROUTE_EXACT, serve_people);
 
     // method NULL: serve_notes_api dispatches GET/POST/PUT/DELETE itself
     // and answers unsupported methods with 405.
