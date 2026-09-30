@@ -3,7 +3,7 @@
 
 #include "../http/serve.h"
 #include <stddef.h>
-#include <sqlite3.h>
+#include "../../src/db/sql.h"
 
 typedef struct {
     long long id;
@@ -100,10 +100,10 @@ typedef struct {
 
 MD_MasterRows *md_master_rows_new(void);
 void md_master_rows_free(MD_MasterRows *rows);
-bool md_load_master_with_children(sqlite3               *db,
+bool md_load_master_with_children(db_t                  *db,
                                   const MD_MasterConfig *config,
                                   MD_MasterRows         *rows);
-bool md_form_cols_load(sqlite3 *db, const MD_MasterConfig *config, MD_FormCols *out);
+bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCols *out);
 
 void md_render_master_detail_list(Serve_Context         *sc,
                                   const MD_MasterConfig *config,

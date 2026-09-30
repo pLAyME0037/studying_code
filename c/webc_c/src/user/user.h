@@ -2,8 +2,8 @@
 #define SRC_USER_H_
 
 #include <stddef.h>
-#include <sqlite3.h>
 #include "module/nob.h"
+#include "../db/sql.h"
 
 typedef struct {
     const char *id;
@@ -25,9 +25,9 @@ static inline User user_data(void) {
     return u;
 }
 
-bool load_users(sqlite3 *db, Users *rows);
-bool insert_user(sqlite3 *db, String_View *fields, size_t count);
-bool update_user(sqlite3 *db, String_View *fields, size_t count, String_View id);
-bool delete_user(sqlite3 *db, String_View id);
+bool load_users(db_t *db, Users *rows);
+bool insert_user(db_t *db, String_View *fields, size_t count);
+bool update_user(db_t *db, String_View *fields, size_t count, String_View id);
+bool delete_user(db_t *db, String_View id);
 
 #endif // SRC_USER_H_

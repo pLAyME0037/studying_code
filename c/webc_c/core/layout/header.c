@@ -8,7 +8,7 @@ void render_page_header(String_Builder *sb,
 {
     User u = user_data();
     Users users = {0};
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (db) {
         if (load_users(db, &users) && users.count > 0) {
             User row = users.items[0];
@@ -17,7 +17,7 @@ void render_page_header(String_Builder *sb,
             if (row.email       && row.email[0])       u.email       = row.email;
             if (row.profile_pic && row.profile_pic[0]) u.profile_pic = row.profile_pic;
         }
-        sqlite3_close(db);
+        db_close(db);
         free(users.items);
     }
 #define OUT(buf, size) sb_append_buf(sb, buf, size);

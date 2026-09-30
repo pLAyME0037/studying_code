@@ -1,23 +1,23 @@
-#ifndef BUNDLE_H_ // ./src/nob.c:103
-#define BUNDLE_H_ // ./src/nob.c:104
-#include <stddef.h> // ./src/nob.c:105
-#define WEBC_BUILD_TIME "Tue, 29 Sep 2026 09:37:10 GMT" // ./src/nob.c:106
-typedef struct { // ./src/nob.c:107
-    const char *file_path; // ./src/nob.c:108
-    size_t offset; // ./src/nob.c:109
-    size_t size; // ./src/nob.c:110
-} Resource; // ./src/nob.c:111
-#ifdef BUNDLE_IMPLEMENTATION // ./src/nob.c:112
-static size_t resources_count = 6; // ./src/nob.c:113
-static Resource resources[] = { // ./src/nob.c:114
-    {.file_path = "./css/output.css", .offset = 0, .size = 31791}, // ./src/nob.c:116
-    {.file_path = "./resource/image/user1.png", .offset = 31792, .size = 200846}, // ./src/nob.c:116
-    {.file_path = "./resource/image/know_me.png", .offset = 232639, .size = 6000}, // ./src/nob.c:116
-    {.file_path = "./js/ListExpandSwitcher.js", .offset = 238640, .size = 5834}, // ./src/nob.c:116
-    {.file_path = "./js/sidebarSwitcher.js", .offset = 244475, .size = 4688}, // ./src/nob.c:116
-    {.file_path = "./js/themeSwitcher.js", .offset = 249164, .size = 573}, // ./src/nob.c:116
-}; // ./src/nob.c:119
-static unsigned char bundle[] = { // ./src/nob.c:121
+#ifndef BUNDLE_H_ // build/nob.c:107
+#define BUNDLE_H_ // build/nob.c:108
+#include <stddef.h> // build/nob.c:109
+#define WEBC_BUILD_TIME "Wed, 30 Sep 2026 06:39:52 GMT" // build/nob.c:110
+typedef struct { // build/nob.c:111
+    const char *file_path; // build/nob.c:112
+    size_t offset; // build/nob.c:113
+    size_t size; // build/nob.c:114
+} Resource; // build/nob.c:115
+#ifdef BUNDLE_IMPLEMENTATION // build/nob.c:116
+static size_t resources_count = 6; // build/nob.c:117
+static Resource resources[] = { // build/nob.c:118
+    {.file_path = "./css/output.css", .offset = 0, .size = 31791}, // build/nob.c:120
+    {.file_path = "./resource/image/user1.png", .offset = 31792, .size = 200846}, // build/nob.c:120
+    {.file_path = "./resource/image/know_me.png", .offset = 232639, .size = 6000}, // build/nob.c:120
+    {.file_path = "./js/ListExpandSwitcher.js", .offset = 238640, .size = 5834}, // build/nob.c:120
+    {.file_path = "./js/sidebarSwitcher.js", .offset = 244475, .size = 4688}, // build/nob.c:120
+    {.file_path = "./js/themeSwitcher.js", .offset = 249164, .size = 573}, // build/nob.c:120
+}; // build/nob.c:123
+static unsigned char bundle[] = { // build/nob.c:125
      0x2F, 0x2A, 0x21, 0x20, 0x74, 0x61, 0x69, 0x6C, 0x77, 0x69, 0x6E, 0x64, 0x63, 0x73, 0x73, 0x20, 0x76, 0x34, 0x2E, 0x33, 
      0x2E, 0x33, 0x20, 0x7C, 0x20, 0x4D, 0x49, 0x54, 0x20, 0x4C, 0x69, 0x63, 0x65, 0x6E, 0x73, 0x65, 0x20, 0x7C, 0x20, 0x68, 
      0x74, 0x74, 0x70, 0x73, 0x3A, 0x2F, 0x2F, 0x74, 0x61, 0x69, 0x6C, 0x77, 0x69, 0x6E, 0x64, 0x63, 0x73, 0x73, 0x2E, 0x63, 
@@ -12505,6 +12505,6 @@ static unsigned char bundle[] = { // ./src/nob.c:121
      0x6D, 0x65, 0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C, 0x6C, 0x65, 0x72, 0x2E, 0x61, 0x70, 0x70, 0x6C, 0x79, 0x28, 0x77, 
      0x69, 0x6E, 0x64, 0x6F, 0x77, 0x2E, 0x74, 0x68, 0x65, 0x6D, 0x65, 0x43, 0x6F, 0x6E, 0x74, 0x72, 0x6F, 0x6C, 0x6C, 0x65, 
      0x72, 0x2E, 0x67, 0x65, 0x74, 0x28, 0x29, 0x29, 0x3B, 0x0A, 0x7D, 0x29, 0x28, 0x29, 0x3B, 0x0A, 0x0A, 0x00, 
-}; // ./src/nob.c:130
-#endif // BUNDLE_IMPLEMENTATION // ./src/nob.c:131
-#endif // BUNDLE_H_ // ./src/nob.c:132
+}; // build/nob.c:134
+#endif // BUNDLE_IMPLEMENTATION // build/nob.c:135
+#endif // BUNDLE_H_ // build/nob.c:136

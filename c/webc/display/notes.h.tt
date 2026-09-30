@@ -40,14 +40,14 @@
                 </tr>
             ({ } else for (size_t i = 0; i < notes.count; ++i) { })
                 <tr>
-                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400">({ INT(notes.items[i].id); })</td>
+                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400">({ STR(notes.items[i].id); })</td>
                     <td class="px-4 py-2 font-medium text-gray-800 dark:text-white">({ ESCAPED(notes.items[i].title); })</td>
                     <td class="px-4 py-2 text-gray-600 dark:text-gray-300">({ ESCAPED(notes.items[i].created_at); })</td>
                     <td class="px-4 py-2 text-gray-600 dark:text-gray-300">({ ESCAPED(notes.items[i].body); })</td>
                     <td class="px-4 py-2 whitespace-nowrap">
-                        <a href="/notes/({ INT(notes.items[i].id); })/edit"
+                        <a href="/notes/({ STR(notes.items[i].id); })/edit"
                            class="mr-2 px-2 py-1 rounded text-xs bg-amber-500 hover:bg-amber-600 text-white">Edit</a>
-                        <form method="POST" action="/notes/({ INT(notes.items[i].id); })/delete" class="inline">
+                        <form method="POST" action="/notes/({ STR(notes.items[i].id); })/delete" class="inline">
                             <button type="submit"
                                     class="px-2 py-1 rounded text-xs bg-red-500 hover:bg-red-600 text-white">Delete</button>
                         </form>

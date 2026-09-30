@@ -6,10 +6,14 @@
 #include <fcntl.h>
 
 #include <unistd.h>
+#include <limits.h>
 
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <poll.h>
+
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 
 #define NOB_STRIP_PREFIX
 #include "module/nob.h"
@@ -32,20 +36,133 @@ Resource *find_resource(const char *file_path) {
     return NULL;
 }
 
-static bool write_entire_sv_coro(int fd, String_View sv) {
+/* -- TLS -------------------------------------------------------------------
+ * Enabled when WEBC_TLS_CERT and WEBC_TLS_KEY both point at PEM files
+ * (env instead of CLI flags so `webc dev` relaunches inherit it). The server
+ * socket stays plaintext-compatible: connections negotiate in serve_request_
+ * coro() and every byte then flows through conn_read()/conn_write(), which
+ * preserve the EAGAIN -> coroutine_sleep_* retry pattern for plain sockets.
+ */
+static SSL_CTX *tls_ctx = NULL;
+
+static const char *tls_error(void) {
+    const char *reason = ERR_reason_error_string(ERR_get_error());
+    return reason ? reason : "unknown TLS error";
+}
+
+static bool tls_server_init(void) {
+    const char *cert = getenv("WEBC_TLS_CERT");
+    const char *key  = getenv("WEBC_TLS_KEY");
+    if (!cert && !key) return true;  // no cert: plaintext HTTP
+    if (!cert || !key) {
+        fprintf(stderr, "ERROR: WEBC_TLS_CERT and WEBC_TLS_KEY must be set "
+                        "together (got cert=%s key=%s)\n",
+                cert ? "yes" : "no", key ? "yes" : "no");
+        return false;
+    }
+
+    tls_ctx = SSL_CTX_new(TLS_server_method());
+    if (!tls_ctx) {
+        fprintf(stderr, "ERROR: SSL_CTX_new failed: %s\n", tls_error());
+        return false;
+    }
+    SSL_CTX_set_min_proto_version(tls_ctx, TLS1_2_VERSION);
+    if (SSL_CTX_use_certificate_chain_file(tls_ctx, cert) != 1) {
+        fprintf(stderr, "ERROR: cannot load TLS certificate %s: %s\n",
+                cert, tls_error());
+        return false;
+    }
+    if (SSL_CTX_use_PrivateKey_file(tls_ctx, key, SSL_FILETYPE_PEM) != 1) {
+        fprintf(stderr, "ERROR: cannot load TLS private key %s: %s\n",
+                key, tls_error());
+        return false;
+    }
+    if (SSL_CTX_check_private_key(tls_ctx) != 1) {
+        fprintf(stderr, "ERROR: TLS private key does not match certificate "
+                        "(%s): %s\n", cert, tls_error());
+        return false;
+    }
+    return true;
+}
+
+// One connection: the fd plus its TLS session (ssl == NULL = plaintext).
+typedef struct {
+    int   fd;
+    SSL  *ssl;
+} Conn;
+
+// conn_read()/conn_write() results:
+//    >0 bytes transferred,  0 clean EOF,  -3 hard error (already logged);
+//   -1 retry after coroutine_sleep_read(fd),
+//   -2 retry after coroutine_sleep_write(fd).
+// quiet: suppress the error log (used by the post-response drain, where a
+// reset by the peer after "Connection: close" is normal, not a problem).
+static ssize_t conn_read(Conn *c, void *buf, size_t len, bool quiet) {
+    if (!c->ssl) {
+        ssize_t n = read(c->fd, buf, len);
+        if (n >= 0) return n;
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
+        if (!quiet)
+            fprintf(stderr, "ERROR: could not read request: %s", strerror(errno));
+        return -3;
+    }
+    int n = SSL_read(c->ssl, buf,
+                     len > (size_t) INT_MAX ? INT_MAX : (int) len);
+    if (n > 0) return n;
+    switch (SSL_get_error(c->ssl, n)) {
+    case SSL_ERROR_WANT_READ:  return -1;
+    case SSL_ERROR_WANT_WRITE: return -2;
+    case SSL_ERROR_ZERO_RETURN: return 0;
+    case SSL_ERROR_SYSCALL:
+        if (n == 0) return 0;  // peer closed without close_notify
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return -1;
+        if (!quiet)
+            fprintf(stderr, "ERROR: could not read request: %s", strerror(errno));
+        return -3;
+    default:
+        if (!quiet)
+            fprintf(stderr, "ERROR: TLS read failed: %s\n", tls_error());
+        return -3;
+    }
+}
+
+static ssize_t conn_write(Conn *c, const void *buf, size_t len) {
+    if (!c->ssl) {
+        ssize_t n = write(c->fd, buf, len);
+        if (n >= 0) return n;
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return -2;
+        fprintf(stderr, "ERROR: Could not write response: %s\n", strerror(errno));
+        return -3;
+    }
+    // On WANT_READ/WANT_WRITE the caller retries with the same arguments,
+    // which is exactly what OpenSSL requires of a failed SSL_write().
+    int n = SSL_write(c->ssl, buf,
+                      len > (size_t) INT_MAX ? INT_MAX : (int) len);
+    if (n > 0) return n;
+    switch (SSL_get_error(c->ssl, n)) {
+    case SSL_ERROR_WANT_WRITE:  return -2;
+    case SSL_ERROR_WANT_READ:   return -1;
+    case SSL_ERROR_ZERO_RETURN: return 0;
+    case SSL_ERROR_SYSCALL:
+        if (n == 0) return 0;
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return -2;
+        fprintf(stderr, "ERROR: Could not write response: %s\n", strerror(errno));
+        return -3;
+    default:
+        fprintf(stderr, "ERROR: TLS write failed: %s\n", tls_error());
+        return -3;
+    }
+}
+
+static bool write_entire_sv_coro(Conn *c, String_View sv) {
     String_View untransfered = sv;
     while (untransfered.count > 0) {
-        ssize_t transfered = write(fd, untransfered.data, untransfered.count);
-        if (transfered < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sleep_write(fd);
-                continue;
-            }
-            fprintf(stderr, "ERROR: Could not write response: %s\n", strerror(errno));
-            return false;
-        }
-        untransfered.data += transfered;
-        untransfered.count -= transfered;
+        ssize_t n = conn_write(c, untransfered.data, untransfered.count);
+        if (n == -1) { coroutine_sleep_read(c->fd);  continue; }
+        if (n == -2) { coroutine_sleep_write(c->fd); continue; }
+        if (n <= 0) return false;  // EOF or hard error (logged by conn_write)
+        untransfered.data += n;
+        untransfered.count -= n;
     }
     return true;
 }
@@ -76,23 +193,16 @@ void serve_resource(Serve_Context *sc,
     sb_free(file);
 }
 
-static bool read_until_double_crlf(int fd, String_Builder *request) {
+static bool read_until_double_crlf(Conn *c, String_Builder *request) {
     char buffer[1024];
     size_t cur = 0;
     String_View suffix = sv_from_parts("\r\n\r\n", 4);
     bool finish = false;
-    ssize_t n = 0;
     do {
-        n = read(fd, buffer, sizeof(buffer));
-        if (n < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sleep_read(fd);
-                continue;
-            }
-            fprintf(stderr, "ERROR: could not read request: %s", strerror(errno));
-            return false;
-        }
-        if (n == 0) return false;
+        ssize_t n = conn_read(c, buffer, sizeof(buffer), false);
+        if (n == -1) { coroutine_sleep_read(c->fd);  continue; }
+        if (n == -2) { coroutine_sleep_write(c->fd); continue; }
+        if (n <= 0) return false;  // EOF or hard error (logged by conn_read)
         sb_append_buf(request, buffer, n);
         for (; cur < request->count && !finish; cur += 1) {
             finish = sv_starts_with(sv_from_parts(request->items + cur, request->count - cur), suffix);
@@ -115,7 +225,7 @@ static long parse_content_length(String_View headers) {
     return -1;
 }
 
-static bool read_body(int             fd,
+static bool read_body(Conn  *c,
                       String_Builder *request,
                       size_t          body_start,
                       long            content_length)
@@ -123,15 +233,11 @@ static bool read_body(int             fd,
     char buffer[1024];
     size_t have = request->count > body_start ? request->count - body_start : 0;
     while (content_length > 0 && have < (size_t)content_length) {
-        ssize_t n = read(fd, buffer, sizeof(buffer));
-        if (n < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                coroutine_sleep_read(fd);
-                continue;
-            }
-            return false;
-        }
+        ssize_t n = conn_read(c, buffer, sizeof(buffer), false);
+        if (n == -1) { coroutine_sleep_read(c->fd);  continue; }
+        if (n == -2) { coroutine_sleep_write(c->fd); continue; }
         if (n == 0) break;
+        if (n < 0) return false;
         sb_append_buf(request, buffer, n);
         have = request->count > body_start ? request->count - body_start : 0;
     }
@@ -146,7 +252,35 @@ static void serve_request_coro(void *arg) {
     Serve_Context sc = {0};
     sc.client_fd = client_fd;
 
-    if (!read_until_double_crlf(client_fd, &sc.request)) {
+    Conn conn = { .fd = client_fd, .ssl = NULL };
+    if (tls_ctx) {
+        conn.ssl = SSL_new(tls_ctx);
+        if (!conn.ssl) {
+            fprintf(stderr, "ERROR: SSL_new failed: %s\n", tls_error());
+            goto cleanup;
+        }
+        if (SSL_set_fd(conn.ssl, client_fd) != 1) {
+            fprintf(stderr, "ERROR: SSL_set_fd failed: %s\n", tls_error());
+            goto cleanup;
+        }
+        for (;;) {
+            int r = SSL_accept(conn.ssl);
+            if (r == 1) break;
+            int e = SSL_get_error(conn.ssl, r);
+            if (e == SSL_ERROR_WANT_READ) {
+                coroutine_sleep_read(client_fd);
+                continue;
+            }
+            if (e == SSL_ERROR_WANT_WRITE) {
+                coroutine_sleep_write(client_fd);
+                continue;
+            }
+            fprintf(stderr, "ERROR: TLS handshake failed: %s\n", tls_error());
+            goto cleanup;
+        }
+    }
+
+    if (!read_until_double_crlf(&conn, &sc.request)) {
         goto cleanup;
     }
 
@@ -165,7 +299,7 @@ static void serve_request_coro(void *arg) {
         goto send_response;
     }
 
-    if (!read_body(client_fd, &sc.request, body_start, content_length)) {
+    if (!read_body(&conn, &sc.request, body_start, content_length)) {
         goto cleanup;
     }
 
@@ -194,15 +328,17 @@ static void serve_request_coro(void *arg) {
     route_request(&sc);
 
 send_response:
-    if (!write_entire_sv_coro(client_fd, sb_to_sv(sc.response))) { }
+    if (!write_entire_sv_coro(&conn, sb_to_sv(sc.response))) { }
 
 cleanup:
+    if (conn.ssl) (void) SSL_shutdown(conn.ssl);  // best-effort close_notify
     shutdown(client_fd, SHUT_WR);
     struct pollfd pfd = { .fd = client_fd, .events = POLLIN };
     char buffer[4096];
     while (poll(&pfd, 1, 100) > 0) {
-        if (read(client_fd, buffer, sizeof(buffer)) <= 0) break;
+        if (conn_read(&conn, buffer, sizeof(buffer), true) <= 0) break;
     }
+    if (conn.ssl) SSL_free(conn.ssl);
     close(client_fd);
     sc_reset(&sc);
     return;
@@ -216,6 +352,7 @@ static int set_nonblocking(int fd) {
 
 void coroutine_server_run(const char *addr, uint16_t port) {
     coroutine_init();
+    if (!tls_server_init()) return;  // misconfigured TLS must not serve plaintext
     db_pool_init();
 
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -251,7 +388,8 @@ void coroutine_server_run(const char *addr, uint16_t port) {
         return;
     }
 
-    printf("Listening to http://%s:%d/ (coroutine mode)\n", addr, port);
+    printf("Listening to %s://%s:%d/ (coroutine mode)\n",
+           tls_ctx ? "https" : "http", addr, port);
 
     signal(SIGPIPE, SIG_IGN);
 
@@ -283,7 +421,7 @@ void serve_request(Serve_Context *sc) {
 
 void sc_reset(Serve_Context *sc) {
     sc->client_fd      = 0;
-    sc->route_id       = (String_View) {0};
+    sc->route_id       = (Route_Id) {0};
     sc->request.count  = 0;
     sb_free(sc->request);
     sc->response.count = 0;

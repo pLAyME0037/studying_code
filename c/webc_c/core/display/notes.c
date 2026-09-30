@@ -6,6 +6,7 @@
 #include "notes.h"
 
 #include "module/webc_template.h"
+#include "core/http/id.h"
 #include "src/db/db.h"
 #include "src/notes/notes.h"
 #include "core/layout/header.h"
@@ -29,24 +30,23 @@ SERVE_CRUD(notes, note, Notes, Note, fields)
 
 static void serve_notes_json(Serve_Context *sc) {
     Notes notes = {0};
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
     if (!load_notes(db, &notes)) {
-        sqlite3_close(db);
+        db_close(db);
         serve_error(sc, 500);
         return;
     }
-    sqlite3_close(db);
+    db_close(db);
 
     String_Builder body = {0};
     sb_append_cstr(&body, "[");
     for (size_t i = 0; i < notes.count; ++i) {
         Note *note = &notes.items[i];
         if (i > 0) sb_append_cstr(&body, ",");
-        sb_append_cstr(&body, "{\"id\":\"");
+        sb_append_cstr(&body, "{\"id\":");
         sb_append_json_escaped(&body, note->id ? note->id : "");
-        sb_append_cstr(&body, "\"");
         sb_append_cstr(&body, ",\"title\":");
         sb_append_json_escaped(&body, note->title);
         sb_append_cstr(&body, ",\"created_at\":");
@@ -75,10 +75,13 @@ void serve_notes_api(Serve_Context *sc) {
     size_t field_count = sizeof(fields) / sizeof(fields[0]);
     String_View values[field_count];
     memset(values, 0, sizeof(values));
-    // Ids are TEXT (legacy numeric strings or schema uuid defaults), so the
-    // API takes the id from the JSON body as a string.
+    // The "id" body field runs through the same parser as uri segments:
+    // legacy numeric ids -> ID_INT, uuid defaults -> ID_STRING. TEXT tables
+    // bind `raw`; has_id gates PUT/DELETE exactly as before.
     String_View id_sv = {0};
-    bool has_id = json_find_string(body_sv, "id", &id_sv) && id_sv.count > 0;
+    Route_Id api_id = {0};
+    bool has_id = json_find_string(body_sv, "id", &id_sv)
+                  && route_id_parse(id_sv, &api_id);
 
     if (sv_eq(sc->method, sv_from_cstr("POST"))) {
         for (size_t i = 0; i < field_count; ++i) {
@@ -93,17 +96,17 @@ void serve_notes_api(Serve_Context *sc) {
             return;
         }
 
-        sqlite3 *db = open_webc_db();
+        db_t *db = open_webc_db();
         if (!db) { serve_error(sc, 500); return; }
-        if (!txn_begin(db)) { 
-            sqlite3_close(db); 
+        if (!sql_txn_begin(db)) { 
+            db_close(db); 
             serve_error(sc, 500);
             return;
         }
         bool ok = insert_note(db, values, field_count);
-        if (ok) txn_commit(db);
-        else txn_rollback(db);
-        sqlite3_close(db);
+        if (ok) sql_txn_commit(db);
+        else sql_txn_rollback(db);
+        db_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
         return;
@@ -127,17 +130,17 @@ void serve_notes_api(Serve_Context *sc) {
             return;
         }
 
-        sqlite3 *db = open_webc_db();
+        db_t *db = open_webc_db();
         if (!db) { serve_error(sc, 500); return; }
-        if (!txn_begin(db)) { 
-            sqlite3_close(db); 
+        if (!sql_txn_begin(db)) { 
+            db_close(db); 
             serve_error(sc, 500);
             return;
         }
-        bool ok = update_note(db, values, field_count, id_sv);
-        if (ok) txn_commit(db);
-        else txn_rollback(db);
-        sqlite3_close(db);
+        bool ok = update_note(db, values, field_count, api_id.raw);
+        if (ok) sql_txn_commit(db);
+        else sql_txn_rollback(db);
+        db_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
         return;
@@ -148,17 +151,17 @@ void serve_notes_api(Serve_Context *sc) {
             serve_error(sc, 400);
             return;
         }
-        sqlite3 *db = open_webc_db();
+        db_t *db = open_webc_db();
         if (!db) { serve_error(sc, 500); return; }
-        if (!txn_begin(db)) { 
-            sqlite3_close(db); 
+        if (!sql_txn_begin(db)) { 
+            db_close(db); 
             serve_error(sc, 500);
             return;
         }
-        bool ok = delete_note(db, id_sv);
-        if (ok) txn_commit(db);
-        else txn_rollback(db);
-        sqlite3_close(db);
+        bool ok = delete_note(db, api_id.raw);
+        if (ok) sql_txn_commit(db);
+        else sql_txn_rollback(db);
+        db_close(db);
         if (!ok) { serve_error(sc, 500); return; }
         serve_ok(sc);
         return;

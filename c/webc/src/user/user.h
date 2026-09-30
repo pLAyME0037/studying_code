@@ -1,0 +1,33 @@
+#ifndef SRC_USER_H_
+#define SRC_USER_H_
+
+#include <stddef.h>
+#include <sqlite3.h>
+#include "module/nob.h"
+
+typedef struct {
+    const char *id;
+    const char *name;
+    const char *username;
+    const char *email;
+    const char *profile_pic;
+} User;
+
+DA_NEW(User, Users)
+
+static inline User user_data(void) {
+    User u = {
+        .name = "hello world",
+        .username = "hello_world",
+        .email = "helloworld1@gmail.com",
+        .profile_pic = "/resource/image/know_me.png",
+    };
+    return u;
+}
+
+bool load_users(sqlite3 *db, Users *rows);
+bool insert_user(sqlite3 *db, String_View *fields, size_t count);
+bool update_user(sqlite3 *db, String_View *fields, size_t count, String_View id);
+bool delete_user(sqlite3 *db, String_View id);
+
+#endif // SRC_USER_H_

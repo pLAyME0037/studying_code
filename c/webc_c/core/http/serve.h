@@ -3,10 +3,11 @@
 
 #include <stdbool.h>
 #include "module/nob.h"
+#include "id.h"
 
 typedef struct {
     int            client_fd;
-    String_View    route_id;   // id segment of ROUTE_ID_ACTION URIs (slice of uri)
+    Route_Id       route_id;   // id segment of ROUTE_ID_ACTION URIs (parsed once)
     String_Builder request;
     String_Builder response;
     String_Builder body;

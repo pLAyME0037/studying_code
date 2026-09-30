@@ -1,15 +1,19 @@
-<aside id="sidebar" class="group shrink-0 hidden md:flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-300">
+<aside id="sidebar"
+       class="shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-300 h-full">
 
-    <div class="relative group/item border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shrink-0">
-        <div id="sidebar-pad" class="user-card flex items-center">
+    <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+        <div id="sidebar-pad"
+             class="flex items-center p-3 user-card">
             <img src="({ STR(u.profile_pic); })"
                  alt="({ STR(u.name); })"
                  class="h-10 w-10 rounded-full shrink-0" />
             <div class="ml-3 min-w-0 nav-label">
                 <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">
-                    ({ STR(u.name); })</p>
+                    ({ STR(u.name); })
+                </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    ({ STR(u.email); })</p>
+                    ({ STR(u.email); })
+                </p>
             </div>
         </div>
 
@@ -18,19 +22,86 @@
         </div>
     </div>
 
-    <nav class="flex-1 p-3 space-y-1 no-scrollbar">
+    <nav class="flex-1 py-0 px-3 space-y-1 overflow-y-auto no-scrollbar">
+        <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 nav-label">
+            Clinic
+        </div>
+
+        <div class="relative group/item mb-1">
+            <a href="/"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/") && strcmp(CURRENT_PATH, "/") == 0,
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Main Form
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+                Main Form
+            </div>
+        </div>
+
+        <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 nav-label">
+            Reference Data
+        </div>
+
+        <div class="relative group/item mb-1">
+            <a href="/users"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/users"),
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Other Link
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+               Other Link 
+            </div>
+        </div>
+
+        <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 nav-label">
+            System
+        </div>
+
+        <div class="relative group/item mb-1">
+            <a href="/users"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/users"),
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Users
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+                Users
+            </div>
+        </div>
+
         <div class="relative group/item mb-1">
             <a href="/notes"
-               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/notes") || CURRENT_PATH[0] == '\0' || strcmp(CURRENT_PATH, "/") == 0,
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/notes"),
                    "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
                    "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">Notes</span>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Notes
+                </span>
             </a>
-
             <div class="sidebar-tooltip">
                 Notes
             </div>
@@ -45,7 +116,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">Version</span>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Version
+                </span>
             </a>
             <div class="sidebar-tooltip">
                 Version
@@ -61,7 +134,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
-                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">API</span>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    API
+                </span>
             </a>
             <div class="sidebar-tooltip">
                 API
@@ -94,3 +169,4 @@
         </form>
     </div>
 </aside>
+<div id="sidebar-backdrop" data-sidebar-close></div>

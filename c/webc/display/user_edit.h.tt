@@ -1,0 +1,41 @@
+<div>
+    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+        Edit User ID #({ STR(user.id); })
+    </h2>
+
+    <form method="POST" action="/users/({ STR(user.id); })/update" enctype="multipart/form-data"
+          class="mb-4 flex gap-2 items-end bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div>
+            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Name</label>
+            <input name="name" type="text" required value="({ ESCAPED(user.name); })"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Username</label>
+            <input name="username" type="text" value="({ ESCAPED(user.username); })"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Email</label>
+            <input name="email" type="text" value="({ ESCAPED(user.email); })"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        </div>
+        <div>
+            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">User Profile Picture</label>
+            ({ if (user.profile_pic != NULL && user.profile_pic[0] != '\0') { })
+            <div class="flex items-center gap-2 mb-1">
+                <img src="({ ESCAPED(user.profile_pic); })" alt="current"
+                     class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-600">
+                <span class="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[12rem]">({ ESCAPED(user.profile_pic); })</span>
+            </div>
+            ({ } })
+            <input name="profile_pic" type="file" accept="image/png,image/jpeg,image/gif,image/webp"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white text-sm file:mr-3 file:px-3 file:py-1 file:rounded file:border-0 file:bg-green-600 file:text-white file:cursor-pointer">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Leave empty to keep the current picture.</p>
+        </div>
+        <button type="submit"
+                class="px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-medium">Save</button>
+        <a href="/users"
+           class="px-4 py-2 rounded bg-gray-500 hover:bg-gray-600 text-white font-medium">Cancel</a>
+    </form>
+</div>

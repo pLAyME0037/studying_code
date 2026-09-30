@@ -5,31 +5,104 @@
 @source "./display";
 @source "./index.html";
 
-body.sidebar-collapsed #sidebar {
-  width: 3rem;
+/* CSS Variables for Sidebar */
+:root {
+    --sidebar-width: 15rem;
+    --sidebar-collapsed-width: 3rem;
 }
 
-body.sidebar-collapsed #sidebar .nav-label {
+/* Sidebar - Flex-based layout (not fixed) */
+#sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: width 0.25s ease;
+    border-right: 1px solid #e5e7eb;
+    background-color: #ffffff;
+}
+
+.dark #sidebar {
+    border-right-color: #374151;
+    background-color: #1f2937;
+}
+
+/* Main content area */
+main {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+}
+
+/* Collapsed State - Applied to html element */
+html.sidebar-collapsed #sidebar {
+    width: var(--sidebar-collapsed-width);
+}
+
+/* Hide labels AND section headers when collapsed */
+html.sidebar-collapsed #sidebar .nav-label,
+html.sidebar-collapsed #sidebar .nav-section {
     opacity: 0;
     width: 0;
-    margin-left: 0;
+    height: 0;
+    flex: none;
+    margin: 0;
+    padding: 0;
     overflow: hidden;
     white-space: nowrap;
+    transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease, padding 0.15s ease;
 }
 
+/* Sidebar nav padding */
+html.sidebar-collapsed #sidebar nav {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+}
+
+/* Sidebar padding adjustment */
+#sidebar #sidebar-pad {
+    padding: 0.3rem 0 0.3rem 1rem;
+}
+
+html.sidebar-collapsed #sidebar #sidebar-pad {
+    padding: 0.3rem 0;
+}
+
+/* Center icons when collapsed - perfect square */
+html.sidebar-collapsed #sidebar .user-card,
+html.sidebar-collapsed #sidebar .nav-link {
+    width: 100%;
+    justify-content: center;
+    padding: 0.5rem !important;
+    margin: 0.125rem 0;
+    border-radius: 0.375rem !important;
+    box-sizing: border-box;
+}
+
+html.sidebar-collapsed #sidebar .user-card img {
+    width: 2rem;
+    height: 2rem;
+}
+
+html.sidebar-collapsed #sidebar .nav-link:hover {
+    background-color: #f3f4f6;
+}
+
+.dark html.sidebar-collapsed #sidebar .nav-link:hover {
+    background-color: #374151;
+}
+
+/* Tooltip styles for collapsed state */
 #sidebar .sidebar-tooltip {
     display: none;
 }
 
-body.sidebar-collapsed #sidebar .sidebar-tooltip {
+html.sidebar-collapsed #sidebar .sidebar-tooltip {
     display: block;
     opacity: 0;
     pointer-events: none;
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    margin-left: 0.5rem;
+    position: fixed;
     padding: 0.25rem 0.5rem;
     border-radius: 0.375rem;
     background: #111827;
@@ -41,29 +114,147 @@ body.sidebar-collapsed #sidebar .sidebar-tooltip {
     transition: opacity 0.15s ease;
 }
 
-body.sidebar-collapsed #sidebar .group\/item:hover .sidebar-tooltip,
-body.sidebar-collapsed #sidebar .user-card:hover ~ .sidebar-tooltip {
+/* Show tooltip on hover when collapsed */
+html.sidebar-collapsed #sidebar .group\/item:hover .sidebar-tooltip {
     opacity: 1;
 }
 
-body.sidebar-collapsed #sidebar .user-card,
-body.sidebar-collapsed #sidebar .nav-link {
-    justify-content: center;
+html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
+    opacity: 1;
 }
 
-#sidebar #sidebar-pad {
-    padding: 0.3rem 0 0.3rem 1rem;
+/* Active link styling (matches template output) */
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    color: #4b5563;
+    text-decoration: none;
+    border-radius: 0.5rem;
+    margin: 0rem;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-body.sidebar-collapsed #sidebar #sidebar-pad {
-    padding: 0.3rem 0;
+.nav-link:hover {
+    background-color: #f3f4f6;
 }
 
-#sidebar {
-    width: 15rem;
+.dark .nav-link {
+    color: #9ca3af;
 }
 
-body.sidebar-collapsed #page-footer {
+.dark .nav-link:hover {
+    background-color: #374151;
+}
+
+/* Active state - matches template bg-indigo-50 / dark:bg-indigo-900/50 */
+.nav-link.bg-indigo-50,
+.nav-link.bg-indigo-900\/50 {
+    background-color: #eef2ff;
+    color: #4f46e5;
+    font-weight: 600;
+}
+
+.dark .nav-link.bg-indigo-50,
+.dark .nav-link.bg-indigo-900\/50 {
+    background-color: rgba(49, 46, 129, 0.5);
+    color: #c7d2fe;
+}
+
+/* Nav label base styles */
+.nav-label {
+    transition: opacity 0.15s ease, width 0.15s ease;
+}
+
+main {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
+
+main::-webkit-scrollbar {
+    width: 8px;
+}
+
+main::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+main::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+main::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+}
+
+.dark main::-webkit-scrollbar-thumb {
+    background-color: #4b5563;
+}
+
+.dark main::-webkit-scrollbar-thumb:hover {
+    background-color: #6b7280;
+}
+
+/* ===== Mobile overlay sidebar (viewport < 768px, matches Tailwind md) ===== */
+#sidebar-backdrop {
     display: none;
+}
+
+@media (max-width: 767.98px) {
+    #sidebar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 40;
+        width: var(--sidebar-width);
+        transform: translateX(-100%);
+        visibility: hidden;
+        transition: transform 0.25s ease, visibility 0.25s ease;
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+    }
+
+    html.mobile-sidebar-open #sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    html.mobile-sidebar-open #sidebar-backdrop {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    html.mobile-sidebar-open main {
+        overflow: hidden;
+    }
+
+    /* The desktop collapse state must not shrink the mobile drawer */
+    html.sidebar-collapsed #sidebar {
+        width: var(--sidebar-width);
+    }
+
+    html.sidebar-collapsed #sidebar .nav-label,
+    html.sidebar-collapsed #sidebar .nav-section {
+        opacity: 1;
+        width: auto;
+        height: auto;
+        overflow: visible;
+    }
+
+    html.sidebar-collapsed #sidebar nav {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    html.sidebar-collapsed #sidebar .user-card,
+    html.sidebar-collapsed #sidebar .nav-link {
+        justify-content: flex-start;
+    }
 }
 

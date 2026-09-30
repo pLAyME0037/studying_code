@@ -60,23 +60,23 @@ static void render_crud_edit_page(Serve_Context     *sc,
 }
 
 void serve_crud_list(Serve_Context *sc, const Crud_Module *mod) {
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
     Crud_Rows rows = {0};
     Crud_Form_Options fopts = {0};
     if (!crud_rows_load(db, mod, -1, &rows)) {
-        sqlite3_close(db);
+        db_close(db);
         serve_error(sc, 500);
         return;
     }
     if (!crud_form_options_load(db, mod, &fopts)) {
         crud_rows_free(&rows);
-        sqlite3_close(db);
+        db_close(db);
         serve_error(sc, 500);
         return;
     }
-    sqlite3_close(db);
+    db_close(db);
 
     sc->body.count = 0;
     render_crud_list_page(sc, mod, &rows, &fopts);
@@ -157,10 +157,10 @@ void serve_crud_create(Serve_Context *sc, const Crud_Module *mod) {
         }
     }
 
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (!db) { free(values); serve_error(sc, 500); return; }
     bool ok = crud_insert(db, mod, values);
-    sqlite3_close(db);
+    db_close(db);
     free(values);
 
     if (!ok) { serve_error(sc, 500); return; }
@@ -181,23 +181,23 @@ void serve_crud_create(Serve_Context *sc, const Crud_Module *mod) {
 }
 
 void serve_crud_edit(Serve_Context *sc, const Crud_Module *mod, int id) {
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
     Crud_Rows rows = {0};
     if (!crud_rows_load(db, mod, id, &rows)) {
-        sqlite3_close(db);
+        db_close(db);
         serve_error(sc, 500);
         return;
     }
     Crud_Form_Options fopts = {0};
     if (!crud_form_options_load(db, mod, &fopts)) {
         crud_rows_free(&rows);
-        sqlite3_close(db);
+        db_close(db);
         serve_error(sc, 500);
         return;
     }
-    sqlite3_close(db);
+    db_close(db);
 
     if (rows.count == 0) {
         crud_rows_free(&rows);
@@ -226,10 +226,10 @@ void serve_crud_update(Serve_Context *sc, const Crud_Module *mod, int id) {
     if (!values) { serve_error(sc, 500); return; }
     crud_gather_values(body, mod, values);
 
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (!db) { free(values); serve_error(sc, 500); return; }
     bool ok = crud_update(db, mod, id, values);
-    sqlite3_close(db);
+    db_close(db);
     free(values);
 
     if (!ok) { serve_error(sc, 500); return; }
@@ -237,11 +237,11 @@ void serve_crud_update(Serve_Context *sc, const Crud_Module *mod, int id) {
 }
 
 void serve_crud_delete(Serve_Context *sc, const Crud_Module *mod, int id) {
-    sqlite3 *db = open_webc_db();
+    db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
     bool ok = crud_delete(db, mod, id);
-    sqlite3_close(db);
+    db_close(db);
 
     if (!ok) { serve_error(sc, 500); return; }
     http_render_redirect(sc, 302, mod->path);

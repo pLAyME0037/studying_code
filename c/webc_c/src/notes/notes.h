@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "sqlite3.h"
 #include "module/nob.h"
+#include "../db/sql.h"
 
 typedef struct {
     const char *id;
@@ -16,9 +16,9 @@ typedef struct {
 
 DA_NEW(Note, Notes)
 
-bool load_notes(sqlite3 *db, Notes *notes);
-bool insert_note(sqlite3 *db, String_View *values, size_t count);
-bool update_note(sqlite3 *db, String_View *values, size_t count, String_View id);
-bool delete_note(sqlite3 *db, String_View id);
+bool load_notes(db_t *db, Notes *notes);
+bool insert_note(db_t *db, String_View *values, size_t count);
+bool update_note(db_t *db, String_View *values, size_t count, String_View id);
+bool delete_note(db_t *db, String_View id);
 
 #endif // SRC_NOTES_H_

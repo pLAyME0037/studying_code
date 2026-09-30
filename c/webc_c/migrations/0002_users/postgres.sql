@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+    name TEXT NOT NULL,
+    username TEXT NOT NULL,
+    email TEXT NOT NULL,
+    profile_pic BYTEA NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

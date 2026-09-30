@@ -1,50 +1,56 @@
 #include <stdbool.h>
-#include <sqlite3.h>
 
 #include "../db/db.h"
 #include "user.h"
 #include "module/nob.h"
 
-bool load_users(sqlite3 *db, Users *rows) {
+bool load_users(db_t *db, Users *rows) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
-    const char *sql = "SELECT id, name, username, email, profile_pic "
-                      "FROM Users "
-                      "ORDER BY id ASC;";
+    sql_stmt stmt = {0};
+    // Table name case differs: MySQL on Linux stores `users` (from the
+    // migration file) and is case-sensitive there.
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "SELECT id, name, username, email, profile_pic "
+                         "FROM Users "
+                         "ORDER BY id ASC;",
+        [SQL_MYSQL]    = "SELECT id, name, username, email, profile_pic "
+                         "FROM users "
+                         "ORDER BY id ASC;",
+        [SQL_POSTGRES] = "SELECT id, name, username, email, profile_pic "
+                         "FROM users "
+                         "ORDER BY id ASC;",
+    };
 
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
 
-    int ret = SQLITE_DONE;
-    for (ret = sqlite3_step(stmt); ret == SQLITE_ROW; ret = sqlite3_step(stmt)) {
+    Sql_Step ret = SQL_DONE;
+    for (ret = sql_step(&stmt); ret == SQL_ROW; ret = sql_step(&stmt)) {
         int column = 0;
-        const char *id          = (const char *)sqlite3_column_text(stmt, column++);
-        const char *name        = (const char *)sqlite3_column_text(stmt, column++);
-        const char *username    = (const char *)sqlite3_column_text(stmt, column++);
-        const char *email       = (const char *)sqlite3_column_text(stmt, column++);
-        const char *profile_pic = (const char *)sqlite3_column_text(stmt, column++);
+        const char *id          = sql_column_text(&stmt, column++);
+        const char *name        = sql_column_text(&stmt, column++);
+        const char *username    = sql_column_text(&stmt, column++);
+        const char *email       = sql_column_text(&stmt, column++);
+        const char *profile_pic = sql_column_text(&stmt, column++);
         Users_add(rows, ((User) {
             .id          = id          ? temp_strdup(id)          : NULL,
             .name        = name        ? temp_strdup(name)        : NULL,
-            .username    = username    ? temp_strdup(username)  : NULL,
-            .email       = email       ? temp_strdup(email)     : NULL,
+            .username    = username    ? temp_strdup(username)    : NULL,
+            .email       = email       ? temp_strdup(email)       : NULL,
             .profile_pic = profile_pic ? temp_strdup(profile_pic) : NULL,
         }));
     }
 
-    if (ret != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
+    if (ret != SQL_DONE) {
+        nob_log(NOB_ERROR, "load_users: %s", db_errmsg(db));
         return_defer(false);
     }
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }
 
-bool insert_user(sqlite3 *db, String_View *fields, size_t count) {
+bool insert_user(db_t *db, String_View *fields, size_t count) {
     bool result = true;
 
     if (count < 4) return false;
@@ -52,106 +58,82 @@ bool insert_user(sqlite3 *db, String_View *fields, size_t count) {
     String_View username    = fields[1];
     String_View email       = fields[2];
     String_View profile_pic = fields[3];
-    sqlite3_stmt *stmt = NULL;
-    const char *sql =  "INSERT OR REPLACE INTO Users (name, username, email, profile_pic) VALUES (?, ?, ?, ?);";
+    sql_stmt stmt = {0};
+    // Conflict handling is the dialect-specific part (uuid PKs never collide
+    // in practice, so MySQL/Postgres just insert).
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "INSERT OR REPLACE INTO Users "
+                         "(name, username, email, profile_pic) "
+                         "VALUES (?, ?, ?, ?);",
+        [SQL_MYSQL]    = "INSERT INTO users "
+                         "(name, username, email, profile_pic) "
+                         "VALUES (?, ?, ?, ?);",
+        [SQL_POSTGRES] = "INSERT INTO users "
+                         "(name, username, email, profile_pic) "
+                         "VALUES ($1, $2, $3, $4);",
+    };
 
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 1, name.data, (int)name.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 2, username.data, (int)username.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 3, email.data, (int)email.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 4, profile_pic.data, (int)profile_pic.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(name)))        return_defer(false);
+    if (!sql_bind(&stmt, 2, SQL_SV(username)))    return_defer(false);
+    if (!sql_bind(&stmt, 3, SQL_SV(email)))       return_defer(false);
+    if (!sql_bind(&stmt, 4, SQL_SV(profile_pic))) return_defer(false);
+    if (!sql_final_step(&stmt))                   return_defer(false);
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }
 
-bool update_user(sqlite3 *db, String_View *fields, size_t count, String_View id) {
+bool update_user(db_t *db, String_View *fields, size_t count, String_View id) {
     bool result = true;
     if (count < 4) return false;
     String_View name        = fields[0];
     String_View username    = fields[1];
     String_View email       = fields[2];
     String_View profile_pic = fields[3];
-    sqlite3_stmt *stmt = NULL;
+    sql_stmt stmt = {0};
     // profile_pic is kept as-is when the form did not carry a new file
     // (value NULL or empty), so editing name/email never wipes the picture.
-    const char *sql = "UPDATE Users SET name = ?, username = ?, email = ?, "
-                      "profile_pic = COALESCE(NULLIF(?, ''), profile_pic) "
-                      "WHERE id = ?;";
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE Users SET name = ?, username = ?, email = ?, "
+                         "profile_pic = COALESCE(NULLIF(?, ''), profile_pic) "
+                         "WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE users SET name = ?, username = ?, email = ?, "
+                         "profile_pic = COALESCE(NULLIF(?, ''), profile_pic) "
+                         "WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE users SET name = $1, username = $2, email = $3, "
+                         "profile_pic = COALESCE(NULLIF($4, ''), profile_pic) "
+                         "WHERE id = $5;",
+    };
 
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 1, name.data, (int)name.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 2, username.data, (int)username.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 3, email.data, (int)email.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 4, profile_pic.data, (int)profile_pic.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 5, id.data, (int)id.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(name)))        return_defer(false);
+    if (!sql_bind(&stmt, 2, SQL_SV(username)))    return_defer(false);
+    if (!sql_bind(&stmt, 3, SQL_SV(email)))       return_defer(false);
+    if (!sql_bind(&stmt, 4, SQL_SV(profile_pic))) return_defer(false);
+    if (!sql_bind(&stmt, 5, SQL_SV(id)))          return_defer(false);
+    if (!sql_final_step(&stmt))                   return_defer(false);
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }
 
-bool delete_user(sqlite3 *db, String_View id) {
+bool delete_user(db_t *db, String_View id) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
-    const char *sql = "DELETE FROM Users WHERE id = ?;";
+    sql_stmt stmt = {0};
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "DELETE FROM Users WHERE id = ?;",
+        [SQL_MYSQL]    = "DELETE FROM users WHERE id = ?;",
+        [SQL_POSTGRES] = "DELETE FROM users WHERE id = $1;",
+    };
 
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_text(stmt, 1, id.data, (int)id.count, SQLITE_TRANSIENT) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }

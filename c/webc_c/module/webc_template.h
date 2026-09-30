@@ -41,14 +41,14 @@
 #define SERVE_READ(plural, Plural_Type)                                   \
     void serve_##plural##_read(Serve_Context *sc) {                       \
         Plural_Type dt = {0};                                             \
-        sqlite3 *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                     \
         if (!db) { serve_error(sc, 500); return; }                        \
         if (!load_##plural(db, &dt)) {                                    \
-            sqlite3_close(db);                                            \
+            db_close(db);                                            \
             serve_error(sc, 500);                                         \
             return;                                                       \
         }                                                                 \
-        sqlite3_close(db);                                                \
+        db_close(db);                                                \
         sc->body.count = 0;                                               \
         render_##plural##_page(sc, dt);                                   \
         free(dt.items);                                                   \
@@ -104,18 +104,18 @@
             return;                                                       \
         }                                                                 \
                                                                           \
-        sqlite3 *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                     \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!txn_begin(db)) {                                             \
-            sqlite3_close(db);                                            \
+        if (!sql_txn_begin(db)) {                                             \
+            db_close(db);                                            \
             serve_error(sc, 500);                                         \
             return;                                                       \
         }                                                                 \
                                                                           \
         bool ok = insert_##singular(db, values, field_count);             \
-        if (ok) { txn_commit(db); }                                       \
-        else    { txn_rollback(db); }                                     \
-        sqlite3_close(db);                                                \
+        if (ok) { sql_txn_commit(db); }                                       \
+        else    { sql_txn_rollback(db); }                                     \
+        db_close(db);                                                \
                                                                           \
         if (!ok) { serve_error(sc, 500); return; }                        \
         http_render_redirect(sc, 302, "/" #plural);                       \
@@ -123,24 +123,24 @@
 
 #define SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)        \
     void serve_##plural##_edit(Serve_Context *sc) {                     \
-        String_View id = {0};                                           \
-        if (!parse_id_from_uri(sc->uri, "/" #plural "/", "/edit", &id)) { \
+        Route_Id id = sc->route_id;   /* parsed once at the route gate */ \
+        if (id.kind == ID_NONE) {                                       \
             serve_error(sc, 404);                                       \
             return;                                                     \
         }                                                               \
         Plural_Type dt = {0};                                           \
-        sqlite3 *db = open_webc_db();                                   \
+        db_t *db = open_webc_db();                                   \
         if (!db) { serve_error(sc, 500); return; }                      \
         if (!load_##plural(db, &dt)) {                                  \
-            sqlite3_close(db);                                          \
+            db_close(db);                                          \
             serve_error(sc, 500);                                       \
             return;                                                     \
         }                                                               \
-        sqlite3_close(db);                                              \
+        db_close(db);                                              \
         Singular_Type *target = NULL;                                   \
         for (size_t i = 0; i < dt.count; ++i) {                         \
             if (dt.items[i].id != NULL                                 \
-                && sv_eq(sv_from_cstr(dt.items[i].id), id)) {           \
+                && sv_eq(sv_from_cstr(dt.items[i].id), id.raw)) {       \
                 target = &dt.items[i];                                  \
                 break;                                                  \
             }                                                           \
@@ -158,8 +158,8 @@
 
 #define SERVE_UPDATE(plural, singular, fields)                            \
     void serve_##plural##_update(Serve_Context *sc) {                     \
-        String_View id = {0};                                               \
-        if (!parse_id_from_uri(sc->uri, "/" #plural "/", "/update", &id)) { \
+        Route_Id id = sc->route_id;   /* parsed once at the route gate */ \
+        if (id.kind == ID_NONE) {                                         \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
@@ -175,17 +175,17 @@
             return;                                                       \
         }                                                                 \
                                                                           \
-        sqlite3 *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                     \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!txn_begin(db)) {                                             \
-            sqlite3_close(db);                                            \
+        if (!sql_txn_begin(db)) {                                             \
+            db_close(db);                                            \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
-        bool ok = update_##singular(db, values, field_count, id);         \
-        if (ok) { txn_commit(db); }                                       \
-        else    { txn_rollback(db); }                                     \
-        sqlite3_close(db);                                                \
+        bool ok = update_##singular(db, values, field_count, id.raw);   \
+        if (ok) { sql_txn_commit(db); }                                       \
+        else    { sql_txn_rollback(db); }                                     \
+        db_close(db);                                                \
                                                                           \
         if (!ok) { serve_error(sc, 500); return; }                        \
         http_render_redirect(sc, 302, "/" #plural);                       \
@@ -193,22 +193,22 @@
 
 #define SERVE_DELETE(plural, singular)                                    \
     void serve_##plural##_delete(Serve_Context *sc) {                     \
-        String_View id = {0};                                               \
-        if (!parse_id_from_uri(sc->uri, "/" #plural "/", "/delete", &id)) { \
+        Route_Id id = sc->route_id;   /* parsed once at the route gate */ \
+        if (id.kind == ID_NONE) {                                         \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
-        sqlite3 *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                     \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!txn_begin(db)) {                                             \
-            sqlite3_close(db);                                            \
+        if (!sql_txn_begin(db)) {                                             \
+            db_close(db);                                            \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
-        bool ok = delete_##singular(db, id);                              \
-        if (ok) { txn_commit(db); }                                       \
-        else    { txn_rollback(db); }                                     \
-        sqlite3_close(db);                                                \
+        bool ok = delete_##singular(db, id.raw);                         \
+        if (ok) { sql_txn_commit(db); }                                       \
+        else    { sql_txn_rollback(db); }                                     \
+        db_close(db);                                                \
         if (!ok) { serve_error(sc, 500); return; }                        \
         http_render_redirect(sc, 302, "/" #plural);                       \
     }

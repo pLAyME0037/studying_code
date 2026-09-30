@@ -1,0 +1,39 @@
+<tr class="md-add-row hidden">
+    ({ for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
+        <td class="px-2 py-1">
+            <label class="block text-xs text-gray-500 dark:text-gray-400 mb-0.5">
+                ({ ESCAPED(config->children[ti].columns[cci].label); })
+            </label>
+        ({ if (config->children[ti].columns[cci].type == COL_TYPE_FK_SELECT) { })
+            <select form="mdf-a-({ STR(config->children[ti].table); })-({ LLINT(rows->items[ri].id); })"
+                    name="({ STR(config->children[ti].columns[cci].name); })" required
+                    class="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                ({ for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { })
+                    <option value="({ LLINT(config->children[ti].columns[cci].opt[o].id); })">
+                        ({ ESCAPED(config->children[ti].columns[cci].opt[o].label); })
+                    </option>
+                ({ } })
+            </select>
+        ({ } else { })
+            <input form="mdf-a-({ STR(config->children[ti].table); })-({ LLINT(rows->items[ri].id); })"
+                   name="({ STR(config->children[ti].columns[cci].name); })"
+                   type="({ if (config->children[ti].columns[cci].type == COL_TYPE_DATE) { })date({ } else if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
+                   ({ if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })step="any" ({ } })
+                   class="w-full px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        ({ } })
+        </td>
+    ({ } })
+    <td class="px-2 py-1">
+        <div class="flex flex-col gap-1 items-start">
+            <button type="submit" form="mdf-a-({ STR(config->children[ti].table); })-({ LLINT(rows->items[ri].id); })"
+                    title="Confirm" aria-label="Confirm"
+                    class="p-1 rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </button>
+            <button type="button" class="md-discard p-1 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
+                    title="Discard" aria-label="Discard">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+    </td>
+</tr>

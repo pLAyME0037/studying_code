@@ -1,0 +1,20 @@
+<div class="max-w-2xl mx-auto">
+    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
+        ({ if (id == 0) { })Add ({ } else { })Edit ({ } }) ({ STR(mod->title); })
+    </h2>
+
+    <form method="POST" action="({ STR(mod->path); })/({ INT(id); })/update"
+          class="p-5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            ({ #include "./crud_fields.h" })
+        </div>
+        <div class="flex justify-end gap-2 mt-4">
+            <button type="button" onclick="history.back()"
+                    class="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600">
+                Discard
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-medium">Confirm</button>
+        </div>
+    </form>
+</div>

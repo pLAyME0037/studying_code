@@ -1,0 +1,44 @@
+<div>
+    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">
+        Clinic Management System
+    </h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+        Select a module to manage.
+    </p>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        ({ for (size_t i = 0; i < crud_modules_count; ++i) { })
+            <a href="({ STR(crud_modules[i]->path); })"
+               class="group flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md transition-all duration-200">
+                <svg class="w-8 h-8 mb-3 text-indigo-600 dark:text-indigo-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="({ STR(dashboard_icon(i)); })" />
+                </svg>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
+                    ({ ESCAPED(crud_modules[i]->title); })
+                </span>
+            </a>
+        ({ } })
+        ({ for (size_t i = 0; i < custom->count; ++i) { })
+            <a href="({ STR(custom->items[i].path); })"
+               class="group flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md transition-all duration-200">
+                <svg class="w-8 h-8 mb-3 text-indigo-600 dark:text-indigo-400"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="({ STR(custom->items[i].icon); })" />
+                </svg>
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
+                    ({ ESCAPED(custom->items[i].title); })
+                </span>
+            </a>
+        ({ } })
+    </div>
+</div>
