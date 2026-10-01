@@ -75,6 +75,7 @@ int build_bundle(const char *webc_build_time) {
         { .file_path = "./resource/image/user1.png" },
         { .file_path = "./resource/image/know_me.png" },
         { .file_path = "./js/ListExpandSwitcher.js" },
+        { .file_path = "./js/PaginationSwitcher.js" },
         { .file_path = "./js/sidebarSwitcher.js" },
         { .file_path = "./js/themeSwitcher.js" },
     };

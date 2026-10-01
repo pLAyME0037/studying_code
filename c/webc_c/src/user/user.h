@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include "module/nob.h"
 #include "../db/sql.h"
+#include "core/display/paging.h"
 
 typedef struct {
     const char *id;
@@ -25,7 +26,8 @@ static inline User user_data(void) {
     return u;
 }
 
-bool read_users(db_t *db, Users *rows);
+bool read_users(db_t *db, Users *rows, const Page_Info *slice);
+bool count_users(db_t *db, size_t *out);
 bool create_user(db_t *db, String_View *fields, size_t count);
 bool update_user(db_t *db, String_View *fields, size_t count, String_View id);
 bool delete_user(db_t *db, String_View id);

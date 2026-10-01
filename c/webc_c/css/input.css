@@ -28,7 +28,6 @@
     background-color: #1f2937;
 }
 
-/* Main content area */
 main {
     flex: 1;
     min-width: 0;
@@ -93,7 +92,6 @@ html.sidebar-collapsed #sidebar .nav-link:hover {
     background-color: #374151;
 }
 
-/* Tooltip styles for collapsed state */
 #sidebar .sidebar-tooltip {
     display: none;
 }
@@ -114,7 +112,6 @@ html.sidebar-collapsed #sidebar .sidebar-tooltip {
     transition: opacity 0.15s ease;
 }
 
-/* Show tooltip on hover when collapsed */
 html.sidebar-collapsed #sidebar .group\/item:hover .sidebar-tooltip {
     opacity: 1;
 }
@@ -123,7 +120,6 @@ html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
     opacity: 1;
 }
 
-/* Active link styling (matches template output) */
 .nav-link {
     display: flex;
     align-items: center;
@@ -147,7 +143,6 @@ html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
     background-color: #374151;
 }
 
-/* Active state - matches template bg-indigo-50 / dark:bg-indigo-900/50 */
 .nav-link.bg-indigo-50,
 .nav-link.bg-indigo-900\/50 {
     background-color: #eef2ff;
@@ -161,7 +156,6 @@ html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
     color: #c7d2fe;
 }
 
-/* Nav label base styles */
 .nav-label {
     transition: opacity 0.15s ease, width 0.15s ease;
 }

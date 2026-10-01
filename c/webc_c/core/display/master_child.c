@@ -6,6 +6,7 @@
 #include "core/layout/header.h"
 #include "core/layout/footer.h"
 #include "core/http/utils.h"
+#include "core/display/paging.h"
 
 // =========================================================================
 // Master-child view engine: loads a configured master table plus its child
@@ -168,7 +169,8 @@ static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCo
 
 static bool md_load_master_with_children(db_t                  *db,
                                          const MD_MasterConfig *config,
-                                         MD_MasterRows         *rows)
+                                         MD_MasterRows         *rows,
+                                         const Page_Info       *slice)
 {
     String_Builder cl = {0};
     sb_append_cstr(&cl, config->id_column);
@@ -177,7 +179,13 @@ static bool md_load_master_with_children(db_t                  *db,
         sb_append_cstr(&cl, config->columns[ci2].name);
     }
     sb_append_null(&cl);
-    char *sql = temp_sprintf("SELECT %s FROM %s ORDER BY %s DESC;", cl.items, config->table, config->id_column);
+    // ORDER BY %s DESC is the single line that decides master order.
+    // Child lists are always loaded in full (they are bounded per master
+    // and the template windows them); only the master list takes a window.
+    char *sql = temp_sprintf("SELECT %s FROM %s ORDER BY %s DESC%s;",
+            cl.items, config->table, config->id_column,
+            slice ? temp_sprintf(" LIMIT %zu OFFSET %zu", slice->per_page, slice->offset)
+                  : "");
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
         return false;
@@ -227,15 +235,54 @@ static bool md_load_master_with_children(db_t                  *db,
 
 // ---- entry point --------------------------------------------------------
 
+// Total master rows (drives the pager; the window itself is applied by
+// md_load_master_with_children's LIMIT/OFFSET).
+static bool md_count_masters(db_t *db, const MD_MasterConfig *config, size_t *out) {
+    char *sql = temp_sprintf("SELECT count(*) FROM %s;", config->table);
+    sql_stmt stmt = {0};
+    if (!sql_prepare(db, sql, &stmt)) return false;
+    bool ok = false;
+    if (sql_step(&stmt) == SQL_ROW) {
+        *out = (size_t)sql_column_int64(&stmt, 0);
+        ok = true;
+    } else {
+        nob_log(NOB_ERROR, "master_child count: %s", db_errmsg(db));
+    }
+    sql_finalize(&stmt);
+    return ok;
+}
+
 void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     db_t *db = open_webc_db();
     if (!db) {
         serve_error(sc, 500);
         return;
     }
+    // ?fragment=all: load everything, render the bare pagination store
+    // (no header/footer) -- the payload js/PaginationSwitcher.js caches.
+    bool fragment = page_fragment_requested(sc->query_string);
+    Page_Info page_info = {0};                    // master list window
+    page_info_parse(sc->query_string, "page", &page_info);
+    bool windowed = !fragment;
+    if (windowed && !md_count_masters(db, config, &page_info.total)) {
+        db_close(db);
+        serve_error(sc, 500);
+        return;
+    }
+    if (windowed) page_info_finish(&page_info, page_info.total);
+    // Child tabs share one page key per table (?notes_page=N for every
+    // master); totals are per master and computed in the template.
+    size_t child_slot_count = config->children_count ? config->children_count : 1;
+    Page_Info child_pages[child_slot_count];
+    for (size_t ti = 0; ti < config->children_count; ++ti) {
+        page_info_parse(sc->query_string,
+                        temp_sprintf("%s_page", config->children[ti].table),
+                        &child_pages[ti]);
+    }
     MD_MasterRows *rows = md_master_rows_new();
     MD_FormCols form_cols = {0};
-    bool ok = md_load_master_with_children(db, config, rows)
+    bool ok = md_load_master_with_children(db, config, rows,
+                                           windowed ? &page_info : NULL)
         && md_form_cols_load(db, config, &form_cols);
     if (ok) {
         for (size_t i = 0; i < config->column_count; ++i) {
@@ -269,12 +316,18 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
         serve_error(sc, 500);
         return;
     }
+    if (fragment) page_info_finish(&page_info, rows->count);
     String_Builder *sb = &sc->body;
     sb->count = 0;
     // Route path feeds NAV_ACTIVE highlighting in the sidebar and the
     // ?redirect= targets of every mutation form on this page.
     const char *md_path = temp_sprintf("%.*s", (int)sc->uri.count, sc->uri.data);
-    render_page_header(sb, config->title, md_path);
+    // Pager scope contract (see display/component/pagination.h.tt).
+    String_View page_query = sc->query_string;
+    const char *page_base = md_path;
+    const char *page_key = "page";
+    const char *page_container = "mc-tbody";
+    if (!fragment) render_page_header(sb, config->title, md_path);
 #define OUT(buf, size) sb_append_buf(sb, buf, size);
 #define INT(v) sb_append_cstr(sb, temp_sprintf("%zu", v));
 #define LLINT(v) sb_append_cstr(sb, temp_sprintf("%lld", v));
@@ -288,7 +341,7 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
 #undef STR
 #undef ESCAPED
 #undef PAGE_TITLE
-    render_page_footer(sb);
+    if (!fragment) render_page_footer(sb);
     md_master_rows_free(rows);
     http_render_response(sc, 200, "text/html", sb_to_sv(*sb));
 }

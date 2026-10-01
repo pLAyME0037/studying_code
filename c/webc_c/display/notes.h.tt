@@ -1,4 +1,5 @@
 <div>
+({ if (!fragment) { })
     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
         SQLite Notes
     </h2>
@@ -20,7 +21,13 @@
             Add note
         </button>
     </form>
+({ } })
 
+({ if (fragment) { })
+    <div id="pg-store" hidden>
+        <table data-pg-rows="({ STR(page_container); })" data-pg-unit="1">
+            <tbody>
+({ } else { })
     <table class="w-full text-left border-collapse overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <thead class="bg-indigo-600 text-white">
             <tr>
@@ -31,7 +38,8 @@
                 <th class="px-4 py-3 font-semibold">Actions</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+        <tbody id="({ STR(page_container); })" class="divide-y divide-gray-200 dark:divide-gray-700">
+({ } })
             ({ if (notes.count == 0) { })
                 <tr>
                     <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -54,6 +62,14 @@
                     </td>
                 </tr>
             ({ } })
+({ if (fragment) { })
+            </tbody>
+        </table>
+    </div>
+    ({ #include "./component/pager_templates.h" })
+({ } else { })
         </tbody>
     </table>
+    ({ #include "./component/pagination.h" })
+({ } })
 </div>

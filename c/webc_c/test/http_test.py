@@ -347,6 +347,124 @@ def main():
     t.chk("md delete removed row",
           db_query(DB, "SELECT count(*) FROM notes WHERE id=?", (mid,)), 0)
 
+    # ---- pagination: SSR window, clamps, fragment prefetch contract ------
+    def row_ids(page_html, path):
+        """Ids of the edit links in one list page (one per visible row)."""
+        return [p.split('"')[0].split('/')[0]
+                for p in page_html.split(f'href="{path}/')[1:]]
+
+    stamps = []
+    for i in range(5):
+        st, hdr, _, _ = post_form(
+            "/users/create?redirect=/people",
+            {"name": f"PG U{i}", "username": f"pg_u{i}",
+             "email": f"pg_u{i}@t.com"})
+        stamps.append(st)
+    t.chk("pg seed users", stamps, [302] * 5)
+    # user ids are generated uuids: fetch pg_u1's real id for FK + markup
+    target_mid = db_query(DB, "SELECT id FROM users WHERE username='pg_u1'")
+    for title in ("pg_note_a", "pg_note_b"):
+        st, hdr, _, _ = post_form(
+            f"/notes/create?user_id={target_mid}&redirect=/people",
+            {"title": title, "body": "pagination fixture"})
+        t.chk(f"pg seed {title}", st, 302)
+
+    n_users = db_query(DB, "SELECT count(*) FROM users")
+
+    st, b1, _ = c.get("/users?per_page=1")
+    h1 = b1.decode()
+    st2, b2, _ = c.get("/users?per_page=1&page=2")
+    h2 = b2.decode()
+    t.chk("users per_page=1 window",
+          (st, len(row_ids(h1, "/users")), len(row_ids(h2, "/users"))),
+          (200, 1, 1))
+    t.chk("users page1/page2 disjoint",
+          row_ids(h1, "/users") != row_ids(h2, "/users"), "True")
+    t.chk("users pager attrs",
+          ('data-pg-container="users-tbody"' in h1
+           and 'data-pg-key="page"' in h1
+           and 'data-pg-per="1"' in h1), "True")
+
+    st, bd, _ = c.get("/users")
+    t.chk("single-page list still shows pager bar",
+          (st, 'data-pg-container="users-tbody"' in bd.decode()), (200, True))
+
+    st, bl, _ = c.get("/users?per_page=1&page=999")
+    stl, bn, _ = c.get(f"/users?per_page=1&page={n_users}")
+    t.chk("page=999 clamps to last page", (st, bl == bn), (200, True))
+    st, ba, _ = c.get("/users?per_page=1&page=abc")
+    st0, b0, _ = c.get("/users?per_page=1&page=1")
+    t.chk("page=abc is page 1", (st, ba == b0), (200, True))
+    st, b9, _ = c.get("/users?per_page=9999")
+    h9 = b9.decode()
+    t.chk("per_page=9999 clamps (all rows, one-page pager bar)",
+          (st, len(row_ids(h9, "/users")) == n_users,
+           'data-pg-container' in h9), (200, True, True))
+    st, bz, _ = c.get("/users?per_page=0")
+    t.chk("per_page=0 falls back to default",
+          (st, len(row_ids(bz.decode(), "/users")) == n_users), (200, True))
+
+    st, bf, _ = c.get("/users?per_page=1&fragment=all")
+    hf = bf.decode()
+    t.chk("users fragment payload",
+          (st, '<!DOCTYPE' in hf, 'id="pg-store"' in hf,
+           'data-pg-rows="users-tbody"' in hf), (200, False, True, True))
+    t.chk("users fragment has a pager template per page",
+          (hf.count('<template data-pg-pager="users-tbody"') == n_users,
+           'data-pg-n="2"' in hf), (True, True))
+    t.chk("users fragment holds every row",
+          len(row_ids(hf, "/users")), n_users)
+
+    st, nn, _ = c.get("/notes?per_page=1")
+    stn2, nn2, _ = c.get("/notes?per_page=1&page=2")
+    t.chk("notes per_page=1 window",
+          (st, len(row_ids(nn.decode(), "/notes")),
+           len(row_ids(nn2.decode(), "/notes"))), (200, 1, 1))
+
+    st, bp, _ = c.get("/people?per_page=1")
+    hp = bp.decode()
+    t.chk("people master pager + window",
+          (st, 'data-pg-container="mc-tbody"' in hp,
+           hp.count('class="detail-panel-row"')), (200, True, 1))
+
+    # find the windowed page that shows the master owning pg_note_a/b
+    master_page = None
+    for p in range(1, n_users + 1):
+        _, bp, _ = c.get(f"/people?per_page=1&page={p}")
+        if f'data-master-id="{target_mid}"' in bp.decode():
+            master_page = p
+            break
+    t.chk("target master found by paging through masters",
+          master_page is not None, "True")
+    st, cp, _ = c.get(f"/people?per_page=1&page={master_page}")
+    hc = cp.decode()
+    t.chk("child pager present",
+          f'data-pg-container="mc-tbody-notes-{target_mid}"' in hc, "True")
+    st, cq, _ = c.get(
+        f"/people?per_page=1&page={master_page}&notes_page=2")
+    hq = cq.decode()
+    on1 = {x for x in ("pg_note_a", "pg_note_b") if x in hc}
+    on2 = {x for x in ("pg_note_a", "pg_note_b") if x in hq}
+    t.chk("child window shows exactly one note per page",
+          (len(on1), len(on2), on1 != on2), (1, 1, True))
+    st, c9, _ = c.get(
+        f"/people?per_page=1&page={master_page}&notes_page=999")
+    h9p = c9.decode()
+    t.chk("notes_page=999 clamps to last child page",
+          (st, len({x for x in ("pg_note_a", "pg_note_b")
+                    if x in h9p})), (200, 1))
+
+    st, pff, _ = c.get("/people?per_page=1&fragment=all")
+    hpf = pff.decode()
+    t.chk("people fragment stores",
+          (st, '<!DOCTYPE' in hpf, 'id="pg-store"' in hpf,
+           'data-pg-rows="mc-tbody"' in hpf,
+           'data-pg-unit="3"' in hpf),
+          (200, False, True, True, True))
+    t.chk("people fragment child store + master pagers",
+          (f'data-pg-rows="mc-tbody-notes-{target_mid}"' in hpf,
+           '<template data-pg-pager="mc-tbody"' in hpf), (True, True))
+
     ok = t.summary()
     sys.exit(0 if ok else 1)
 

@@ -7,13 +7,15 @@
 
 #include "notes.h"
 #include "../db/db.h"
+#include "core/display/paging.h"
 
-bool read_notes(db_t *db, Notes *notes) {
+bool read_notes(db_t *db, Notes *notes, const Page_Info *slice) {
     bool result = true;
     sql_stmt stmt = {0};
     // `datetime(..., 'localtime')` is SQLite-only; the other dialects
     // format/return the stored timestamp as-is.
-    static const char *const q[SQL_LANG_COUNT] = {
+    // ORDER BY created_at DESC is the single line that decides list order.
+    static const char *const q_all[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "SELECT id, user_id, title, "
                          "datetime(created_at, 'localtime'), body "
                          "FROM Notes ORDER BY created_at DESC;",
@@ -23,8 +25,28 @@ bool read_notes(db_t *db, Notes *notes) {
                          "TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'), body "
                          "FROM notes ORDER BY created_at DESC;",
     };
+    // Same query with the page window appended (limit/offset bound below).
+    static const char *const q_page[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "SELECT id, user_id, title, "
+                         "datetime(created_at, 'localtime'), body "
+                         "FROM Notes ORDER BY created_at DESC "
+                         "LIMIT ? OFFSET ?;",
+        [SQL_MYSQL]    = "SELECT id, user_id, title, created_at, body "
+                         "FROM notes ORDER BY created_at DESC "
+                         "LIMIT ? OFFSET ?;",
+        [SQL_POSTGRES] = "SELECT id, user_id, title, "
+                         "TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS'), body "
+                         "FROM notes ORDER BY created_at DESC "
+                         "LIMIT $1 OFFSET $2;",
+    };
 
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_prepare(db, slice ? q_page[db->lang] : q_all[db->lang], &stmt)) {
+        return_defer(false);
+    }
+    if (slice) {
+        if (!sql_bind(&stmt, 1, SQL_I(slice->per_page))) return_defer(false);
+        if (!sql_bind(&stmt, 2, SQL_I(slice->offset)))    return_defer(false);
+    }
 
     Sql_Step ret = SQL_DONE;
     for (ret = sql_step(&stmt); ret == SQL_ROW; ret = sql_step(&stmt)) {
@@ -51,6 +73,25 @@ bool read_notes(db_t *db, Notes *notes) {
 defer:
     sql_finalize(&stmt);
     return result;
+}
+
+bool count_notes(db_t *db, size_t *out) {
+    sql_stmt stmt = {0};
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "SELECT count(*) FROM Notes;",
+        [SQL_MYSQL]    = "SELECT count(*) FROM notes;",
+        [SQL_POSTGRES] = "SELECT count(*) FROM notes;",
+    };
+    if (!sql_prepare(db, q[db->lang], &stmt)) return false;
+    bool ok = false;
+    if (sql_step(&stmt) == SQL_ROW) {
+        *out = (size_t)sql_column_int64(&stmt, 0);
+        ok = true;
+    } else {
+        nob_log(NOB_ERROR, "count_notes: %s", db_errmsg(db));
+    }
+    sql_finalize(&stmt);
+    return ok;
 }
 
 bool create_note(db_t *db, String_View *values, size_t count) {

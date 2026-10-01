@@ -22,15 +22,28 @@ MD_Column md_notes_columns[] = {
 };
 const size_t md_notes_columns_count = ARRAY_LEN(md_notes_columns);
 
-void render_notes_page(Serve_Context *sc, Notes notes) {
-    PAGE_BEGIN(sc, "Note", "/notes");
-    #include "build/h_to_html/notes.h"
-    PAGE_END(sc);
+void render_notes_page(Serve_Context *sc,
+                       Notes          notes,
+                       Page_Info      page_info,
+                       bool           fragment)
+{
+    // PAGE_BEGIN's declarations, minus the header: ?fragment=all responses
+    // are the bare pagination store (rows + per-page <template> pagers).
+    String_Builder *sb         = &(sc)->body;
+    const char *page_title     = "Note";
+    const char *current_path   = "/notes";
+    String_View page_query     = sc->query_string;
+    const char *page_base      = current_path;
+    const char *page_key       = "page";
+    const char *page_container = "notes-tbody";
+    if (!fragment) render_page_header(sb, page_title, current_path);
+#include "build/h_to_html/notes.h"
+    if (!fragment) render_page_footer(sb);
 }
 
 void render_notes_edit_page(Serve_Context *sc, Note note) {
     PAGE_BEGIN(sc, "Edit Note", "/notes");
-    #include "build/h_to_html/notes_edit.h"
+#include "build/h_to_html/notes_edit.h"
     PAGE_END(sc);
 }
 
@@ -46,7 +59,7 @@ static void serve_notes_json(Serve_Context *sc) {
     db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
-    if (!read_notes(db, &notes)) {
+    if (!read_notes(db, &notes, NULL)) {
         db_close(db);
         serve_error(sc, 500);
         return;

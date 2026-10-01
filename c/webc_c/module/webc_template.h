@@ -6,6 +6,7 @@
 
 #include "module/nob.h"
 #include "core/http/utils.h"
+#include "core/display/paging.h"
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
@@ -38,19 +39,32 @@
 // Dynamic CRUD with Zero Limits (Loop-based)
 // =========================================================================
 
+// List handler: parse ?page/?per_page, count, load just that window and
+// render. ?fragment=all skips the shell and loads everything instead --
+// that bare payload is the pagination store fetched in the background by
+// js/PaginationSwitcher.js (page flips then happen client-side).
 #define SERVE_READ(plural, Plural_Type)                                   \
     void serve_##plural##_read(Serve_Context *sc) {                       \
         Plural_Type dt = {0};                                             \
-        db_t *db = open_webc_db();                                     \
+        Page_Info page_info = {0};                                        \
+        bool fragment = page_fragment_requested(sc->query_string);        \
+        page_info_parse(sc->query_string, "page", &page_info);            \
+        db_t *db = open_webc_db();                                        \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!read_##plural(db, &dt)) {                                    \
-            db_close(db);                                            \
-            serve_error(sc, 500);                                         \
-            return;                                                       \
+        bool ok;                                                          \
+        if (fragment) {                                                   \
+            ok = read_##plural(db, &dt, NULL);                            \
+        } else if (count_##plural(db, &page_info.total)) {                \
+            page_info_finish(&page_info, page_info.total);                \
+            ok = read_##plural(db, &dt, &page_info);                      \
+        } else {                                                          \
+            ok = false;                                                   \
         }                                                                 \
-        db_close(db);                                                \
+        db_close(db);                                                     \
+        if (!ok) { serve_error(sc, 500); return; }                        \
+        if (fragment) page_info_finish(&page_info, dt.count);             \
         sc->body.count = 0;                                               \
-        render_##plural##_page(sc, dt);                                   \
+        render_##plural##_page(sc, dt, page_info, fragment);              \
         free(dt.items);                                                   \
         http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));   \
     }
@@ -103,13 +117,13 @@
 // (`POST /notes/create?user_id=<uuid>`) while the plain /notes and /users
 // forms keep working without those keys.
 #define SERVE_EXTRACT_OPT_FIELDS(sc, body_sv, values, opt_fields, opt_count, base) \
-    do {                                                                        \
-        for (size_t i_ = 0; i_ < (opt_count); ++i_) {                           \
-            SERVE_EXTRACT_ONE(sc, body_sv, values, (base) + i_, (opt_fields)[i_], \
-                { if (!form_find((sc)->query_string, (opt_fields)[i_],          \
-                                 &(values)[(base) + i_]))                       \
-                      (values)[(base) + i_] = (Nob_String_View){0}; });         \
-        }                                                                       \
+    do {                                                                           \
+        for (size_t i_ = 0; i_ < (opt_count); ++i_) {                              \
+            SERVE_EXTRACT_ONE(sc, body_sv, values, (base) + i_, (opt_fields)[i_],  \
+                { if (!form_find((sc)->query_string, (opt_fields)[i_],             \
+                                 &(values)[(base) + i_]))                          \
+                      (values)[(base) + i_] = (Nob_String_View){0}; });            \
+        }                                                                          \
     } while (0)
 
 #define SERVE_CREATE(plural, singular, fields, opt_fields)                \
@@ -127,18 +141,18 @@
             return;                                                       \
         }                                                                 \
                                                                           \
-        db_t *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                        \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!sql_txn_begin(db)) {                                             \
-            db_close(db);                                            \
+        if (!sql_txn_begin(db)) {                                         \
+            db_close(db);                                                 \
             serve_error(sc, 500);                                         \
             return;                                                       \
         }                                                                 \
                                                                           \
         bool ok = create_##singular(db, values, field_count);             \
-        if (ok) { sql_txn_commit(db); }                                       \
-        else    { sql_txn_rollback(db); }                                     \
-        db_close(db);                                                \
+        if (ok) { sql_txn_commit(db); }                                   \
+        else    { sql_txn_rollback(db); }                                 \
+        db_close(db);                                                     \
                                                                           \
         if (!ok) { serve_error(sc, 500); return; }                        \
         http_render_redirect(sc, 302,                                     \
@@ -153,17 +167,17 @@
             return;                                                     \
         }                                                               \
         Plural_Type dt = {0};                                           \
-        db_t *db = open_webc_db();                                   \
+        db_t *db = open_webc_db();                                      \
         if (!db) { serve_error(sc, 500); return; }                      \
-        if (!read_##plural(db, &dt)) {                                  \
-            db_close(db);                                          \
+        if (!read_##plural(db, &dt, NULL)) {                            \
+            db_close(db);                                               \
             serve_error(sc, 500);                                       \
             return;                                                     \
         }                                                               \
-        db_close(db);                                              \
+        db_close(db);                                                   \
         Singular_Type *target = NULL;                                   \
         for (size_t i = 0; i < dt.count; ++i) {                         \
-            if (dt.items[i].id != NULL                                 \
+            if (dt.items[i].id != NULL                                  \
                 && sv_eq(sv_from_cstr(dt.items[i].id), id.raw)) {       \
                 target = &dt.items[i];                                  \
                 break;                                                  \
@@ -201,17 +215,17 @@
             return;                                                       \
         }                                                                 \
                                                                           \
-        db_t *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                        \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!sql_txn_begin(db)) {                                             \
-            db_close(db);                                            \
+        if (!sql_txn_begin(db)) {                                         \
+            db_close(db);                                                 \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
-        bool ok = update_##singular(db, values, field_count, id.raw);   \
-        if (ok) { sql_txn_commit(db); }                                       \
-        else    { sql_txn_rollback(db); }                                     \
-        db_close(db);                                                \
+        bool ok = update_##singular(db, values, field_count, id.raw);     \
+        if (ok) { sql_txn_commit(db); }                                   \
+        else    { sql_txn_rollback(db); }                                 \
+        db_close(db);                                                     \
                                                                           \
         if (!ok) { serve_error(sc, 500); return; }                        \
         http_render_redirect(sc, 302,                                     \
@@ -225,27 +239,27 @@
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
-        db_t *db = open_webc_db();                                     \
+        db_t *db = open_webc_db();                                        \
         if (!db) { serve_error(sc, 500); return; }                        \
-        if (!sql_txn_begin(db)) {                                             \
-            db_close(db);                                            \
+        if (!sql_txn_begin(db)) {                                         \
+            db_close(db);                                                 \
             serve_error(sc, 404);                                         \
             return;                                                       \
         }                                                                 \
-        bool ok = delete_##singular(db, id.raw);                         \
-        if (ok) { sql_txn_commit(db); }                                       \
-        else    { sql_txn_rollback(db); }                                     \
-        db_close(db);                                                \
+        bool ok = delete_##singular(db, id.raw);                          \
+        if (ok) { sql_txn_commit(db); }                                   \
+        else    { sql_txn_rollback(db); }                                 \
+        db_close(db);                                                     \
         if (!ok) { serve_error(sc, 500); return; }                        \
         http_render_redirect(sc, 302,                                     \
                              http_redirect_target(sc, "/" #plural));      \
     }
 
 #define SERVE_CRUD(plural, singular, Plural_Type, Singular_Type, fields, opt_fields) \
-    SERVE_READ(plural, Plural_Type)                                  \
-    SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)         \
-    SERVE_DELETE(plural, singular)                                   \
-    SERVE_CREATE(plural, singular, fields, opt_fields)               \
+    SERVE_READ(plural, Plural_Type)                                                  \
+    SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)                         \
+    SERVE_DELETE(plural, singular)                                                   \
+    SERVE_CREATE(plural, singular, fields, opt_fields)                               \
     SERVE_UPDATE(plural, singular, fields, opt_fields)
 
 

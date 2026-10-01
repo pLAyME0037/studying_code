@@ -2,14 +2,16 @@
 
 #include "../db/db.h"
 #include "user.h"
+#include "core/display/paging.h"
 #include "module/nob.h"
 
-bool read_users(db_t *db, Users *rows) {
+bool read_users(db_t *db, Users *rows, const Page_Info *slice) {
     bool result = true;
     sql_stmt stmt = {0};
     // Table name case differs: MySQL on Linux stores `users` (from the
     // migration file) and is case-sensitive there.
-    static const char *const q[SQL_LANG_COUNT] = {
+    // ORDER BY id ASC is the single line that decides list order.
+    static const char *const q_all[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "SELECT id, name, username, email, profile_pic "
                          "FROM Users "
                          "ORDER BY id ASC;",
@@ -20,8 +22,26 @@ bool read_users(db_t *db, Users *rows) {
                          "FROM users "
                          "ORDER BY id ASC;",
     };
+    // Same query with the page window appended (limit/offset bound below).
+    static const char *const q_page[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "SELECT id, name, username, email, profile_pic "
+                         "FROM Users "
+                         "ORDER BY id ASC LIMIT ? OFFSET ?;",
+        [SQL_MYSQL]    = "SELECT id, name, username, email, profile_pic "
+                         "FROM users "
+                         "ORDER BY id ASC LIMIT ? OFFSET ?;",
+        [SQL_POSTGRES] = "SELECT id, name, username, email, profile_pic "
+                         "FROM users "
+                         "ORDER BY id ASC LIMIT $1 OFFSET $2;",
+    };
 
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_prepare(db, slice ? q_page[db->lang] : q_all[db->lang], &stmt)) {
+        return_defer(false);
+    }
+    if (slice) {
+        if (!sql_bind(&stmt, 1, SQL_I(slice->per_page))) return_defer(false);
+        if (!sql_bind(&stmt, 2, SQL_I(slice->offset)))    return_defer(false);
+    }
 
     Sql_Step ret = SQL_DONE;
     for (ret = sql_step(&stmt); ret == SQL_ROW; ret = sql_step(&stmt)) {
@@ -48,6 +68,25 @@ bool read_users(db_t *db, Users *rows) {
 defer:
     sql_finalize(&stmt);
     return result;
+}
+
+bool count_users(db_t *db, size_t *out) {
+    sql_stmt stmt = {0};
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "SELECT count(*) FROM Users;",
+        [SQL_MYSQL]    = "SELECT count(*) FROM users;",
+        [SQL_POSTGRES] = "SELECT count(*) FROM users;",
+    };
+    if (!sql_prepare(db, q[db->lang], &stmt)) return false;
+    bool ok = false;
+    if (sql_step(&stmt) == SQL_ROW) {
+        *out = (size_t)sql_column_int64(&stmt, 0);
+        ok = true;
+    } else {
+        nob_log(NOB_ERROR, "count_users: %s", db_errmsg(db));
+    }
+    sql_finalize(&stmt);
+    return ok;
 }
 
 bool create_user(db_t *db, String_View *fields, size_t count) {

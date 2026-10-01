@@ -1,3 +1,20 @@
+({
+    // Per-master child window. One shared ?<table>_page key (parsed once
+    // per table into child_pages[] in serve_master_child); the totals are
+    // per master, so the window is clamped against each master's own rows.
+    Page_Info page_info = child_pages[ti];
+    page_info_finish(&page_info, rows->items[ri].children[ti].count);
+    size_t cw_lo = page_info.offset;
+    size_t cw_hi = cw_lo + page_info.per_page;
+    if (cw_hi > rows->items[ri].children[ti].count) {
+        cw_hi = rows->items[ri].children[ti].count;
+    }
+    const char *page_key = temp_sprintf("%s_page", config->children[ti].table);
+    const char *page_container = temp_sprintf("mc-tbody-%s-%s",
+            config->children[ti].table, rows->items[ri].id);
+    const char *page_base = md_path;
+    String_View page_query = sc->query_string;
+})
 <div class="tab-content ({ if (ti == 0) { })({ } else { })hidden({ } })"
      data-tab="({ STR(config->children[ti].table); })"
      data-master-id="({ STR(rows->items[ri].id); })">
@@ -32,18 +49,20 @@
                 </th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="({ STR(page_container); })">
             ({ #include "./md_child_add_row.h" })
             ({ if (rows->items[ri].children[ti].count == 0) { })
                 <tr><td colspan="({ INT(config->children[ti].column_count + 1); })"
                         class="px-3 py-3 text-sm text-gray-400 text-center">No records</td></tr>
             ({ } else { })
-                ({ for (size_t ci = 0; ci < rows->items[ri].children[ti].count; ++ci) { })
+                ({ for (size_t ci = cw_lo; ci < cw_hi; ++ci) { })
                     ({ #include "./md_child_rows.h" })
                 ({ } })
             ({ } })
         </tbody>
     </table>
+
+    ({ #include "./pagination.h" })
 
     <form id="mdf-a-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].id); })"
           method="POST"
@@ -55,9 +74,20 @@
           class="hidden">
     </form>
 
-    ({ if (rows->items[ri].children[ti].count > 0) { })
+    ({ if (page_info.total > 0) { })
         <div class="m-1 text-sm text-amber-200">
-            ({ INT(rows->items[ri].children[ti].count); }) record(s)
+            ({ INT(page_info.total); }) record(s)
         </div>
+    ({ } })
+
+    ({ if (fragment) { })
+        <table data-pg-rows="({ STR(page_container); })" data-pg-unit="3">
+            <tbody>
+                ({ for (size_t ci = 0; ci < rows->items[ri].children[ti].count; ++ci) { })
+                    ({ #include "./md_child_rows.h" })
+                ({ } })
+            </tbody>
+        </table>
+    ({ #include "./pager_templates.h" })
     ({ } })
 </div>

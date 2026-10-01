@@ -28,7 +28,10 @@ function mdChildRows(scope, masterId) {
     if (!scope || !masterId) return null;
     const content = document.querySelector(
         '.tab-content[data-tab="' + mdSel(scope) + '"][data-master-id="' + mdSel(masterId) + '"]');
-    return content ? Array.from(content.querySelectorAll('tr[data-row-id]')) : null;
+    // Scope to the id'd tbody: after a master-page flip a cluster may carry
+    // a nested pagination store (tbody without id) whose rows must not be
+    // counted here.
+    return content ? Array.from(content.querySelectorAll('tbody[id] > tr[data-row-id]')) : null;
 }
 
 function mdMasterRows() {
@@ -186,7 +189,19 @@ async function mdHandleSubmit(e, form) {
                 const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
                 newRoot = doc.querySelector('#mc-root');
             } catch (err) {}
-            if (newRoot && mdSwap(newRoot)) return;
+            if (newRoot && mdSwap(newRoot)) {
+                // content came from the redirect target: sync the address bar
+                // to it (drop stale ?page state) and refresh the pagination
+                // store for the swapped DOM
+                try {
+                    if (res.url && window.history.replaceState) {
+                        history.replaceState(null, '', res.url);
+                    }
+                } catch (err) {}
+                if (window.pgReset) window.pgReset();
+                if (window.pgArm) window.pgArm();
+                return;
+            }
             // redirect landed outside the component: full navigation
             try { sessionStorage.removeItem(MD_FLASH_KEY); } catch (err) {}
             window.location.assign(res.url || form.action);

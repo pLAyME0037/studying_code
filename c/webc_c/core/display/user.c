@@ -21,10 +21,23 @@ MD_Column md_users_columns[] = {
 };
 const size_t md_users_columns_count = ARRAY_LEN(md_users_columns);
 
-void render_users_page(Serve_Context *sc, Users users) {
-    PAGE_BEGIN(sc, "Users",  "/users");
+void render_users_page(Serve_Context *sc,
+                       Users          users,
+                       Page_Info      page_info,
+                       bool           fragment)
+{
+    // PAGE_BEGIN's declarations, minus the header: ?fragment=all responses
+    // are the bare pagination store (rows + per-page <template> pagers).
+    String_Builder *sb         = &(sc)->body;
+    const char *page_title     = "Users";
+    const char *current_path   = "/users";
+    String_View page_query     = sc->query_string;
+    const char *page_base      = current_path;
+    const char *page_key       = "page";
+    const char *page_container = "users-tbody";
+    if (!fragment) render_page_header(sb, page_title, current_path);
 #include "build/h_to_html/user.h"
-    PAGE_END(sc);
+    if (!fragment) render_page_footer(sb);
 }
 
 void render_users_edit_page(Serve_Context *sc, User user) {
