@@ -319,6 +319,14 @@ def main():
     t.chk("md child row shown", "md_child_note" in html, "True")
     t.chk("md fk badge shown", "user_id: 7" in html, "True")
 
+    # reveal contract: swap root, per-row ids (locate exact new row after
+    # reload/swap; row order is random uuid), explicit form scopes
+    t.chk("mc swap root id", 'id="mc-root"' in html, "True")
+    t.chk("md rows carry ids", html.count("data-row-id=") >= 2, "True")
+    t.chk("md form scopes",
+          'data-md-kind="master"' in html and 'data-md-kind="child"' in html,
+          "True")
+
     # redirect fallback (no param) + open-redirect guard
     st, hdr, _, _ = post_form("/notes/create",
                               {"title": "fallback_note", "body": "x"})

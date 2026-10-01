@@ -1,4 +1,5 @@
-<tr class="md-row hover:bg-gray-50 dark:hover:bg-gray-700/50"> ({
+<tr class="md-row hover:bg-gray-50 dark:hover:bg-gray-700/50"
+    data-row-id="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"> ({
     for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) {
     })
         <td class="pl-3 text-sm text-gray-700 dark:text-gray-200">
@@ -15,6 +16,11 @@
             </button>
             <form method="POST"
                   action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/delete?redirect=({ STR(md_path); })"
+                  data-md-kind="child"
+                  data-md-scope="({ STR(config->children[ti].table); })"
+                  data-md-op="delete"
+                  data-md-master="({ STR(rows->items[ri].id); })"
+                  data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
                   class="inline">
                 <button type="submit"
                         title="Delete"
@@ -71,5 +77,10 @@
 <form id="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
       method="POST"
       action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/update?({ STR(config->children[ti].fk_column); })=({ STR(rows->items[ri].id); })&redirect=({ STR(md_path); })"
+      data-md-kind="child"
+      data-md-scope="({ STR(config->children[ti].table); })"
+      data-md-op="update"
+      data-md-master="({ STR(rows->items[ri].id); })"
+      data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
       class="hidden">
 </form>

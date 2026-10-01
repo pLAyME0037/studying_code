@@ -1,6 +1,9 @@
-<div class="max-w-full mx-auto">
+<div id="mc-root" class="max-w-full mx-auto">
     <form method="POST"
           action="({ STR(config->crud_path); })/create?redirect=({ STR(md_path); })"
+          data-md-kind="master"
+          data-md-scope="({ STR(config->table); })"
+          data-md-op="create"
           class="mb-3 p-2 bg-white dark:bg-gray-800 border border-gray-500 dark:border-gray-700">
         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
             Add ({ ESCAPED(config->title); })
@@ -68,7 +71,8 @@
                     </tr>
                 ({ } else { })
                     ({ for (size_t ri = 0; ri < rows->count; ++ri) { })
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                            data-row-id="({ STR(rows->items[ri].id); })">
                             ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
                                 <td class="px-4 py-2 text-gray-700 dark:text-gray-200">
                                     ({ ESCAPED(rows->items[ri].disp[ci + 1]); })
@@ -92,6 +96,11 @@
                                     </button>
                                     <form method="POST"
                                           action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/delete?redirect=({ STR(md_path); })"
+                                          data-md-kind="master"
+                                          data-md-scope="({ STR(config->table); })"
+                                          data-md-op="delete"
+                                          data-md-master="({ STR(rows->items[ri].id); })"
+                                          data-md-target="({ STR(rows->items[ri].id); })"
                                           class="inline">
                                         <button type="submit"
                                                 title="Delete"
@@ -108,6 +117,11 @@
                                 <form id="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                       method="POST"
                                       action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/update?redirect=({ STR(md_path); })"
+                                      data-md-kind="master"
+                                      data-md-scope="({ STR(config->table); })"
+                                      data-md-op="update"
+                                      data-md-master="({ STR(rows->items[ri].id); })"
+                                      data-md-target="({ STR(rows->items[ri].id); })"
                                       class="flex flex-wrap gap-3 items-end px-2 py-1">
                             ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
                                     <div class="flex flex-col gap-1 min-w-[140px]">

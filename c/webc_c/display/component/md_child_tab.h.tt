@@ -48,6 +48,10 @@
     <form id="mdf-a-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].id); })"
           method="POST"
           action="({ STR(config->children[ti].crud_path); })/create?({ STR(config->children[ti].fk_column); })=({ STR(rows->items[ri].id); })&redirect=({ STR(md_path); })"
+          data-md-kind="child"
+          data-md-scope="({ STR(config->children[ti].table); })"
+          data-md-op="create"
+          data-md-master="({ STR(rows->items[ri].id); })"
           class="hidden">
     </form>
 
