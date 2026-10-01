@@ -1,7 +1,8 @@
 <div class="tab-content ({ if (ti == 0) { })({ } else { })hidden({ } })"
-     data-tab="({ STR(config->children[ti].table); })" data-master-id="({ STR(rows->items[ri].id); })">
-    <div class="flex justify-between items-center mb-2">
-        <div class="flex items-center gap-2">
+     data-tab="({ STR(config->children[ti].table); })"
+     data-master-id="({ STR(rows->items[ri].id); })">
+    <div class="bg-slate-100 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 flex justify-between items-center">
+        <div class="flex items-center pl-3 gap-2">
             <h4 class="font-medium text-sm text-gray-800 dark:text-white">
                 ({ ESCAPED(config->children[ti].title); })
             </h4>
@@ -9,15 +10,18 @@
                 ({ STR(config->children[ti].fk_column); }): ({ STR(rows->items[ri].id); })
             </span>
         </div>
-        <button type="button" class="add-child-btn flex items-center gap-1 px-2 py-1 text-xs rounded text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40"
-                title="Add" aria-label="Add" data-tab="({ STR(config->children[ti].table); })">
+        <button type="button"
+                title="Add"
+                aria-label="Add"
+                data-tab="({ STR(config->children[ti].table); })"
+                class="add-child-btn flex items-center gap-1 px-2 py-1 text-xs rounded text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
         </button>
     </div>
 
     <table class="w-full text-left border-collapse text-sm">
-        <thead>
-            <tr class="border-b border-gray-200 dark:border-gray-700">
+        <thead class="bg-slate-100 dark:bg-slate-900 dark:text-white text-slate-800">
+            <tr class="border border-gray-200 dark:border-gray-700">
                 ({ for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
                     <th class="px-3 py-1.5 font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         ({ ESCAPED(config->children[ti].columns[cci].label); })
@@ -48,7 +52,7 @@
     </form>
 
     ({ if (rows->items[ri].children[ti].count > 0) { })
-        <div class="mt-1 text-xs text-gray-400">
+        <div class="m-1 text-sm text-amber-200">
             ({ INT(rows->items[ri].children[ti].count); }) record(s)
         </div>
     ({ } })

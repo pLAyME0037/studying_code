@@ -93,10 +93,10 @@ typedef struct {
 } MD_FormCols;
 
 typedef struct {
-    const char  *id;        /* aliases values[0] (the id column) */
-    char       **values;    /* raw ids for FK cols (edit prefill) */
-    char       **disp;      /* display text (FK cols show label) */
-    size_t       value_count;
+    const char   *id;        /* aliases values[0] (the id column) */
+    char        **values;    /* raw ids for FK cols (edit prefill) */
+    char        **disp;      /* display text (FK cols show label) */
+    size_t        value_count;
     MD_ChildRows *children;
     size_t        children_count;
 } MD_MasterRow;
