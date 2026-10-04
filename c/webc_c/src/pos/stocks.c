@@ -1,5 +1,7 @@
 #include "stocks.h"
 
+#include <string.h>
+
 #include "core/display/master_child.h"
 #include "module/webc_template.h"
 #include "src/db/db.h"
@@ -7,12 +9,48 @@
 #include "core/http/utils.h"
 
 // =========================================================================
-// inventory_stocks rows: created/edited from the /pos/products Stock tab
-// (product_id rides the form's query string). Thresholds are optional
-// (form-less child rows default them to 0). Soft delete like every POS
-// entity; org_unit_id stays inside the UNIQUE(org_unit, product, variant)
-// triple, so an edit may move it (SQLite FK RESTRICT is satisfied).
+// /pos/stocks: inventory master (product/org/variant FKs + qty + range
+// cell) with stock_ledger as the child tab. Rows are also created as a
+// child of /pos/products (product_id rides the query string there).
 // =========================================================================
+
+static const char *stk_minmax_parts[]  = { "min_threshold", "max_threshold" };
+static const char *stk_minmax_labels[] = { "Min", "Max" };
+static const MD_Cell stk_minmax_cell = {
+    .parts       = stk_minmax_parts,
+    .part_labels = stk_minmax_labels,
+    .part_count  = 2,
+    .style       = "stack",
+};
+
+// Child tab shape for stock_ledger (view-local): a movement log entry.
+static MD_Column md_pos_ledger_columns[] = {
+    { .name = "reference_type", .label = "Type", .type = COL_TYPE_TEXT,
+      .nullable = false },   // ORDER | PURCHASE | ADJUST | RETURN
+    { .name = "reference_id", .label = "Ref", .type = COL_TYPE_TEXT,
+      .nullable = true },
+    { .name = "quantity_change", .label = "Change", .type = COL_TYPE_NUM,
+      .nullable = false },
+    { .name = "balance_after", .label = "Balance", .type = COL_TYPE_NUM,
+      .nullable = false },
+};
+static const size_t md_pos_ledger_columns_count = ARRAY_LEN(md_pos_ledger_columns);
+
+static MD_Column md_stocks_columns[] = {
+    { .name = "product_id", .label = "Product", .type = COL_TYPE_FK_SELECT,
+      .nullable = false, .fk_table = "products", .fk_label = "name" },
+    { .name = "org_unit_id", .label = "Org", .type = COL_TYPE_FK_SELECT,
+      .nullable = false, .fk_table = "org_units", .fk_label = "ou_name" },
+    { .name = "variant_id", .label = "Variant", .type = COL_TYPE_FK_SELECT,
+      .nullable = true, .fk_table = "product_variants",
+      .fk_label = "variant_name" },
+    { .name = "quantity", .label = "Qty", .type = COL_TYPE_NUM,
+      .nullable = false },
+    { .name = "min_threshold", .label = "Range", .type = COL_TYPE_NUM,
+      .nullable = false, .cell = &stk_minmax_cell },
+};
+static const size_t md_stocks_columns_count = ARRAY_LEN(md_stocks_columns);
+
 
 static bool create_pos_stock(db_t *db, String_View *fields, size_t count) {
     if (count < 6) return false;
@@ -42,7 +80,9 @@ defer:
     return result;
 }
 
-// product_id is intentionally not UPDATEd (see variants).
+// product_id IS updated here (master edit may move a stock to another
+// product); the products-page child edit form does not carry it, so
+// COALESCE keeps the stored fk.
 static bool update_pos_stock(db_t *db, String_View *fields, size_t count,
                              String_View id)
 {
@@ -53,30 +93,33 @@ static bool update_pos_stock(db_t *db, String_View *fields, size_t count,
                          "variant_id = COALESCE(NULLIF(?, ''), variant_id), "
                          "quantity = COALESCE(NULLIF(?, ''), quantity), "
                          "min_threshold = COALESCE(NULLIF(?, ''), min_threshold), "
-                         "max_threshold = COALESCE(NULLIF(?, ''), max_threshold) "
+                         "max_threshold = COALESCE(NULLIF(?, ''), max_threshold), "
+                         "product_id = COALESCE(NULLIF(?, ''), product_id) "
                          "WHERE id = ?;",
         [SQL_MYSQL]    = "UPDATE inventory_stocks SET "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
                          "variant_id = COALESCE(NULLIF(?, ''), variant_id), "
                          "quantity = COALESCE(NULLIF(?, ''), quantity), "
                          "min_threshold = COALESCE(NULLIF(?, ''), min_threshold), "
-                         "max_threshold = COALESCE(NULLIF(?, ''), max_threshold) "
+                         "max_threshold = COALESCE(NULLIF(?, ''), max_threshold), "
+                         "product_id = COALESCE(NULLIF(?, ''), product_id) "
                          "WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE inventory_stocks SET "
                          "org_unit_id = COALESCE(NULLIF($1, ''), org_unit_id), "
                          "variant_id = COALESCE(NULLIF($2, ''), variant_id), "
                          "quantity = COALESCE(NULLIF($3, ''), quantity), "
                          "min_threshold = COALESCE(NULLIF($4, ''), min_threshold), "
-                         "max_threshold = COALESCE(NULLIF($5, ''), max_threshold) "
-                         "WHERE id = $6;",
+                         "max_threshold = COALESCE(NULLIF($5, ''), max_threshold), "
+                         "product_id = COALESCE(NULLIF($6, ''), product_id) "
+                         "WHERE id = $7;",
     };
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    for (int i = 1; i <= 5; ++i) {
+    for (int i = 1; i <= 6; ++i) {
         if (!sql_bind(&stmt, i, SQL_SV(fields[i - 1]))) return_defer(false);
     }
-    if (!sql_bind(&stmt, 6, SQL_SV(id)))  return_defer(false);
+    if (!sql_bind(&stmt, 7, SQL_SV(id)))  return_defer(false);
     if (!sql_final_step(&stmt))           return_defer(false);
 defer:
     sql_finalize(&stmt);
@@ -120,6 +163,33 @@ static bool restore_pos_stock(db_t *db, String_View id) {
 defer:
     sql_finalize(&stmt);
     return result;
+}
+
+void serve_pos_stocks(Serve_Context *sc) {
+    MD_ChildTab children[] = {
+        {
+            .table        = "stock_ledger",
+            .title        = "Ledger",
+            .fk_column    = "stock_id",
+            .id_column    = "id",
+            .crud_path    = "/pos/ledger",
+            .columns      = md_pos_ledger_columns,
+            .column_count = md_pos_ledger_columns_count,
+            .soft_delete  = 1,
+        },
+    };
+    MD_MasterConfig config = {
+        .table          = "inventory_stocks",
+        .title          = "Stock",
+        .id_column      = "id",
+        .crud_path      = "/pos/stocks",
+        .columns        = md_stocks_columns,
+        .column_count   = md_stocks_columns_count,
+        .children       = children,
+        .children_count = ARRAY_LEN(children),
+        .soft_delete    = 1,
+    };
+    serve_master_child(sc, &config);
 }
 
 static const char *stk_fields[] = { "org_unit_id", "variant_id", "quantity" };

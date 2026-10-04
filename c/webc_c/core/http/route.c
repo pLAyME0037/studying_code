@@ -12,6 +12,7 @@
 #include "src/pos/products.h"
 #include "src/pos/variants.h"
 #include "src/pos/stocks.h"
+#include "src/pos/ledger.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -201,10 +202,16 @@ void route_initialize(void) {
     route_new(&routes, "/pos/variants", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_variants_delete);
     route_new(&routes, "/pos/variants", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_variants_restore);
 
+    route_new(&routes, "/pos/stocks", NULL,       "GET",  ROUTE_EXACT,     serve_pos_stocks);
     route_new(&routes, "/pos/stocks/create", NULL, "POST", ROUTE_EXACT,    serve_pos_stocks_create);
     route_new(&routes, "/pos/stocks", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_update);
     route_new(&routes, "/pos/stocks", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_delete);
     route_new(&routes, "/pos/stocks", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_stocks_restore);
+
+    route_new(&routes, "/pos/ledger/create", NULL, "POST", ROUTE_EXACT,    serve_pos_ledger_create);
+    route_new(&routes, "/pos/ledger", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_update);
+    route_new(&routes, "/pos/ledger", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_delete);
+    route_new(&routes, "/pos/ledger", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_ledger_restore);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

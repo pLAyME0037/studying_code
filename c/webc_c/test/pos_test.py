@@ -521,6 +521,104 @@ def main():
                   (sid,))),
           ((None,), (None,)))
 
+    # ---- Phase 5b: INVENTORY (/pos/stocks + stock_ledger) ----------------
+    st, body, _ = c.get("/pos/stocks")
+    html = body.decode()
+    t.chk("stocks page", st, 200)
+    t.chk("stocks th = product+org+variant+qty+range+actions", th_count(html), 6)
+    t.chk("stocks shows 5a stock row",
+          f'data-row-id="{sid}"' in html, True)
+
+    # master create: variant None -> NULL (keeps 5a's variant stock row)
+    st, _, _ = c.post_urlencoded(
+        "/pos/stocks/create?redirect=/pos/stocks",
+        {"product_id": pid, "org_unit_id": "pos-ou-1", "variant_id": "",
+         "quantity": "9", "min_threshold": "2", "max_threshold": "50"})
+    t.chk("stock create (master form)", st, 302)
+    sid2 = db_row("SELECT id FROM inventory_stocks "
+                  "WHERE product_id = ? AND variant_id IS NULL", (pid,))[0]
+    t.chk("stock row db (master body values)",
+          db_row("SELECT quantity, min_threshold, max_threshold "
+                 "FROM inventory_stocks WHERE id = ?", (sid2,)),
+          (9.0, 2.0, 50.0))
+
+    st, body, _ = c.get("/pos/stocks")
+    html = body.decode()
+    row, edit = row_and_edit(html, sid2)
+    t.chk("stock row found", bool(row), True)
+    t.chk("stock row FK labels",
+          ("Test Product XL" in row and "Main Depot" in row), True)
+    t.chk("edit prefills qty", float(edit_inputs(edit).get("quantity") or 0), 9.0)
+    t.chk("stock child tab (ledger)", 'data-tab="stock_ledger"' in html, True)
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/stocks/{sid2}/update?redirect=/pos/stocks",
+        {"product_id": pid, "org_unit_id": "pos-ou-1", "variant_id": "",
+         "quantity": "7", "min_threshold": "2", "max_threshold": "50"})
+    t.chk("stock update", st, 302)
+    t.chk("stock update saved",
+          db_row("SELECT quantity FROM inventory_stocks WHERE id = ?", (sid2,)),
+          (7.0,))
+
+    # ledger via child form (stock_id in the query string)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/ledger/create?stock_id={sid2}&redirect=/pos/stocks",
+        {"reference_type": "ADJUST", "reference_id": "",
+         "quantity_change": "5", "balance_after": "5"})
+    t.chk("ledger create (child, fk via query)", st, 302)
+    lid = db_row("SELECT id FROM stock_ledger "
+                 "WHERE stock_id = ? AND reference_type = 'ADJUST'",
+                 (sid2,))[0]
+    t.chk("ledger row db (change/balance, note default)",
+          db_row("SELECT quantity_change, balance_after, note "
+                 "FROM stock_ledger WHERE id = ?", (lid,)),
+          (5.0, 5.0, None))
+
+    st, body, _ = c.get("/pos/stocks")
+    html = body.decode()
+    t.chk("ledger row in child tab", "ADJUST" in html, True)
+    lm = re.search(r'data-tab="stock_ledger".*?<thead[^>]*>(.*?)</thead>',
+                   html, re.S)
+    t.chk("ledger child thead = 4 cols + actions",
+          lm.group(1).count("<th") if lm else -1, 5)
+    t.chk("ledger pager container",
+          f'data-pg-container="mc-tbody-stock_ledger-{sid2}"' in html, True)
+
+    # stock soft delete + restore (master-level trash view)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/stocks/{sid2}/delete?redirect=/pos/stocks", {})
+    t.chk("stock soft delete", st, 302)
+    t.chk("stock deleted_at stamped",
+          db_row("SELECT deleted_at FROM inventory_stocks WHERE id = ?",
+                 (sid2,))[0] is not None, True)
+    st, body, _ = c.get("/pos/stocks")
+    t.chk("stock hidden from live list",
+          f'data-row-id="{sid2}"' not in body.decode(), True)
+    st, body, _ = c.get("/pos/stocks?deleted=1")
+    t.chk("stock in trash view",
+          f'data-row-id="{sid2}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/stocks/{sid2}/restore?redirect=/pos/stocks?deleted=1")
+    t.chk("stock restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/stocks?deleted=1"))
+    t.chk("stock restored",
+          db_row("SELECT deleted_at FROM inventory_stocks WHERE id = ?",
+                 (sid2,)),
+          (None,))
+
+    # ---- stock pagination window with volume -----------------------------
+    for _ in range(25):
+        db_exec("INSERT INTO inventory_stocks (org_unit_id, product_id, "
+                "quantity) VALUES (?, ?, ?)",
+                ("pos-ou-1", pid, 1.0))
+    st, body, _ = c.get("/pos/stocks?page=2")
+    html = body.decode()
+    t.chk("stocks ?page=2", st, 200)
+    t.chk("stocks page 2 = 7 of 27 rows",
+          html.count('<tr class="hover:'), 7)
+    t.chk("stocks pager present",
+          'data-pg-container="mc-tbody"' in html, True)
+
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
     t.chk("people page (demo)", st, 200)

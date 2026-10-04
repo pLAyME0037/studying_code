@@ -165,8 +165,16 @@ vanilla JS only.
   Standalone child restore = route-only when the table has no master
   page (variants); FK option lists still include deleted rows (engine
   limitation). Suite: 256 PASS (pos_test 115).
-- Next: Phase 5b INVENTORY /pos/stocks (+ stock_ledger child), then 5c..5g
-  module pages -> Phase 8 reports spike (docs/POS_PLAN.md).
+- Phase 5b DONE: INVENTORY — /pos/stocks master (5 cols: product/org/
+  variant FKs, qty, {min,max} range cell) + stock_ledger child tab, both
+  in src/pos/stocks.c (view) and src/pos/ledger.c (ledger handlers);
+  stock_id via query opt. update_pos_stock now also updates product_id
+  via COALESCE (master edit may move stock; child edit keeps it). Fixed
+  ledger create binder field-order bug (opt stock_id = fields[4], not
+  fields[0]). Suite: 281 PASS (pos_test 140).
+- Next: Phase 5c SALES /pos/orders (children order_items, payments,
+  deliveries), /pos/shifts, /pos/finance (read_only) -> 5d..5g
+  module pages -> sidebar grouped nav -> reports (docs/POS_PLAN.md).
 
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.

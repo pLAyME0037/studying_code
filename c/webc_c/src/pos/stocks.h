@@ -3,9 +3,10 @@
 
 #include "core/display/master_child.h"
 
-/* inventory_stocks: child entity of /pos/products (fk = product_id via
- * the child forms' query string). Write routes only for now; the master
- * page /pos/stocks + stock_ledger child tab arrive with Phase 5b. */
+/* inventory_stocks: /pos/stocks master (product/org/variant FKs + qty +
+ * range cell) with a stock_ledger child tab. Also created as a child of
+ * /pos/products (fk = product_id via the child forms' query string). */
+void serve_pos_stocks(Serve_Context *sc);
 void serve_pos_stocks_create(Serve_Context *sc);
 void serve_pos_stocks_update(Serve_Context *sc);
 void serve_pos_stocks_delete(Serve_Context *sc);
