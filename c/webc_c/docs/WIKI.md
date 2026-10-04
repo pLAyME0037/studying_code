@@ -217,8 +217,14 @@ vanilla JS only.
   /pos/locations + /pos/dictionaries were already live from the
   showcase phases. Files: i18n.c, translations.c, config.c. Suite: 420
   PASS (pos_test 279).
-- Next: Phase 5g MONITOR (/pos/alerts system_alerts, /pos/audit
-  audit_logs read_only) -> sidebar grouped nav -> reports
+- Phase 5g DONE: MONITOR — /pos/alerts (user/order FKs + type + payload
+  + {seen,sent} flags cell), /pos/audit (read_only: user/table/record/
+  action + {old,new} diff cell + when; GET only). Files: alerts.c,
+  audit.c. Test pins read_only+trash gating (restore button stays out
+  when ?deleted=1). ALL Phase 5 module pages are now live (5a-5g: 21
+  routes groups / ~17 pages). Suite: 439 PASS (pos_test 298).
+- Next: Phase 5 sidebar grouped nav (Dashboard, Catalog, Sales, Party,
+  Inventory, Access, Config, Monitoring, Reports -> then reports spike
   (docs/POS_PLAN.md).
 
 ## Gotchas

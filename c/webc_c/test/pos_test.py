@@ -1246,6 +1246,89 @@ def main():
     t.chk("config restore redirects to trash view",
           (st, hdrs.get("Location")), (302, "/pos/config?deleted=1"))
 
+    # ---- Phase 5g: MONITOR (/pos/alerts, /pos/audit) ----------------------
+    st, body, _ = c.get("/pos/alerts")
+    html = body.decode()
+    t.chk("alerts page", st, 200)
+    t.chk("alerts th = user+order+type+flags+payload+actions",
+          th_count(html), 6)
+    t.chk("alerts empty state", "No Alerts yet." in html, True)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/alerts/create?redirect=/pos/alerts",
+        {"user_id": uid5d, "order_id": oid, "alert_type": "POPUP",
+         "raw_payload": '{"m":1}', "is_seen": "1", "is_sent": "0"})
+    t.chk("alert create", st, 302)
+    al5g = db_row("SELECT id FROM system_alerts WHERE alert_type = 'POPUP'")[0]
+    t.chk("alert row db (user/order/type/payload/flags)",
+          db_row("SELECT user_id, order_id, raw_payload, is_seen, is_sent "
+                 "FROM system_alerts WHERE id = ?", (al5g,)),
+          (uid5d, oid, '{"m":1}', 1, 0))
+
+    st, body, _ = c.get("/pos/alerts")
+    row, edit = row_and_edit(body.decode(), al5g)
+    t.chk("alert row labels (user name + order number)",
+          (bool(row) and "Chanthou" in row and "ORD-POS-1" in row), True)
+    t.chk("alert flags cell = 2 parts",
+          len(re.findall(r'<span class="text-xs', row.split("</td>")[3])), 2)
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/alerts/{al5g}/update?redirect=/pos/alerts",
+        {"user_id": uid5d, "order_id": oid, "alert_type": "POPUP",
+         "raw_payload": '{"m":1}', "is_seen": "1", "is_sent": "1"})
+    t.chk("alert update saved",
+          db_row("SELECT is_sent FROM system_alerts WHERE id = ?", (al5g,)),
+          (1,))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/alerts/{al5g}/delete?redirect=/pos/alerts", {})
+    t.chk("alert soft delete", st, 302)
+    st, body, _ = c.get("/pos/alerts?deleted=1")
+    t.chk("alert in trash view",
+          f'data-row-id="{al5g}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/alerts/{al5g}/restore?redirect=/pos/alerts?deleted=1")
+    t.chk("alert restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/alerts?deleted=1"))
+
+    # ---- /pos/audit (read_only) ------------------------------------------
+    st, body, _ = c.get("/pos/audit")
+    html = body.decode()
+    t.chk("audit page (read_only)", st, 200)
+    t.chk("audit th = user+table+record+action+diff+when+actions",
+          th_count(html), 7)
+    t.chk("audit empty state", "No Audit yet." in html, True)
+    t.chk("audit read_only: no write UI",
+          ('data-md-op="create"' not in html
+           and "master-edit-btn" not in html
+           and 'data-md-op="delete"' not in html
+           and 'data-md-op="restore"' not in html), True)
+    t.chk("audit: write route not registered",
+          c.req("POST", "/pos/audit/create",
+                b"a=b", {"Content-Type": "application/x-www-form-urlencoded"})[0],
+          404)
+
+    # audit fixtures: one live entry, one already soft-deleted
+    db_exec("INSERT INTO audit_logs "
+            "(id, user_id, table_name, record_id, action, new_values) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("aud-live-1", uid5d, "products", pid, "UPDATE", '{"name":"x"}'))
+    db_exec("INSERT INTO audit_logs "
+            "(id, user_id, table_name, record_id, action, deleted_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            ("aud-dead-1", uid5d, "orders", oid, "SOFT_DELETE",
+             "2026-01-01T00:00:00.000Z"))
+    st, body, _ = c.get("/pos/audit")
+    html = body.decode()
+    t.chk("audit live row rendered (FK label + action)",
+          ('data-row-id="aud-live-1"' in html and "Chanthou" in html
+           and "UPDATE" in html), True)
+    st, body, _ = c.get("/pos/audit?deleted=1")
+    html = body.decode()
+    t.chk("audit trash shows deleted entry",
+          'data-row-id="aud-dead-1"' in html, True)
+    t.chk("read_only+trash: restore button still gated out",
+          'data-md-op="restore"' not in html, True)
+
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
     t.chk("people page (demo)", st, 200)

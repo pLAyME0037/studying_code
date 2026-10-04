@@ -30,6 +30,8 @@
 #include "src/pos/i18n.h"
 #include "src/pos/translations.h"
 #include "src/pos/config.h"
+#include "src/pos/alerts.h"
+#include "src/pos/audit.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -331,6 +333,16 @@ void route_initialize(void) {
     route_new(&routes, "/pos/translations", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_translations_update);
     route_new(&routes, "/pos/translations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_translations_delete);
     route_new(&routes, "/pos/translations", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_translations_restore);
+
+    // Phase 5g MONITOR
+    route_new(&routes, "/pos/alerts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_alerts);
+    route_new(&routes, "/pos/alerts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_alerts_create);
+    route_new(&routes, "/pos/alerts", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_alerts_update);
+    route_new(&routes, "/pos/alerts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_alerts_delete);
+    route_new(&routes, "/pos/alerts", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_alerts_restore);
+
+    // read_only view: GET only
+    route_new(&routes, "/pos/audit", NULL, "GET", ROUTE_EXACT, serve_pos_audit);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);
