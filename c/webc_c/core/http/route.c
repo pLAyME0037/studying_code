@@ -24,6 +24,9 @@
 #include "src/pos/org.h"
 #include "src/pos/customer_interactions.h"
 #include "src/pos/user_roles.h"
+#include "src/pos/roles.h"
+#include "src/pos/permissions.h"
+#include "src/pos/role_permissions.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -284,6 +287,29 @@ void route_initialize(void) {
     route_new(&routes, "/pos/user_roles", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_update);
     route_new(&routes, "/pos/user_roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_delete);
     route_new(&routes, "/pos/user_roles", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_user_roles_restore);
+
+    // Phase 5e ACCESS
+    route_new(&routes, "/pos/roles", NULL,       "GET",  ROUTE_EXACT,     serve_pos_roles);
+    route_new(&routes, "/pos/roles/create", NULL, "POST", ROUTE_EXACT,    serve_pos_roles_create);
+    route_new(&routes, "/pos/roles", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_roles_update);
+    route_new(&routes, "/pos/roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_roles_delete);
+    route_new(&routes, "/pos/roles", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_roles_restore);
+
+    route_new(&routes, "/pos/permissions", NULL,       "GET",  ROUTE_EXACT,     serve_pos_permissions);
+    route_new(&routes, "/pos/permissions/create", NULL, "POST", ROUTE_EXACT,    serve_pos_permissions_create);
+    route_new(&routes, "/pos/permissions", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_permissions_update);
+    route_new(&routes, "/pos/permissions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_permissions_delete);
+    route_new(&routes, "/pos/permissions", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_permissions_restore);
+
+    route_new(&routes, "/pos/role_permissions/create", NULL, "POST", ROUTE_EXACT,    serve_pos_role_permissions_create);
+    route_new(&routes, "/pos/role_permissions", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_update);
+    route_new(&routes, "/pos/role_permissions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_delete);
+    route_new(&routes, "/pos/role_permissions", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_restore);
+
+    route_new(&routes, "/pos/role_members/create", NULL, "POST", ROUTE_EXACT,    serve_pos_role_members_create);
+    route_new(&routes, "/pos/role_members", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_update);
+    route_new(&routes, "/pos/role_members", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_delete);
+    route_new(&routes, "/pos/role_members", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_role_members_restore);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

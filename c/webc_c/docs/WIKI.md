@@ -200,8 +200,20 @@ vanilla JS only.
   header -- tab buttons precede panel contents; a non-greedy regex
   backtracks across </thead> and swallows earlier headers). Suite: 370
   PASS (pos_test 229).
-- Next: Phase 5e ACCESS (/pos/roles + permissions children, /pos/i18n),
-  then 5f CONFIG, 5g MONITOR -> sidebar grouped nav -> reports
+- Phase 5e DONE: ACCESS — /pos/roles (code/name + org FK + description;
+  children role_permissions + Members), /pos/permissions (master-only,
+  code/name/module). Files: roles.c, permissions.c, role_permissions.c.
+  New wrinkle: the same user_roles link is created from TWO views whose
+  body/query split is mirrored (under users: role in body, user in
+  query; under roles: user in body, role in query) and
+  SERVE_EXTRACT_FIELDS is body-only (missing key = 400) -> the roles
+  side gets its own handler pair + route prefix /pos/role_members (empty
+  fields[] is a hard error under -pedantic). Roles have NO soft-delete
+  cascade trigger: links stay live while the role hides (test pins
+  this). Suite: 396 PASS (pos_test 255).
+- Next: Phase 5f CONFIG (/pos/locations showcase already live, i18n =
+  languages->translations, /pos/config system_configs), 5g MONITOR
+  (alerts, audit read_only) -> sidebar grouped nav -> reports
   (docs/POS_PLAN.md).
 
 ## Gotchas

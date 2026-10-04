@@ -100,3 +100,61 @@ static const char *ur_opt_fields[] = { "user_id" };
 SERVE_CREATE(pos_user_roles, user_role, ur_fields, ur_opt_fields)
 SERVE_UPDATE(pos_user_roles, user_role, ur_fields, ur_opt_fields)
 SERVE_SOFT_DELETE(pos_user_roles, user_role)
+
+// ---- /pos/role_members: the same link seen from /pos/roles ----------------
+// The body/query split mirrors this view: user_id is a body column and
+// role_id rides the query string. SERVE_EXTRACT_FIELDS is body-only (a
+// missing key is a 400), so the two views cannot share one fields array.
+static bool create_role_member(db_t *db, String_View *fields, size_t count) {
+    if (count < 2) return false;
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "INSERT INTO user_roles (user_id, role_id) "
+                         "VALUES (?, ?);",
+        [SQL_MYSQL]    = "INSERT INTO user_roles (user_id, role_id) "
+                         "VALUES (?, ?);",
+        [SQL_POSTGRES] = "INSERT INTO user_roles (user_id, role_id) "
+                         "VALUES ($1, $2);",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt))  return_defer(false);
+    if (!sql_bind(&stmt, 1, pos_sv(fields[0]))) return_defer(false);  // user
+    if (!sql_bind(&stmt, 2, pos_sv(fields[1]))) return_defer(false);  // role
+    if (!sql_final_step(&stmt))                 return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
+// Only the user can move here; role is the child fk (query echo).
+static bool update_role_member(db_t *db, String_View *fields, size_t count,
+                               String_View id)
+{
+    if (count < 2) return false;
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE user_roles SET "
+                         "user_id = COALESCE(NULLIF(?, ''), user_id) "
+                         "WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE user_roles SET "
+                         "user_id = COALESCE(NULLIF(?, ''), user_id) "
+                         "WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE user_roles SET "
+                         "user_id = COALESCE(NULLIF($1, ''), user_id) "
+                         "WHERE id = $2;",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt))  return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);
+    if (!sql_bind(&stmt, 2, SQL_SV(id)))        return_defer(false);
+    if (!sql_final_step(&stmt))                 return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
+static const char *rm_fields[] = { "user_id" };
+static const char *rm_opt_fields[] = { "role_id" };
+SERVE_CREATE(pos_role_members, role_member, rm_fields, rm_opt_fields)
+SERVE_UPDATE(pos_role_members, role_member, rm_fields, rm_opt_fields)
+SERVE_SOFT_DELETE(pos_role_members, user_role)

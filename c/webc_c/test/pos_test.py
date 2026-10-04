@@ -1033,6 +1033,119 @@ def main():
     t.chk("customer restore redirects to trash view",
           (st, hdrs.get("Location")), (302, "/pos/customers?deleted=1"))
 
+    # ---- Phase 5e: ACCESS (/pos/roles, /pos/permissions) ------------------
+    st, body, _ = c.get("/pos/permissions")
+    html = body.decode()
+    t.chk("permissions page", st, 200)
+    t.chk("permissions th = code+name+module+since+actions", th_count(html), 5)
+    t.chk("permissions empty state (no seeds)",
+          "No Permissions yet." in html, True)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/permissions/create?redirect=/pos/permissions",
+        {"perm_code": "POS-SELL", "perm_name": "Sell", "module_name": "pos"})
+    t.chk("permission create", st, 302)
+    permid = db_row("SELECT id FROM permissions WHERE perm_code = 'POS-SELL'")[0]
+    st, body, _ = c.get("/pos/permissions")
+    row, edit = row_and_edit(body.decode(), permid)
+    t.chk("permission row rendered (code + module value)",
+          (bool(row) and "POS-SELL" in row and "pos" in row), True)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/permissions/{permid}/update?redirect=/pos/permissions",
+        {"perm_code": "POS-SELL", "perm_name": "Sell renamed",
+         "module_name": "pos", "created_at": ""})
+    t.chk("permission update saved",
+          db_row("SELECT perm_name FROM permissions WHERE id = ?", (permid,)),
+          ("Sell renamed",))
+
+    st, body, _ = c.get("/pos/roles")
+    html = body.decode()
+    t.chk("roles page", st, 200)
+    t.chk("roles th = code+name+org+description+actions", th_count(html), 5)
+    t.chk("roles lists 5d fixture role",
+          'data-row-id="pos-role-5d"' in html, True)
+    t.chk("role child tabs (permissions/members)",
+          ('data-tab="role_permissions"' in html
+           and 'data-tab="user_roles"' in html), True)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/roles/create?redirect=/pos/roles",
+        {"role_code": "POS-ROLE-5E", "role_name": "Manager 5E",
+         "org_unit_id": "pos-ou-1", "description": "phase5e"})
+    t.chk("role create", st, 302)
+    rid = db_row("SELECT id FROM roles WHERE role_code = 'POS-ROLE-5E'")[0]
+    t.chk("role row db (org/description)",
+          db_row("SELECT org_unit_id, description FROM roles WHERE id = ?",
+                 (rid,)),
+          ("pos-ou-1", "phase5e"))
+
+    st, body, _ = c.get("/pos/roles")
+    html = body.decode()
+    row, edit = row_and_edit(html, rid)
+    t.chk("role row labels (name/org/desc)",
+          (bool(row) and "Manager 5E" in row and "Main Depot" in row
+           and "phase5e" in row), True)
+    t.chk("role_permissions child thead = perm+granted + actions",
+          child_thead(html, "role_permissions"), 3)
+    t.chk("user_roles child thead (under role) = user+linked + actions",
+          child_thead(html, "user_roles"), 3)
+
+    # permission grant child (role_id via query)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/role_permissions/create?role_id={rid}&redirect=/pos/roles",
+        {"permission_id": permid, "created_at": ""})
+    t.chk("role_permission child create", st, 302)
+    rpid = db_row("SELECT id FROM role_permissions "
+                  "WHERE role_id = ? AND permission_id = ?", (rid, permid))[0]
+    st, body, _ = c.get("/pos/roles")
+    html = body.decode()
+    t.chk("grant row under role (permission label)",
+          (f'data-row-id="{rpid}"' in html and "Sell renamed" in html), True)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/role_permissions/create?role_id={rid}&redirect=/pos/roles",
+        {"permission_id": permid, "created_at": ""})
+    t.chk("duplicate grant rejected (UNIQUE pair)", st, 500)
+
+    # member link under the role (user_id from body, role_id from query)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/role_members/create?role_id={rid}&redirect=/pos/roles",
+        {"user_id": uid5d, "created_at": ""})
+    t.chk("user_role under role create", st, 302)
+    t.chk("user_role link db (user via body, role via query)",
+          db_row("SELECT id FROM user_roles "
+                 "WHERE user_id = ? AND role_id = ?", (uid5d, rid))[0] != "",
+          True)
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/roles/{rid}/update?redirect=/pos/roles",
+        {"role_code": "POS-ROLE-5E", "role_name": "Manager Renamed",
+         "org_unit_id": "pos-ou-1", "description": "phase5e"})
+    t.chk("role update saved",
+          db_row("SELECT role_name FROM roles WHERE id = ?", (rid,)),
+          ("Manager Renamed",))
+
+    # roles have NO soft-delete cascade in the schema: links stay live
+    # while the role hides from the live list.
+    st, _, _ = c.post_urlencoded(
+        f"/pos/roles/{rid}/delete?redirect=/pos/roles", {})
+    t.chk("role soft delete", st, 302)
+    t.chk("links NOT cascaded (schema has no roles trigger)",
+          (db_row("SELECT deleted_at FROM role_permissions WHERE id = ?",
+                  (rpid,))[0],
+           db_row("SELECT deleted_at FROM user_roles "
+                  "WHERE user_id = ? AND role_id = ?", (uid5d, rid))[0]),
+          (None, None))
+    st, body, _ = c.get("/pos/roles")
+    t.chk("role hidden from live list",
+          f'data-row-id="{rid}"' not in body.decode(), True)
+    st, body, _ = c.get("/pos/roles?deleted=1")
+    t.chk("role in trash view",
+          f'data-row-id="{rid}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/roles/{rid}/restore?redirect=/pos/roles?deleted=1")
+    t.chk("role restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/roles?deleted=1"))
+
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
     t.chk("people page (demo)", st, 200)
