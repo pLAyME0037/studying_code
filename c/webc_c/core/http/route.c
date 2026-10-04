@@ -13,6 +13,12 @@
 #include "src/pos/variants.h"
 #include "src/pos/stocks.h"
 #include "src/pos/ledger.h"
+#include "src/pos/orders.h"
+#include "src/pos/shifts.h"
+#include "src/pos/finance.h"
+#include "src/pos/order_items.h"
+#include "src/pos/payments.h"
+#include "src/pos/deliveries.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -212,6 +218,38 @@ void route_initialize(void) {
     route_new(&routes, "/pos/ledger", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_update);
     route_new(&routes, "/pos/ledger", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_delete);
     route_new(&routes, "/pos/ledger", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_ledger_restore);
+
+    // Phase 5c SALES
+    route_new(&routes, "/pos/orders", NULL,       "GET",  ROUTE_EXACT,     serve_pos_orders);
+    route_new(&routes, "/pos/orders/create", NULL, "POST", ROUTE_EXACT,    serve_pos_orders_create);
+    route_new(&routes, "/pos/orders", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_orders_update);
+    route_new(&routes, "/pos/orders", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_orders_delete);
+    route_new(&routes, "/pos/orders", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_orders_restore);
+
+    route_new(&routes, "/pos/shifts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_shifts);
+    route_new(&routes, "/pos/shifts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_shifts_create);
+    route_new(&routes, "/pos/shifts", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_shifts_update);
+    route_new(&routes, "/pos/shifts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_shifts_delete);
+    route_new(&routes, "/pos/shifts", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_shifts_restore);
+
+    // read_only view: GET only
+    route_new(&routes, "/pos/finance", NULL, "GET", ROUTE_EXACT, serve_pos_finance);
+
+    // order children: write routes only
+    route_new(&routes, "/pos/order_items/create", NULL, "POST", ROUTE_EXACT,    serve_pos_order_items_create);
+    route_new(&routes, "/pos/order_items", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_order_items_update);
+    route_new(&routes, "/pos/order_items", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_order_items_delete);
+    route_new(&routes, "/pos/order_items", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_order_items_restore);
+
+    route_new(&routes, "/pos/payments/create", NULL, "POST", ROUTE_EXACT,    serve_pos_payments_create);
+    route_new(&routes, "/pos/payments", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_payments_update);
+    route_new(&routes, "/pos/payments", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_payments_delete);
+    route_new(&routes, "/pos/payments", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_payments_restore);
+
+    route_new(&routes, "/pos/deliveries/create", NULL, "POST", ROUTE_EXACT,    serve_pos_deliveries_create);
+    route_new(&routes, "/pos/deliveries", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_update);
+    route_new(&routes, "/pos/deliveries", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_delete);
+    route_new(&routes, "/pos/deliveries", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_deliveries_restore);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

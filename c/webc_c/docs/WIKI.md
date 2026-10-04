@@ -172,9 +172,22 @@ vanilla JS only.
   via COALESCE (master edit may move stock; child edit keeps it). Fixed
   ledger create binder field-order bug (opt stock_id = fields[4], not
   fields[0]). Suite: 281 PASS (pos_test 140).
-- Next: Phase 5c SALES /pos/orders (children order_items, payments,
-  deliveries), /pos/shifts, /pos/finance (read_only) -> 5d..5g
-  module pages -> sidebar grouped nav -> reports (docs/POS_PLAN.md).
+- Phase 5c DONE: SALES — /pos/orders (6 cols: order#, org/staff/
+  customer/status FKs + 4-part amounts cell; children order_items,
+  payments, deliveries), /pos/shifts (org/staff/status + 3-part cash cell
+  + notes), /pos/finance (read_only, GET only). Files: orders.c (view +
+  handlers + child column shapes), order_items.c, payments.c,
+  deliveries.c, shifts.c, finance.c; 23 routes. Engine: MD_Column gains
+  `fk_where` (raw WHERE fragment scoping option queries -- dict selects
+  now show only their category; same additive precedent as `cell`),
+  restore button gated on !read_only (no dead button on read_only+trash).
+  CHECK-default fallbacks in binders: blank status -> COMPLETED / pending /
+  OPEN. Fixed create_order_item opt-field index bug (unit_cost got the
+  quantity; assert now pins price/qty/total + defaults). Suite: 325 PASS
+  (pos_test 184).
+- Next: Phase 5d PARTY (/pos/customers, /pos/users+children, /pos/staff,
+  /pos/org) -> 5e..5g -> sidebar grouped nav -> reports
+  (docs/POS_PLAN.md).
 
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.

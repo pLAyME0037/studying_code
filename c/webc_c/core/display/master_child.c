@@ -128,8 +128,10 @@ static bool load_child_rows(db_t *db,
 
 static void md_col_load_options(db_t *db, MD_Column *col) {
     if (!col || col->type != COL_TYPE_FK_SELECT || !col->fk_table) return;
-    char *sql = temp_sprintf("SELECT id, %s FROM %s ORDER BY %s ASC;",
-            col->fk_label, col->fk_table, col->fk_label);
+    char *sql = temp_sprintf("SELECT id, %s FROM %s%s ORDER BY %s ASC;",
+            col->fk_label, col->fk_table,
+            col->fk_where ? temp_sprintf(" WHERE %s", col->fk_where) : "",
+            col->fk_label);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
         return;
@@ -165,8 +167,10 @@ static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCo
     for (size_t i = 0; i < config->column_count; ++i) {
         MD_FormCol fc = { .col = &config->columns[i] };
         if (fc.col->type == COL_TYPE_FK_SELECT && fc.col->fk_table) {
-            char *sql = temp_sprintf("SELECT id, %s FROM %s ORDER BY %s ASC;",
-                    fc.col->fk_label, fc.col->fk_table, fc.col->fk_label);
+            char *sql = temp_sprintf("SELECT id, %s FROM %s%s ORDER BY %s ASC;",
+                    fc.col->fk_label, fc.col->fk_table,
+                    fc.col->fk_where ? temp_sprintf(" WHERE %s", fc.col->fk_where) : "",
+                    fc.col->fk_label);
             sql_stmt stmt = {0};
             if (!sql_prepare(db, sql, &stmt)) {
                 return false;

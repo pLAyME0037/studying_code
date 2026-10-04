@@ -42,7 +42,8 @@ MD_Column md_products_columns[] = {
       .nullable = false, .fk_table = "categories", .fk_label = "name" },
     { .name = "product_type_dict_id", .label = "Type",
       .type = COL_TYPE_FK_SELECT, .nullable = true,
-      .fk_table = "dictionaries", .fk_label = "label" },
+      .fk_table = "dictionaries", .fk_label = "label",
+      .fk_where = "category = 'PRODUCT_TYPE'" },
 };
 const size_t md_products_columns_count = ARRAY_LEN(md_products_columns);
 

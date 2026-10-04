@@ -114,7 +114,7 @@
                             ({ } })
                             <td class="pl-3 py-1 whitespace-nowrap">
                                 <div class="flex items-center gap-1">
-                                    ({ if (config->soft_delete && show_deleted) { })
+                                    ({ if (!config->read_only && config->soft_delete && show_deleted) { })
                                     <form method="POST"
                                           action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/restore?redirect=({ STR(md_path); })?deleted=1"
                                           data-md-kind="master"

@@ -48,6 +48,9 @@ typedef struct {
     int         nullable;
     const char *fk_table;
     const char *fk_label;
+    const char *fk_where;    /* raw WHERE fragment scoping the option query,
+                              * e.g. "category = 'ORDER_STATUS'" -- keeps
+                              * dict-backed selects to their own category */
     const char *fk_value;
     MD_Option  *opt;        /* runtime: FK dropdown options */
     size_t      opt_count;

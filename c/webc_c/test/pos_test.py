@@ -619,6 +619,211 @@ def main():
     t.chk("stocks pager present",
           'data-pg-container="mc-tbody"' in html, True)
 
+    # ---- Phase 5c: SALES (/pos/orders, /pos/shifts, /pos/finance) --------
+    # fixtures: a location + a staff member (orders.staff_id NOT NULL)
+    db_exec("INSERT INTO locations (province, district, commune, village) "
+            "VALUES (?, ?, ?, ?)",
+            ("Phnom Penh", "Chamkarmon", "Boeung Keng Kang", "BKK1"))
+    loc_id = db_row("SELECT id FROM locations "
+                    "ORDER BY created_at DESC LIMIT 1")[0]
+    user_id = db_row("SELECT id FROM users LIMIT 1")[0]
+    db_exec("INSERT INTO staff (id, user_id, org_unit_id, staff_code, "
+            "first_name, last_name, location_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("pos-stf-1", user_id, "pos-ou-1", "POS-STF-1",
+             "Sok", "Dara", loc_id))
+
+    st, body, _ = c.get("/pos/orders")
+    html = body.decode()
+    t.chk("orders page", st, 200)
+    t.chk("orders th = order+org+staff+customer+status+amounts+actions",
+          th_count(html), 7)
+    t.chk("orders empty state", "No Orders yet." in html, True)
+    sm = re.search(r'name="order_status_dict_id"[^>]*>(.*?)</select>',
+                   html, re.S)
+    t.chk("status options scoped to ORDER_STATUS (fk_where)",
+          sm.group(1).count("<option") if sm else -1, 7)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/orders/create?redirect=/pos/orders",
+        {"order_number": "ORD-POS-1", "org_unit_id": "pos-ou-1",
+         "staff_id": "pos-stf-1", "customer_id": "",
+         "order_status_dict_id": "PAID", "subtotal": "100",
+         "discount_amount": "10", "tax_amount": "9", "total_amount": "99"})
+    t.chk("order create", st, 302)
+    oid = db_row("SELECT id FROM orders WHERE order_number = ?",
+                 ("ORD-POS-1",))[0]
+    t.chk("order row db (incl. delivery_fee/shift defaults)",
+          db_row("SELECT org_unit_id, staff_id, customer_id, subtotal, "
+                 "total_amount, delivery_fee, shift_id FROM orders WHERE id = ?",
+                 (oid,)),
+          ("pos-ou-1", "pos-stf-1", None, 100.0, 99.0, 0.0, None))
+
+    st, body, _ = c.get("/pos/orders")
+    html = body.decode()
+    row, edit = row_and_edit(html, oid)
+    t.chk("order row found", bool(row), True)
+    t.chk("order row FK labels (org/staff)",
+          ("Main Depot" in row and "Sok" in row), True)
+    status_label = db_row("SELECT label FROM dictionaries WHERE id = 'PAID'")[0]
+    t.chk("status cell shows dict label (not raw id)",
+          (status_label in row and "PAID" not in row), True)
+    t.chk("amounts cell = 4 stacked parts",
+          len(re.findall(r'<span class="text-xs',
+                         row.split("</td>")[5])), 4)
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/orders/{oid}/update?redirect=/pos/orders",
+        {"order_number": "ORD-POS-1", "org_unit_id": "pos-ou-1",
+         "staff_id": "pos-stf-1", "customer_id": "",
+         "order_status_dict_id": "DELIVERED", "subtotal": "100",
+         "discount_amount": "10", "tax_amount": "9", "total_amount": "105"})
+    t.chk("order update", st, 302)
+    t.chk("order update saved",
+          db_row("SELECT order_status_dict_id, total_amount FROM orders "
+                 "WHERE id = ?", (oid,)),
+          ("DELIVERED", 105.0))
+
+    # ---- order children: items, payments, deliveries ---------------------
+    st, _, _ = c.post_urlencoded(
+        f"/pos/order_items/create?order_id={oid}&redirect=/pos/orders",
+        {"product_id": pid, "variant_id": "", "unit_price": "15",
+         "quantity": "2", "total_line": "30"})
+    t.chk("order item create (child, fk via query)", st, 302)
+    iid = db_row("SELECT id FROM order_items WHERE order_id = ?", (oid,))[0]
+    t.chk("order item db (price/qty/total + computed defaults)",
+          db_row("SELECT unit_price, unit_cost, quantity, discount_amount, "
+                 "tax_amount, total_line FROM order_items WHERE id = ?", (iid,)),
+          (15.0, 0.0, 2.0, 0.0, 0.0, 30.0))
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/payments/create?order_id={oid}&redirect=/pos/orders",
+        {"amount": "99", "payment_status": "", "transaction_ref": "TX-1",
+         "payment_method_dict_id": "CASH"})
+    t.chk("payment create (blank status -> COMPLETED)", st, 302)
+    pay_id = db_row("SELECT id FROM payments WHERE order_id = ?", (oid,))[0]
+    t.chk("payment db",
+          db_row("SELECT payment_status, payment_method_dict_id, amount "
+                 "FROM payments WHERE id = ?", (pay_id,)),
+          ("COMPLETED", "CASH", 99.0))
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/deliveries/create?order_id={oid}&redirect=/pos/orders",
+        {"recipient_name": "Chana", "recipient_phone": "012345678",
+         "delivery_address": "St 123", "delivery_status": "delivered",
+         "delivery_cost": "3", "driver_staff_id": ""})
+    t.chk("delivery create (UNIQUE one per order)", st, 302)
+    did = db_row("SELECT id FROM deliveries WHERE order_id = ?", (oid,))[0]
+    t.chk("delivery db (driver NULL, status, cost)",
+          db_row("SELECT driver_staff_id, delivery_status, delivery_cost, "
+                 "dispatched_at FROM deliveries WHERE id = ?", (did,)),
+          (None, "delivered", 3.0, None))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/deliveries/create?order_id={oid}&redirect=/pos/orders",
+        {"recipient_name": "Dup", "recipient_phone": "099",
+         "delivery_address": "St 1", "delivery_status": "pending",
+         "delivery_cost": "0", "driver_staff_id": ""})
+    t.chk("second delivery for same order rejected (UNIQUE)", st, 500)
+
+    st, body, _ = c.get("/pos/orders")
+    html = body.decode()
+    t.chk("order child tabs",
+          ('data-tab="order_items"' in html
+           and 'data-tab="payments"' in html
+           and 'data-tab="deliveries"' in html), True)
+    t.chk("child rows rendered",
+          (f'data-row-id="{iid}"' in html and f'data-row-id="{pay_id}"' in html
+           and f'data-row-id="{did}"' in html), True)
+    for tab, want in (("order_items", 4), ("payments", 4), ("deliveries", 4)):
+        tm = re.search(r'data-tab="%s".*?<thead[^>]*>(.*?)</thead>' % tab,
+                       html, re.S)
+        t.chk(f"{tab} child thead = 3 cols + actions",
+              tm.group(1).count("<th") if tm else -1, want)
+
+    # ---- cascade: order delete/restore stamps children -------------------
+    st, _, _ = c.post_urlencoded(
+        f"/pos/orders/{oid}/delete?redirect=/pos/orders", {})
+    t.chk("order soft delete", st, 302)
+    t.chk("cascade: items/payments/deliveries stamped",
+          (db_row("SELECT deleted_at FROM order_items WHERE id = ?",
+                  (iid,))[0] is not None,
+           db_row("SELECT deleted_at FROM payments WHERE id = ?",
+                  (pay_id,))[0] is not None,
+           db_row("SELECT deleted_at FROM deliveries WHERE id = ?",
+                  (did,))[0] is not None),
+          (True, True, True))
+    st, body, _ = c.get("/pos/orders?deleted=1")
+    html = body.decode()
+    t.chk("trash shows order + child rows",
+          (f'data-row-id="{oid}"' in html and f'data-row-id="{iid}"' in html),
+          True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/orders/{oid}/restore?redirect=/pos/orders?deleted=1")
+    t.chk("order restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/orders?deleted=1"))
+    t.chk("cascade: children restored",
+          (db_row("SELECT deleted_at FROM order_items WHERE id = ?", (iid,)),
+           db_row("SELECT deleted_at FROM payments WHERE id = ?", (pay_id,)),
+           db_row("SELECT deleted_at FROM deliveries WHERE id = ?", (did,))),
+          ((None,), (None,), (None,)))
+
+    # ---- /pos/shifts (master-only) ---------------------------------------
+    st, body, _ = c.get("/pos/shifts")
+    html = body.decode()
+    t.chk("shifts page", st, 200)
+    t.chk("shifts th = org+staff+status+cash+notes+actions", th_count(html), 6)
+    t.chk("shifts empty state", "No Shifts yet." in html, True)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/shifts/create?redirect=/pos/shifts",
+        {"org_unit_id": "pos-ou-1", "staff_id": "pos-stf-1", "status": "",
+         "opening_cash": "500", "closing_cash": "", "expected_cash": "",
+         "notes": "morning"})
+    t.chk("shift create (blank status -> OPEN)", st, 302)
+    shid = db_row("SELECT id FROM cash_shifts WHERE notes = 'morning'")[0]
+    t.chk("shift db (status default, cash, opened_at default)",
+          (db_row("SELECT status, opening_cash FROM cash_shifts WHERE id = ?",
+                  (shid,)),
+           db_row("SELECT opened_at FROM cash_shifts WHERE id = ?",
+                  (shid,))[0] is not None),
+          (("OPEN", 500.0), True))
+
+    st, body, _ = c.get("/pos/shifts")
+    row, edit = row_and_edit(body.decode(), shid)
+    t.chk("shift row found", bool(row), True)
+    t.chk("shift row contents (org/staff/status)",
+          ("Main Depot" in row and "Sok" in row and "OPEN" in row), True)
+    t.chk("shift cash cell = 3 parts",
+          len(re.findall(r'<span class="text-xs',
+                         row.split("</td>")[3])), 3)
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/shifts/{shid}/update?redirect=/pos/shifts",
+        {"org_unit_id": "pos-ou-1", "staff_id": "pos-stf-1", "status": "CLOSED",
+         "opening_cash": "500", "closing_cash": "480", "expected_cash": "490",
+         "notes": "morning"})
+    t.chk("shift close update", st, 302)
+    t.chk("shift close saved",
+          db_row("SELECT status, closing_cash, expected_cash "
+                 "FROM cash_shifts WHERE id = ?", (shid,)),
+          ("CLOSED", 480.0, 490.0))
+
+    # ---- /pos/finance (read_only) ----------------------------------------
+    st, body, _ = c.get("/pos/finance")
+    html = body.decode()
+    t.chk("finance page (read_only)", st, 200)
+    t.chk("finance th = org+type+account+amounts+description+actions",
+          th_count(html), 6)
+    t.chk("finance empty state", "No Finance yet." in html, True)
+    t.chk("finance read_only: no write UI",
+          ('data-md-op="create"' not in html
+           and "master-edit-btn" not in html
+           and 'data-md-op="delete"' not in html
+           and 'data-md-op="restore"' not in html), True)
+    t.chk("finance: write route not registered",
+          c.req("POST", "/pos/finance/create",
+                b"a=b", {"Content-Type": "application/x-www-form-urlencoded"})[0],
+          404)
+
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
     t.chk("people page (demo)", st, 200)
