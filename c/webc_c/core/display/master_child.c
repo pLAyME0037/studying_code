@@ -85,12 +85,20 @@ static char *build_column_list(const MD_ChildTab *child) {
 static bool load_child_rows(db_t *db,
                             const MD_ChildTab *child,
                             const char        *master_id,
+                            bool               show_deleted,
                             MD_ChildRows      *out_rows)
 {
     char *cols = build_column_list(child);
+    // Same live/trash rule as the master list: soft_delete tabs hide the
+    // trash, ?deleted=1 shows ONLY the trash (restore buttons gate on it).
+    const char *trash = "";
+    if (child->soft_delete) {
+        trash = show_deleted ? " AND deleted_at IS NOT NULL"
+                             : " AND deleted_at IS NULL";
+    }
     char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s = '%s'%s ORDER BY %s DESC;",
             cols, child->table, child->fk_column, md_sql_quote(master_id),
-            child->soft_delete ? " AND deleted_at IS NULL" : "",
+            trash,
             child->id_column);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
@@ -238,7 +246,8 @@ static bool md_load_master_with_children(db_t                  *db,
             row.children[ci].items = NULL;
             row.children[ci].count = 0;
             row.children[ci].capacity = 0;
-            if (!load_child_rows(db, &config->children[ci], row.id, &row.children[ci])) {
+            if (!load_child_rows(db, &config->children[ci], row.id,
+                                 show_deleted, &row.children[ci])) {
                 free(row.values);
                 for (size_t ci2 = 0; ci2 <= ci; ++ci2) {
                     MD_ChildRows *cr = &row.children[ci2];

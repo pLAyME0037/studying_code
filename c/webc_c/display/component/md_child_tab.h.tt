@@ -27,7 +27,7 @@
                 ({ STR(config->children[ti].fk_column); }): ({ STR(rows->items[ri].id); })
             </span>
         </div>
-        ({ if (!config->read_only) { })
+        ({ if (!config->read_only && !show_deleted) { })
         <button type="button"
                 title="Add"
                 aria-label="Add"

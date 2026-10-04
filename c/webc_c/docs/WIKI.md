@@ -147,8 +147,26 @@ vanilla JS only.
   MD_MasterConfig.read_only gates create/edit/delete/add-child UI and the
   module registers only the GET route -- showcase /pos/dictionaries.
   Suite: 204 PASS (pos_test now 63).
-- Next: Phase 5 module pages (src/pos/<entity>.c + route_new + sidebar
-  grouped nav) -> Phase 6 reports spike -> ... (docs/POS_PLAN.md).
+- Phase 5a DONE: CATALOG modules in src/pos/ (categories.c, products.c,
+  variants.c, stocks.c + pos_util.h pos_sv/pos_num bind helpers).
+  /pos/products = 5 cols (name, codes cell {sku,barcode}, prices cell
+  {base,cost,tax}, category FK, type FK) + children product_variants +
+  inventory_stocks; /pos/categories = self-FK parent select + products
+  child tab (md_products_child_columns). Child forms carry fk + redirect
+  in the query string (opt fields: body first, query fallback, absent ->
+  SQL NULL); UPDATE = COALESCE(NULLIF(?,''), col) everywhere so a child
+  edit form cannot blank columns it does not carry (cost: cleared
+  nullable fields keep their stored value). Child trash now complete:
+  loader honors ?deleted=1 per child tab, child rows get tint + restore
+  button, add-child gated in trash view. Nullable FK selects: required
+  gated on !nullable, "None" option in create/edit/add-row selects.
+  Cascade verified in tests (product delete/restore stamps+restores
+  variants & stocks via trg_soft_del_products/trg_restore_products).
+  Standalone child restore = route-only when the table has no master
+  page (variants); FK option lists still include deleted rows (engine
+  limitation). Suite: 256 PASS (pos_test 115).
+- Next: Phase 5b INVENTORY /pos/stocks (+ stock_ledger child), then 5c..5g
+  module pages -> Phase 8 reports spike (docs/POS_PLAN.md).
 
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.

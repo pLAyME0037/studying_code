@@ -23,8 +23,11 @@
             })
             <select form="mdf-a-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].id); })"
                     name="({ STR(config->children[ti].columns[cci].name); })"
-                    required
+                    ({ if (!config->children[ti].columns[cci].nullable) { })required({ } })
                     class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                ({ if (config->children[ti].columns[cci].nullable) { })
+                <option value="">None</option>
+                ({ } })
                 ({ for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { })
                     <option value="({ STR(config->children[ti].columns[cci].opt[o].id); })">
                         ({ ESCAPED(config->children[ti].columns[cci].opt[o].label); })

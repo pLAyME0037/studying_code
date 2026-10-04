@@ -35,7 +35,8 @@
                         ({ ESCAPED(form_cols.items[fi].col->label); })
                     </label>
                     ({ if (form_cols.items[fi].col->type == COL_TYPE_FK_SELECT) { })
-                        <select name="({ ESCAPED(form_cols.items[fi].col->name); })" required
+                        <select name="({ ESCAPED(form_cols.items[fi].col->name); })"
+                                ({ if (!form_cols.items[fi].col->nullable) { })required({ } })
                                 class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                             <option value="">None</option>
                             ({ for (size_t o = 0; o < form_cols.items[fi].count; ++o) { })
@@ -199,8 +200,15 @@
                                         </label>
                                 ({ if (config->columns[ci].type == COL_TYPE_FK_SELECT) { })
                                         <select form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
-                                                name="({ ESCAPED(config->columns[ci].name); })" required
+                                                name="({ ESCAPED(config->columns[ci].name); })"
+                                                ({ if (!config->columns[ci].nullable) { })required({ } })
                                                 class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                            ({ if (config->columns[ci].nullable) { })
+                                            <option value=""
+                                                    ({ if (rows->items[ri].values[md_col_slot(config->columns, ci)][0] == '\0') { })selected({ } })>
+                                                None
+                                            </option>
+                                            ({ } })
                                             ({ for (size_t o = 0; o < config->columns[ci].opt_count; ++o) { })
                                                 <option value="({ STR(config->columns[ci].opt[o].id); })"
                                                     ({ if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci)], config->columns[ci].opt[o].id) == 0) { })selected({ } })>

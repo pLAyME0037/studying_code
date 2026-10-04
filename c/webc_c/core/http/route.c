@@ -8,6 +8,10 @@
 #include "core/display/people.h"
 #include "core/display/user.h"
 #include "core/display/pos.h"
+#include "src/pos/categories.h"
+#include "src/pos/products.h"
+#include "src/pos/variants.h"
+#include "src/pos/stocks.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -177,6 +181,30 @@ void route_initialize(void) {
 
     // read_only showcase: view only
     route_new(&routes, "/pos/dictionaries", NULL, "GET", ROUTE_EXACT, serve_pos_dictionaries);
+
+    // Phase 5a CATALOG
+    route_new(&routes, "/pos/categories", NULL,       "GET",  ROUTE_EXACT,     serve_pos_categories);
+    route_new(&routes, "/pos/categories/create", NULL, "POST", ROUTE_EXACT,    serve_pos_categories_create);
+    route_new(&routes, "/pos/categories", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_categories_update);
+    route_new(&routes, "/pos/categories", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_categories_delete);
+    route_new(&routes, "/pos/categories", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_categories_restore);
+
+    route_new(&routes, "/pos/products", NULL,       "GET",  ROUTE_EXACT,     serve_pos_products);
+    route_new(&routes, "/pos/products/create", NULL, "POST", ROUTE_EXACT,    serve_pos_products_create);
+    route_new(&routes, "/pos/products", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_products_update);
+    route_new(&routes, "/pos/products", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_products_delete);
+    route_new(&routes, "/pos/products", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_products_restore);
+
+    // child entities: write routes only (child forms carry fk + redirect)
+    route_new(&routes, "/pos/variants/create", NULL, "POST", ROUTE_EXACT,    serve_pos_variants_create);
+    route_new(&routes, "/pos/variants", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_variants_update);
+    route_new(&routes, "/pos/variants", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_variants_delete);
+    route_new(&routes, "/pos/variants", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_variants_restore);
+
+    route_new(&routes, "/pos/stocks/create", NULL, "POST", ROUTE_EXACT,    serve_pos_stocks_create);
+    route_new(&routes, "/pos/stocks", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_update);
+    route_new(&routes, "/pos/stocks", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_delete);
+    route_new(&routes, "/pos/stocks", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_stocks_restore);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);
