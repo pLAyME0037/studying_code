@@ -5,14 +5,14 @@
           data-md-kind="master"
           data-md-scope="({ STR(config->table); })"
           data-md-op="create"
-          class="mb-3 p-2 bg-white dark:bg-gray-800 border border-gray-500 dark:border-gray-700">
+          class="mb-3 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
             Add ({ ESCAPED(config->title); })
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             ({ for (size_t fi = 0; fi < form_cols.count; ++fi) { })
                 ({ if (form_cols.items[fi].col->cell) { })
-                <div class="mb-3">
+                <div>
                     ({ for (size_t pi = 0; pi < form_cols.items[fi].col->cell->part_count; ++pi) { })
                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                             ({ ESCAPED(md_cell_part_label(form_cols.items[fi].col->cell, pi)); })
@@ -23,7 +23,7 @@
                     ({ } })
                 </div>
                 ({ } else { })
-                <div class="mb-3">
+                <div>
                     <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
                         ({ ESCAPED(form_cols.items[fi].col->label); })
                     </label>
@@ -52,11 +52,11 @@
             ({ } })
         </div>
         <button type="submit"
-            class="bg-gray-200 dark:bg-gray-700 text-sky-900 dark:text-sky-200 border-b-3 border-b-sky-200 hover:border-b-blue-700 p-1.5 font-medium">
+            class="bg-gray-200 dark:bg-gray-700 text-sky-900 dark:text-sky-200 border-b-3 border-b-sky-200 hover:border-b-blue-700 p-1 font-medium">
             Confirm
         </button>
         <button type="reset"
-            class="bg-gray-200 dark:bg-gray-700 text-orange-900 dark:text-orange-200 border-b-3 border-b-orange-200 hover:border-b-red-700 ml-2 p-1.5">
+            class="bg-gray-200 dark:bg-gray-700 text-orange-900 dark:text-orange-200 border-b-3 border-b-orange-200 hover:border-b-red-700 p-1">
             Discard
         </button>
     </form>
@@ -70,13 +70,13 @@
     <div class="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-scroll border">
         <table class="w-full text-left border-collapse master-table">
             <thead class="bg-slate-100 dark:bg-slate-900 dark:text-white text-slate-800">
-                <tr class="border-2 border-gray-300 hover:border-gray-700">
+                <tr class="border-b border-gray-200 dark:border-gray-700">
                     ({ for (size_t i = 0; i < config->column_count; ++i) { })
-                        <th class="p-2 font-semibold">
+                        <th class="py-1 pl-3 font-semibold">
                             ({ ESCAPED(config->columns[i].label); })
                         </th>
                     ({ } })
-                    <th class="p-2 font-semibold">
+                    <th class="py-1 pl-3 font-semibold">
                         Actions
                     </th>
                 </tr>
@@ -86,16 +86,16 @@
                 ({ if (rows->count == 0) { })
                     <tr>
                         <td colspan="({ INT(config->column_count + 1); })"
-                            class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400 text-center">
+                            class="pl-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 text-center">
                             No ({ ESCAPED(config->title); }) yet.
                         </td>
                     </tr>
                 ({ } else { })
                     ({ for (size_t ri = 0; ri < rows->count; ++ri) { })
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        <tr class="hover:bg-gray-100 dark:hover:bg-gray-700"
                             data-row-id="({ STR(rows->items[ri].id); })">
                             ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
-                                <td class="px-4 py-2 text-gray-700 dark:text-gray-200">
+                                <td class="pl-3 py-1 text-gray-700 dark:text-gray-200">
                                     ({ if (config->columns[ci].cell) { })
                                         ({ STR(md_cell_render(config->columns[ci].cell, rows->items[ri].values, md_col_slot(config->columns, ci))); })
                                     ({ } else { })
@@ -103,10 +103,10 @@
                                     ({ } })
                                 </td>
                             ({ } })
-                            <td class="px-4 py-2 whitespace-nowrap">
+                            <td class="pl-3 py-1 whitespace-nowrap">
                                 <div class="flex items-center gap-1">
                                     <button type="button"
-                                            class="master-edit-btn p-1 rounded text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                                            class="master-edit-btn p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                                             title="Edit"
                                             aria-label="Edit"
                                             data-master-id="({ STR(rows->items[ri].id); })">
@@ -114,7 +114,7 @@
                                     </button>
                                     <button
                                         type="button"
-                                        class="expand-btn px-2 py-1 rounded text-xs hover:bg-indigo-900/30 text-indigo-600"
+                                        class="expand-btn p-1 text-xs hover:bg-indigo-900/30 text-indigo-600"
                                         data-master-id="({ STR(rows->items[ri].id); })"
                                         aria-expanded="false">
                                         󰈈
@@ -130,7 +130,7 @@
                                         <button type="submit"
                                                 title="Delete"
                                                 aria-label="Delete"
-                                                class="p-1 rounded text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30">
+                                                class="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                         </button>
                                     </form>
@@ -138,7 +138,7 @@
                             </td>
                         </tr>
                         <tr class="md-master-edit-row hidden">
-                            <td colspan="({ INT(config->column_count + 1); })" class="px-2 py-1 bg-amber-50/50 dark:bg-gray-900/40">
+                            <td colspan="({ INT(config->column_count + 1); })" class="pl-3 py-1 bg-amber-50 dark:bg-gray-900">
                                 <form id="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                       method="POST"
                                       action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/update?redirect=({ STR(md_path); })"
@@ -147,7 +147,7 @@
                                       data-md-op="update"
                                       data-md-master="({ STR(rows->items[ri].id); })"
                                       data-md-target="({ STR(rows->items[ri].id); })"
-                                      class="flex flex-wrap gap-3 items-end px-2 py-1">
+                                      class="flex flex-wrap gap-3 items-end">
                             ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
                                 ({ if (config->columns[ci].cell) { })
                                     <div class="flex flex-col gap-1 min-w-[140px]">
@@ -159,7 +159,7 @@
                                                    name="({ ESCAPED(config->columns[ci].cell->parts[pi]); })"
                                                    type="text"
                                                    value="({ ESCAPED(rows->items[ri].values[md_col_slot(config->columns, ci) + pi]); })"
-                                                   class="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                                   class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                                         ({ } })
                                     </div>
                                 ({ } else { })
@@ -170,7 +170,7 @@
                                 ({ if (config->columns[ci].type == COL_TYPE_FK_SELECT) { })
                                         <select form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                                 name="({ ESCAPED(config->columns[ci].name); })" required
-                                                class="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                                class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                                             ({ for (size_t o = 0; o < config->columns[ci].opt_count; ++o) { })
                                                 <option value="({ STR(config->columns[ci].opt[o].id); })"
                                                     ({ if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci)], config->columns[ci].opt[o].id) == 0) { })selected({ } })>
@@ -184,16 +184,16 @@
                                                type="({ if (config->columns[ci].type == COL_TYPE_DATE) { })date({ } else if (config->columns[ci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
                                                ({ if (config->columns[ci].type == COL_TYPE_NUM) { })step="any" ({ } })
                                                value="({ ESCAPED(rows->items[ri].values[md_col_slot(config->columns, ci)]); })"
-                                               class="px-2 py-1 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                               class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                                 ({ } })
                                     </div>
                                 ({ } })
                             ({ } })
                                     <button type="submit" title="Confirm" aria-label="Confirm"
-                                            class="p-1 rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
+                                            class="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                                     </button>
-                                    <button type="button" class="md-discard p-1 rounded text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                    <button type="button" class="md-discard p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
                                             title="Discard" aria-label="Discard">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                                     </button>
@@ -205,12 +205,12 @@
                             style="display: none;">
                             <td colspan="({ INT(config->column_count + 1); })" 
                                 class="px-0 py-0">
-                                <div class="detail-panel p-0 bg-gray-50 dark:bg-gray-900/60 border-t border-gray-200 dark:border-gray-700">
-                                    <div class="flex border-b border-gray-200 dark:border-gray-700 mb-0 flex-wrap">
+                                <div class="detail-panel bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="flex border-b border-gray-200 dark:border-gray-700 flex-wrap">
                                         ({ for (size_t ti = 0; ti < config->children_count; ++ti) { })
                                             <button
                                                 type="button"
-                                                class="tab-btn px-4 py-2 text-sm font-medium ({ if (ti == 0) { })text-indigo-600 border-b-2 border-indigo-600({ } else { })text-gray-500 hover:text-gray-700 dark:text-gray-400({ } })"
+                                                class="tab-btn px-3 py-1.5 text-sm font-medium ({ if (ti == 0) { })text-indigo-600 border-b-2 border-indigo-600({ } else { })text-gray-500 hover:text-gray-700 dark:text-gray-400({ } })"
                                                 data-tab="({ STR(config->children[ti].table); })">
                                                 ({ ESCAPED(config->children[ti].title); })
                                             </button>

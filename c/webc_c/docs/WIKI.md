@@ -131,7 +131,15 @@ vanilla JS only.
 - serve.c fix shipped with Phase 2: request-body NUL byte no longer counted
   into sb_to_sv(sc.body) -- it used to leak into the LAST urlencoded form
   value (Svay Pak -> 'Svay Pak\0'). C-string users still see items[count].
-- Next: Phase 3 style pass -> Phase 4 soft_delete/read_only -> Phase 5
+- Phase 3 DONE: style pass on shared components (master_child,
+  md_child_rows/add_row/tab, pagination, sidebar): no `rounded` left in the
+  data area (logo keeps rounded-full), inputs px-0.5 py-1.5 / buttons p-1 /
+  cells pl-3 py-1, hierarchy via bg steps (header gray-100/slate-100, rows
+  white -> hover gray-100, child panel gray-50, edit row amber-50, dark
+  900/800/700) + hairline dividers (border-b/divide-y), no m*/p* nesting
+  (field mb-3 dropped for grid gap, edit form padding single-sourced in the
+  td). Suite: 178 PASS.
+- Next: Phase 4 soft_delete/read_only -> Phase 5
   module pages -> Phase 6 reports spike -> ... (docs/POS_PLAN.md).
 
 ## Gotchas
