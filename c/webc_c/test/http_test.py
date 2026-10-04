@@ -77,7 +77,7 @@ def main():
         t.chk(f"split head at term+{k}", resp.startswith(b"HTTP/1.1"), "True")
 
     # ---- migration files pin byte-exact history for existing DBs ----------
-    for mig in ("0001_notes", "0002_users"):
+    for mig in ("0001_notes", "0002_users", "0003_pos_eshop"):
         got = open(os.path.join(PROJECT, "migrations", mig, "sqlite3.sql"),
                    "rb").read()
         want = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),

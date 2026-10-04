@@ -63,6 +63,11 @@ static const Migration migrations[] = {
         [SQL_MYSQL]    = "migrations/0002_users/mysql.sql",
         [SQL_POSTGRES] = "migrations/0002_users/postgres.sql",
     }},
+    { "0003_pos_eshop", {
+        [SQL_SQLITE]   = "migrations/0003_pos_eshop/sqlite3.sql",
+        [SQL_MYSQL]    = "migrations/0003_pos_eshop/mysql.sql",
+        [SQL_POSTGRES] = "migrations/0003_pos_eshop/postgres.sql",
+    }},
 };
 
 /* Bootstrap table recording which migrations are already applied. It must
@@ -133,8 +138,27 @@ static Schema_Status create_schema_status(db_t *db, const char *webc_path) {
     Schema_Status result = SCHEMA_OK;
     sql_stmt stmt = {0};
     bool began = false;
+    bool fk_off = false;
 
     if (!migration_files_load(db->lang)) return_defer(SCHEMA_ERROR);
+
+    // Migrations may swap a table other tables point at (0003 rebuilds the
+    // demo `users` into the POS shape while notes.user_id references it).
+    // SQLite enforces DROP/RENAME against live FKs and PRAGMA foreign_keys
+    // is a no-op inside a transaction, so toggle it around the whole apply -
+    // the same pattern the restore path below uses. Only the sqlite dialect
+    // needs this: the ported mysql/postgres files carry no REFERENCES clauses
+    // that could block a DROP.
+    if (db->lang == SQL_SQLITE) {
+        if (sqlite3_exec((sqlite3 *) db->conn, "PRAGMA foreign_keys=OFF;",
+                         NULL, NULL, NULL) != SQLITE_OK) {
+            nob_log(NOB_ERROR, "disabling foreign keys for migrations: %s",
+                    db_errmsg(db));
+            return_defer(SCHEMA_ERROR);
+        }
+        fk_off = true;
+    }
+
     if (!sql_txn_begin(db)) return_defer(SCHEMA_ERROR);
     began = true;
 
@@ -198,6 +222,12 @@ defer:
         // explicitly so the connection is in a clean state. (ROLLBACK outside
         // of a transaction just reports an error, which we skip.)
         sql_txn_rollback(db);
+    }
+    // Always restore FK enforcement for the request-serving connection,
+    // whether the apply succeeded or bailed out half way.
+    if (fk_off) {
+        sqlite3_exec((sqlite3 *) db->conn, "PRAGMA foreign_keys=ON;",
+                     NULL, NULL, NULL);
     }
     return result;
 }
