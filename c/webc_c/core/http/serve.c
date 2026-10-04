@@ -312,7 +312,11 @@ static void serve_request_coro(void *arg) {
     if (content_length > 0 && body_start + (size_t)content_length <= sc.request.count) {
         sb_append_buf(&sc.body, sc.request.items + body_start, (size_t)content_length);
     }
+    // Terminate the buffer for C-string users, but keep the byte OUT of the
+    // count: sb_to_sv(sc.body) must be the exact body bytes -- a counted NUL
+    // would be captured as part of the last urlencoded form value.
     sb_append_null(&sc.body);
+    sc.body.count -= 1;
 
     String_View request     = sb_to_sv(sc.request);
     String_View status_line = sv_trim(sv_chop_by_delim(&request, '\n'));

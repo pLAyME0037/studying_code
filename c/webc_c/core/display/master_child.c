@@ -3,6 +3,7 @@
 
 #include "master_child.h"
 #include "src/db/db.h"
+#include "src/helper/cells.h"
 #include "core/layout/header.h"
 #include "core/layout/footer.h"
 #include "core/http/utils.h"
@@ -64,8 +65,18 @@ static char *build_column_list(const MD_ChildTab *child) {
     String_Builder sb = {0};
     sb_append_cstr(&sb, child->id_column);
     for (size_t i = 0; i < child->column_count; ++i) {
-        sb_append_cstr(&sb, ", ");
-        sb_append_cstr(&sb, child->columns[i].name);
+        const MD_Column *col = &child->columns[i];
+        if (col->cell) {
+            // Composite column: SELECT one column per part; the slot map
+            // (md_col_slot) lines values[] up with them.
+            for (size_t p = 0; p < col->cell->part_count; ++p) {
+                sb_append_cstr(&sb, ", ");
+                sb_append_cstr(&sb, col->cell->parts[p]);
+            }
+        } else {
+            sb_append_cstr(&sb, ", ");
+            sb_append_cstr(&sb, col->name);
+        }
     }
     sb_append_null(&sb);
     return sb.items;
@@ -175,8 +186,16 @@ static bool md_load_master_with_children(db_t                  *db,
     String_Builder cl = {0};
     sb_append_cstr(&cl, config->id_column);
     for (size_t ci2 = 0; ci2 < config->column_count; ++ci2) {
-        sb_append_cstr(&cl, ", ");
-        sb_append_cstr(&cl, config->columns[ci2].name);
+        const MD_Column *col = &config->columns[ci2];
+        if (col->cell) {
+            for (size_t p = 0; p < col->cell->part_count; ++p) {
+                sb_append_cstr(&cl, ", ");
+                sb_append_cstr(&cl, col->cell->parts[p]);
+            }
+        } else {
+            sb_append_cstr(&cl, ", ");
+            sb_append_cstr(&cl, col->name);
+        }
     }
     sb_append_null(&cl);
     // ORDER BY %s DESC is the single line that decides master order.
@@ -293,18 +312,25 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
                 md_col_load_options(db, &config->children[ti].columns[cci]);
             }
         }
-        // FK label substitution into display arrays
+        // FK label substitution into display arrays (slot map: a composite
+        // column spans part_count slots whose raw copies already stand in
+        // for disp -- its parts are plain fields, never FK labels).
         for (size_t ri = 0; ri < rows->count; ++ri) {
             MD_MasterRow *r = &rows->items[ri];
             for (size_t ci = 0; ci < config->column_count; ++ci) {
-                r->disp[ci + 1] = (char *)md_fk_display(&config->columns[ci], r->values[ci + 1]);
+                if (config->columns[ci].cell) continue;
+                size_t slot = md_col_slot(config->columns, ci);
+                r->disp[slot] = (char *)md_fk_display(&config->columns[ci], r->values[slot]);
             }
             for (size_t ti = 0; ti < config->children_count; ++ti) {
                 const MD_ChildTab *ct = &config->children[ti];
                 MD_ChildRows *cr = &r->children[ti];
                 for (size_t cj = 0; cj < cr->count; ++cj) {
                     for (size_t cci = 0; cci < ct->column_count; ++cci) {
-                        cr->items[cj].disp[cci + 1] = (char *)md_fk_display(&ct->columns[cci], cr->items[cj].values[cci + 1]);
+                        if (ct->columns[cci].cell) continue;
+                        size_t slot = md_col_slot(ct->columns, cci);
+                        cr->items[cj].disp[slot] =
+                            (char *)md_fk_display(&ct->columns[cci], cr->items[cj].values[slot]);
                     }
                 }
             }

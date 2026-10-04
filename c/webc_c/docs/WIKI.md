@@ -119,6 +119,21 @@ vanilla JS only.
   <td> per column kept in display AND edit/create rows.
 - Plan file: docs/POS_PLAN.md (phases 0-10)
 
+## POS phase status (2026-10-04)
+- Phase 0 (baseline + wiki) DONE 6bda49f3. Phase 1 (0003_pos_eshop: 3
+  dialects, users swap with dup dedup, dict/language seeds, FK-off
+  migration txn in db.c, golden pin) DONE 9249a993.
+- Phase 2 DONE: MD_Cell + md_col_slot() slot map in master_child.h (SELECT
+  expands parts; every values/disp index goes through the map), cells.c
+  stack/avatar renderers, composite branches in display/create/edit/add-row
+  templates, showcase pages /pos/locations + /pos/users (+8 route_new
+  lines), test/pos_test.py (37 checks). Suite: 178 PASS.
+- serve.c fix shipped with Phase 2: request-body NUL byte no longer counted
+  into sb_to_sv(sc.body) -- it used to leak into the LAST urlencoded form
+  value (Svay Pak -> 'Svay Pak\0'). C-string users still see items[count].
+- Next: Phase 3 style pass -> Phase 4 soft_delete/read_only -> Phase 5
+  module pages -> Phase 6 reports spike -> ... (docs/POS_PLAN.md).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - No sb_append_ch — use sb_append_buf(sb, &c, 1).

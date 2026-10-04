@@ -7,6 +7,7 @@
 #include "core/display/version.h"
 #include "core/display/people.h"
 #include "core/display/user.h"
+#include "core/display/pos.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -160,6 +161,17 @@ void route_initialize(void) {
     route_new(&routes, "/users", "/edit",   "GET",  ROUTE_ID_ACTION, serve_users_edit);
     route_new(&routes, "/users", "/update", "POST", ROUTE_ID_ACTION, serve_users_update);
     route_new(&routes, "/users", "/delete", "POST", ROUTE_ID_ACTION, serve_users_delete);
+
+    // POS showcase pages (composite multi-field columns), same route shape
+    route_new(&routes, "/pos/locations", NULL,       "GET",  ROUTE_EXACT,     serve_pos_locations);
+    route_new(&routes, "/pos/locations/create", NULL, "POST", ROUTE_EXACT,    serve_pos_locations_create);
+    route_new(&routes, "/pos/locations", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_locations_update);
+    route_new(&routes, "/pos/locations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_locations_delete);
+
+    route_new(&routes, "/pos/users", NULL,       "GET",  ROUTE_EXACT,     serve_pos_users);
+    route_new(&routes, "/pos/users/create", NULL, "POST", ROUTE_EXACT,    serve_pos_users_create);
+    route_new(&routes, "/pos/users", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_users_update);
+    route_new(&routes, "/pos/users", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_users_delete);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

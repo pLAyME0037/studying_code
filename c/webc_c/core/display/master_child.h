@@ -27,6 +27,20 @@ typedef enum {
     COL_TYPE_BLOB,      /* stored image path; shown as its URL text */
 } Col_Type;
 
+/* Composite column: ONE <td> (and one edit cell) holding N same-table
+ * fields. parts[0] is the leading field (first SELECTed, avatar image
+ * slot for "avatar"); style picks the renderer in src/helper/cells.c:
+ *   "stack"  - flex-col lines, color-ranked (parts[0] strongest)
+ *   "avatar" - image (parts[0]) + primary (parts[1]) + secondary (parts[2])
+ * part_labels feeds the per-part edit/create input labels (NULL -> parts).
+ * Parts are plain fields: not combined with hidden/computed/FK flags. */
+typedef struct {
+    const char **parts;
+    const char **part_labels;
+    size_t       part_count;
+    const char  *style;
+} MD_Cell;
+
 typedef struct {
     const char *name;
     const char *label;
@@ -39,7 +53,19 @@ typedef struct {
     size_t      opt_count;
     int         hidden;     /* never displayed; preserved via hidden input on edit */
     int         computed;   /* display-only value (server-derived); no form input */
+    const MD_Cell *cell;    /* composite: N parts render as one cell (see MD_Cell) */
 } MD_Column;
+
+/* values[0] is the row id; column ci starts at its first slot below. Flat
+ * columns keep the historic values[ci + 1] identity; a composite column
+ * spans part_count slots. Every values[]/disp[] index in the templates
+ * goes through this map. */
+static inline size_t md_col_slot(const MD_Column *cols, size_t ci) {
+    size_t slot = 1;
+    for (size_t i = 0; i < ci; ++i)
+        slot += cols[i].cell ? cols[i].cell->part_count : 1;
+    return slot;
+}
 
 typedef struct {
     char  **values;

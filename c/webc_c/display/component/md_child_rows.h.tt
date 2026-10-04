@@ -3,7 +3,11 @@
     for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) {
     })
         <td class="pl-3 text-sm text-gray-700 dark:text-gray-200">
-            ({ ESCAPED(rows->items[ri].children[ti].items[ci].disp[cci + 1]); })
+            ({ if (config->children[ti].columns[cci].cell) { })
+                ({ STR(md_cell_render(config->children[ti].columns[cci].cell, rows->items[ri].children[ti].items[ci].values, md_col_slot(config->children[ti].columns, cci))); })
+            ({ } else { })
+                ({ ESCAPED(rows->items[ri].children[ti].items[ci].disp[md_col_slot(config->children[ti].columns, cci)]); })
+            ({ } })
         </td>
     ({ } })
     <td class="p-1 whitespace-nowrap">
@@ -35,13 +39,27 @@
 <tr class="md-edit-row hidden">
     ({ for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
         <td class="p-1">
+        ({ if (config->children[ti].columns[cci].cell) { })
+            <div class="flex flex-col gap-1">
+                ({ for (size_t pi = 0; pi < config->children[ti].columns[cci].cell->part_count; ++pi) { })
+                    <label class="block text-xs text-gray-500 dark:text-gray-400">
+                        ({ ESCAPED(md_cell_part_label(config->children[ti].columns[cci].cell, pi)); })
+                    </label>
+                    <input form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+                           name="({ ESCAPED(config->children[ti].columns[cci].cell->parts[pi]); })"
+                           type="text"
+                           value="({ ESCAPED(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci) + pi]); })"
+                           class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                ({ } })
+            </div>
+        ({ } else { })
         ({ if (config->children[ti].columns[cci].type == COL_TYPE_FK_SELECT) { })
             <select form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
                     name="({ STR(config->children[ti].columns[cci].name); })"
                     class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                 ({ for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { })
                     <option value="({ STR(config->children[ti].columns[cci].opt[o].id); })"
-                        ({ if (strcmp(rows->items[ri].children[ti].items[ci].values[cci + 1], config->children[ti].columns[cci].opt[o].id) == 0) { })selected({ } })>
+                        ({ if (strcmp(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)], config->children[ti].columns[cci].opt[o].id) == 0) { })selected({ } })>
                         ({ ESCAPED(config->children[ti].columns[cci].opt[o].label); })
                     </option>
                 ({ } })
@@ -51,8 +69,9 @@
                    name="({ STR(config->children[ti].columns[cci].name); })"
                    type="({ if (config->children[ti].columns[cci].type == COL_TYPE_DATE) { })date({ } else if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
                    ({ if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })step="any" ({ } })
-                   value="({ ESCAPED(rows->items[ri].children[ti].items[ci].values[cci + 1]); })"
+                   value="({ ESCAPED(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)]); })"
                    class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        ({ } })
         ({ } })
         </td>
     ({ } })

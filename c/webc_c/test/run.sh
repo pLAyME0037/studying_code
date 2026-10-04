@@ -47,6 +47,9 @@ python3 test/https_test.py "$TMP" > "$HTTPS_LOG" 2>&1 &
 HTTPS_PID=$!
 
 python3 test/http_test.py "$HOST" "$PORT" "$TMP" || rc=$?
+# Phase 2: composite-column pages share this server + DB (needs http_test's
+# rows to be in place first, and cleans up its own rows as it goes).
+python3 test/pos_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 
 if ! wait "$MYSQL_PID"; then
     rc=1
