@@ -13,10 +13,15 @@ void serve_pos_locations(Serve_Context *sc);
 void serve_pos_locations_create(Serve_Context *sc);
 void serve_pos_locations_update(Serve_Context *sc);
 void serve_pos_locations_delete(Serve_Context *sc);
+void serve_pos_locations_restore(Serve_Context *sc);
 
 void serve_pos_users(Serve_Context *sc);
 void serve_pos_users_create(Serve_Context *sc);
 void serve_pos_users_update(Serve_Context *sc);
 void serve_pos_users_delete(Serve_Context *sc);
+void serve_pos_users_restore(Serve_Context *sc);
+
+/* read_only view: GET route only, no write routes registered */
+void serve_pos_dictionaries(Serve_Context *sc);
 
 #endif // !POS_H_

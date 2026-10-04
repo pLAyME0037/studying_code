@@ -85,11 +85,32 @@ defer:
     return result;
 }
 
-static bool delete_location(db_t *db, String_View id) {
+// Soft delete: the row stays, deleted_at is stamped (migration cascade
+// triggers fire on this UPDATE) and the live list filters it out; the
+// /restore route clears the column.
+static bool soft_delete_location(db_t *db, String_View id) {
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "DELETE FROM locations WHERE id = ?;",
-        [SQL_MYSQL]    = "DELETE FROM locations WHERE id = ?;",
-        [SQL_POSTGRES] = "DELETE FROM locations WHERE id = $1;",
+        [SQL_SQLITE]   = "UPDATE locations "
+                         "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
+                         "WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE locations SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE locations SET deleted_at = now() WHERE id = $1;",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
+static bool restore_location(db_t *db, String_View id) {
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE locations SET deleted_at = NULL WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE locations SET deleted_at = NULL WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE locations SET deleted_at = NULL WHERE id = $1;",
     };
     sql_stmt stmt = {0};
     bool result = true;
@@ -109,6 +130,7 @@ void serve_pos_locations(Serve_Context *sc) {
         .crud_path      = "/pos/locations",
         .columns        = md_locations_columns,
         .column_count   = md_locations_columns_count,
+        .soft_delete    = 1,
     };
     serve_master_child(sc, &config);
 }
@@ -121,7 +143,7 @@ static const char *loc_fields[] = { "province", "district", "commune", "village"
 static const char *loc_opt_fields[] = { "created_at" };
 SERVE_CREATE(pos_locations, location, loc_fields, loc_opt_fields)
 SERVE_UPDATE(pos_locations, location, loc_fields, loc_opt_fields)
-SERVE_DELETE(pos_locations, location)
+SERVE_SOFT_DELETE(pos_locations, location)
 
 // ---- /pos/users ---------------------------------------------------------
 
@@ -201,13 +223,32 @@ defer:
     return result;
 }
 
-static bool delete_pos_user(db_t *db, String_View id) {
-    // Rows referenced by notes/roles/staff hit FK RESTRICT -> 500, which is
-    // the loud failure mode we want; fresh showcase rows delete fine.
+// Rows referenced by roles/staff hit FK RESTRICT on a hard delete; with
+// soft_delete the UPDATE only stamps deleted_at (cascade trigger covers
+// user_roles/system_alerts/customer_interactions).
+static bool soft_delete_pos_user(db_t *db, String_View id) {
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "DELETE FROM users WHERE id = ?;",
-        [SQL_MYSQL]    = "DELETE FROM users WHERE id = ?;",
-        [SQL_POSTGRES] = "DELETE FROM users WHERE id = $1;",
+        [SQL_SQLITE]   = "UPDATE users "
+                         "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
+                         "WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE users SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE users SET deleted_at = now() WHERE id = $1;",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
+static bool restore_pos_user(db_t *db, String_View id) {
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE users SET deleted_at = NULL WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE users SET deleted_at = NULL WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE users SET deleted_at = NULL WHERE id = $1;",
     };
     sql_stmt stmt = {0};
     bool result = true;
@@ -227,6 +268,7 @@ void serve_pos_users(Serve_Context *sc) {
         .crud_path      = "/pos/users",
         .columns        = md_pos_users_columns,
         .column_count   = md_pos_users_columns_count,
+        .soft_delete    = 1,
     };
     serve_master_child(sc, &config);
 }
@@ -235,4 +277,29 @@ static const char *usr_fields[] = { "name", "username", "email", "profile_pic" }
 static const char *usr_opt_fields[] = { "phone" };
 SERVE_CREATE(pos_users, pos_user, usr_fields, usr_opt_fields)
 SERVE_UPDATE(pos_users, pos_user, usr_fields, usr_opt_fields)
-SERVE_DELETE(pos_users, pos_user)
+SERVE_SOFT_DELETE(pos_users, pos_user)
+
+// ---- /pos/dictionaries (read_only showcase) -----------------------------
+// Seeded reference data: the page is a pure view -- no create form, no
+// edit/delete UI, and the module registers only the GET route.
+
+MD_Column md_dictionaries_columns[] = {
+    { .name = "category",   .label = "Category",   .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "code",       .label = "Code",       .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "label",      .label = "Label",      .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "sort_order", .label = "Sort",       .type = COL_TYPE_NUM,  .nullable = false },
+};
+const size_t md_dictionaries_columns_count = ARRAY_LEN(md_dictionaries_columns);
+
+void serve_pos_dictionaries(Serve_Context *sc) {
+    MD_MasterConfig config = {
+        .table          = "dictionaries",
+        .title          = "Dictionaries",
+        .id_column      = "id",
+        .crud_path      = "/pos/dictionaries",  /* never used: no write routes */
+        .columns        = md_dictionaries_columns,
+        .column_count   = md_dictionaries_columns_count,
+        .read_only      = 1,
+    };
+    serve_master_child(sc, &config);
+}

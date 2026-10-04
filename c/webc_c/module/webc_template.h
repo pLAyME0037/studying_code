@@ -255,6 +255,55 @@
                              http_redirect_target(sc, "/" #plural));      \
     }
 
+// Soft-delete pair for tables carrying deleted_at: /{id}/delete stamps the
+// column (the live list filters it out; migration cascade triggers fire),
+// /{id}/restore clears it. The module provides the SQL as
+// soft_delete_<singular>() / restore_<singular>() -- same shape as
+// SERVE_DELETE, only the called statement differs.
+#define SERVE_SOFT_DELETE(plural, singular)                                 \
+    void serve_##plural##_delete(Serve_Context *sc) {                       \
+        Route_Id id = sc->route_id;   /* parsed once at the route gate */   \
+        if (id.kind == ID_NONE) {                                           \
+            serve_error(sc, 404);                                           \
+            return;                                                         \
+        }                                                                   \
+        db_t *db = open_webc_db();                                          \
+        if (!db) { serve_error(sc, 500); return; }                          \
+        if (!sql_txn_begin(db)) {                                           \
+            db_close(db);                                                   \
+            serve_error(sc, 404);                                           \
+            return;                                                         \
+        }                                                                   \
+        bool ok = soft_delete_##singular(db, id.raw);                       \
+        if (ok) { sql_txn_commit(db); }                                     \
+        else    { sql_txn_rollback(db); }                                   \
+        db_close(db);                                                       \
+        if (!ok) { serve_error(sc, 500); return; }                          \
+        http_render_redirect(sc, 302,                                       \
+                             http_redirect_target(sc, "/" #plural));        \
+    }                                                                       \
+    void serve_##plural##_restore(Serve_Context *sc) {                      \
+        Route_Id id = sc->route_id;                                         \
+        if (id.kind == ID_NONE) {                                           \
+            serve_error(sc, 404);                                           \
+            return;                                                         \
+        }                                                                   \
+        db_t *db = open_webc_db();                                          \
+        if (!db) { serve_error(sc, 500); return; }                          \
+        if (!sql_txn_begin(db)) {                                           \
+            db_close(db);                                                   \
+            serve_error(sc, 404);                                           \
+            return;                                                         \
+        }                                                                   \
+        bool ok = restore_##singular(db, id.raw);                           \
+        if (ok) { sql_txn_commit(db); }                                     \
+        else    { sql_txn_rollback(db); }                                   \
+        db_close(db);                                                       \
+        if (!ok) { serve_error(sc, 500); return; }                          \
+        http_render_redirect(sc, 302,                                       \
+                             http_redirect_target(sc, "/" #plural));        \
+    }
+
 #define SERVE_CRUD(plural, singular, Plural_Type, Singular_Type, fields, opt_fields) \
     SERVE_READ(plural, Plural_Type)                                                  \
     SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)                         \

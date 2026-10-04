@@ -88,8 +88,9 @@ static bool load_child_rows(db_t *db,
                             MD_ChildRows      *out_rows)
 {
     char *cols = build_column_list(child);
-    char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s = '%s' ORDER BY %s DESC;",
+    char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s = '%s'%s ORDER BY %s DESC;",
             cols, child->table, child->fk_column, md_sql_quote(master_id),
+            child->soft_delete ? " AND deleted_at IS NULL" : "",
             child->id_column);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
@@ -178,10 +179,19 @@ static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCo
     return true;
 }
 
+// Soft-delete visibility filter for a table with a deleted_at column.
+// Live view hides the trash; ?deleted=1 shows ONLY the trash.
+static const char *md_soft_where(int soft_delete, bool show_deleted) {
+    if (!soft_delete) return "";
+    return show_deleted ? " WHERE deleted_at IS NOT NULL"
+                        : " WHERE deleted_at IS NULL";
+}
+
 static bool md_load_master_with_children(db_t                  *db,
                                          const MD_MasterConfig *config,
                                          MD_MasterRows         *rows,
-                                         const Page_Info       *slice)
+                                         const Page_Info       *slice,
+                                         bool                   show_deleted)
 {
     String_Builder cl = {0};
     sb_append_cstr(&cl, config->id_column);
@@ -201,8 +211,9 @@ static bool md_load_master_with_children(db_t                  *db,
     // ORDER BY %s DESC is the single line that decides master order.
     // Child lists are always loaded in full (they are bounded per master
     // and the template windows them); only the master list takes a window.
-    char *sql = temp_sprintf("SELECT %s FROM %s ORDER BY %s DESC%s;",
-            cl.items, config->table, config->id_column,
+    char *sql = temp_sprintf("SELECT %s FROM %s%s ORDER BY %s DESC%s;",
+            cl.items, config->table, md_soft_where(config->soft_delete, show_deleted),
+            config->id_column,
             slice ? temp_sprintf(" LIMIT %zu OFFSET %zu", slice->per_page, slice->offset)
                   : "");
     sql_stmt stmt = {0};
@@ -256,8 +267,10 @@ static bool md_load_master_with_children(db_t                  *db,
 
 // Total master rows (drives the pager; the window itself is applied by
 // md_load_master_with_children's LIMIT/OFFSET).
-static bool md_count_masters(db_t *db, const MD_MasterConfig *config, size_t *out) {
-    char *sql = temp_sprintf("SELECT count(*) FROM %s;", config->table);
+static bool md_count_masters(db_t *db, const MD_MasterConfig *config,
+                             bool show_deleted, size_t *out) {
+    char *sql = temp_sprintf("SELECT count(*) FROM %s%s;",
+            config->table, md_soft_where(config->soft_delete, show_deleted));
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) return false;
     bool ok = false;
@@ -280,10 +293,16 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     // ?fragment=all: load everything, render the bare pagination store
     // (no header/footer) -- the payload js/PaginationSwitcher.js caches.
     bool fragment = page_fragment_requested(sc->query_string);
+    // ?deleted=1 on a soft_delete page: the trash view (restorable rows).
+    // Declared here so every template branch below sees the same flag.
+    String_View del_sv = {0};
+    bool show_deleted = config->soft_delete
+        && form_find(sc->query_string, "deleted", &del_sv)
+        && sv_eq(del_sv, sv_from_cstr("1"));
     Page_Info page_info = {0};                    // master list window
     page_info_parse(sc->query_string, "page", &page_info);
     bool windowed = !fragment;
-    if (windowed && !md_count_masters(db, config, &page_info.total)) {
+    if (windowed && !md_count_masters(db, config, show_deleted, &page_info.total)) {
         db_close(db);
         serve_error(sc, 500);
         return;
@@ -301,7 +320,8 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     MD_MasterRows *rows = md_master_rows_new();
     MD_FormCols form_cols = {0};
     bool ok = md_load_master_with_children(db, config, rows,
-                                           windowed ? &page_info : NULL)
+                                           windowed ? &page_info : NULL,
+                                           show_deleted)
         && md_form_cols_load(db, config, &form_cols);
     if (ok) {
         for (size_t i = 0; i < config->column_count; ++i) {

@@ -167,11 +167,16 @@ void route_initialize(void) {
     route_new(&routes, "/pos/locations/create", NULL, "POST", ROUTE_EXACT,    serve_pos_locations_create);
     route_new(&routes, "/pos/locations", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_locations_update);
     route_new(&routes, "/pos/locations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_locations_delete);
+    route_new(&routes, "/pos/locations", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_locations_restore);
 
     route_new(&routes, "/pos/users", NULL,       "GET",  ROUTE_EXACT,     serve_pos_users);
     route_new(&routes, "/pos/users/create", NULL, "POST", ROUTE_EXACT,    serve_pos_users_create);
     route_new(&routes, "/pos/users", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_users_update);
     route_new(&routes, "/pos/users", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_users_delete);
+    route_new(&routes, "/pos/users", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_users_restore);
+
+    // read_only showcase: view only
+    route_new(&routes, "/pos/dictionaries", NULL, "GET", ROUTE_EXACT, serve_pos_dictionaries);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

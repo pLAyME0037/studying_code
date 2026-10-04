@@ -89,6 +89,7 @@ typedef struct {
     size_t      column_count;
     const char **sum_columns;
     size_t      sum_column_count;
+    int         soft_delete;  /* rows carry deleted_at: loader hides them, add-row/edit gated */
 } MD_ChildTab;
 
 typedef struct {
@@ -102,6 +103,11 @@ typedef struct {
     size_t       sum_column_count;
     MD_ChildTab *children;
     size_t       children_count;
+    int          soft_delete; /* rows carry deleted_at: delete route stamps it,
+                                 ?deleted=1 shows the trash with a restore
+                                 button; child tabs hide their own deleted rows */
+    int          read_only;   /* hides add/edit/delete UI; the module simply
+                                 registers no write routes for this page */
 } MD_MasterConfig;
 
 /* column + resolved FK dropdown options for the generic create form */

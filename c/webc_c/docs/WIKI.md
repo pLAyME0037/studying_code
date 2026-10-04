@@ -139,8 +139,16 @@ vanilla JS only.
   900/800/700) + hairline dividers (border-b/divide-y), no m*/p* nesting
   (field mb-3 dropped for grid gap, edit form padding single-sourced in the
   td). Suite: 178 PASS.
-- Next: Phase 4 soft_delete/read_only -> Phase 5
-  module pages -> Phase 6 reports spike -> ... (docs/POS_PLAN.md).
+- Phase 4 DONE: MD_MasterConfig.soft_delete (loader WHERE live/trash,
+  ?deleted=1 trash view: red tint + banner + restore buttons, restore
+  redirects back to ?deleted=1) + MD_ChildTab.soft_delete (child loader),
+  SERVE_SOFT_DELETE macro (module SQL: stamp/clear deleted_at, cascade
+  triggers fire -- verified user_roles via trg_soft_del_users/restore);
+  MD_MasterConfig.read_only gates create/edit/delete/add-child UI and the
+  module registers only the GET route -- showcase /pos/dictionaries.
+  Suite: 204 PASS (pos_test now 63).
+- Next: Phase 5 module pages (src/pos/<entity>.c + route_new + sidebar
+  grouped nav) -> Phase 6 reports spike -> ... (docs/POS_PLAN.md).
 
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.

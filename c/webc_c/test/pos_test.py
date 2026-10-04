@@ -37,6 +37,16 @@ def db_row(sql, args=()):
         conn.close()
 
 
+def db_exec(sql, args=()):
+    conn = sqlite3.connect(DB, timeout=10)
+    try:
+        conn.execute("PRAGMA busy_timeout=5000")
+        conn.execute(sql, args)
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def row_and_edit(html, rid):
     """(display-row inner html, edit-row inner html) for row `rid`.
 
@@ -185,24 +195,89 @@ def main():
           db_row("SELECT name FROM users WHERE id = ?", (uid,)),
           ("Sok Dara Renamed",))
 
-    # ---- delete all showcase rows ----------------------------------------
+    # ---- soft delete + restore (Phase 4) ---------------------------------
     st, _, _ = c.post_urlencoded(
         f"/pos/locations/{rid}/delete?redirect=/pos/locations", {}
     )
-    t.chk("location delete", st, 302)
+    t.chk("location soft delete", st, 302)
+    t.chk("location deleted_at stamped",
+          db_row("SELECT deleted_at FROM locations WHERE id = ?", (rid,))
+          [0] is not None, True)
+    st, body, _ = c.get("/pos/locations")
+    t.chk("live view hides deleted location",
+          (st, "No Locations yet." in body.decode()), (200, True))
+    st, body, _ = c.get("/pos/locations?deleted=1")
+    html = body.decode()
+    row, _ = row_and_edit(html, rid)
+    t.chk("trash view shows deleted location", bool(row), True)
+    t.chk("trash rows tinted", "hover:bg-red-100" in html, True)
+    t.chk("trash row has restore button", 'data-md-op="restore"' in row, True)
+    t.chk("trash banner + no add form",
+          ("Deleted rows" in html, 'data-md-op="create"' not in html),
+          (True, True))
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/locations/{rid}/restore?redirect=/pos/locations?deleted=1"
+    )
+    t.chk("location restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/locations?deleted=1"))
+    t.chk("restore cleared deleted_at",
+          db_row("SELECT deleted_at FROM locations WHERE id = ?", (rid,)),
+          (None,))
+    st, body, _ = c.get("/pos/locations")
+    t.chk("restored row visible in live view",
+          (st, "Prampi Makara" in body.decode()), (200, True))
+
+    # ---- users: soft delete + cascade trigger ----------------------------
+    # user_roles row exercises trg_soft_del_users / trg_restore_users.
+    db_exec("INSERT OR IGNORE INTO roles (id, role_code, role_name) "
+            "VALUES (?, ?, ?)", ("pos-test-role-1", "POS_TEST_ROLE", "POS Test"))
+    db_exec("INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES (?, ?)",
+            (uid, "pos-test-role-1"))
     st, _, _ = c.post_urlencoded(
         f"/pos/users/{uid}/delete?redirect=/pos/users", {}
     )
-    t.chk("staff delete", st, 302)
+    t.chk("staff soft delete", st, 302)
+    t.chk("staff deleted_at stamped",
+          db_row("SELECT deleted_at FROM users WHERE id = ?", (uid,))
+          [0] is not None, True)
+    t.chk("cascade: user_roles stamped by trigger",
+          db_row("SELECT deleted_at FROM user_roles WHERE user_id = ? "
+                 "AND role_id = ?", (uid, "pos-test-role-1"))
+          [0] is not None, True)
+    st, body, _ = c.get("/pos/users")
+    t.chk("live view hides deleted staff",
+          (st, "pos_avatar_1" not in body.decode()), (200, True))
+    st, body, _ = c.get("/pos/users?deleted=1")
+    t.chk("trash shows deleted staff", "pos_avatar_1" in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/users/{uid}/restore?redirect=/pos/users?deleted=1"
+    )
+    t.chk("staff restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/users?deleted=1"))
+    t.chk("cascade: user_roles restored by trigger",
+          db_row("SELECT deleted_at FROM user_roles WHERE user_id = ? "
+                 "AND role_id = ?", (uid, "pos-test-role-1")),
+          (None,))
+
+    # final cleanup: both showcase users soft-deleted, live views empty
+    st, _, _ = c.post_urlencoded(
+        f"/pos/users/{uid}/delete?redirect=/pos/users", {}
+    )
+    t.chk("staff re-delete", st, 302)
     st, _, _ = c.post_urlencoded(
         f"/pos/users/{uid2}/delete?redirect=/pos/users", {}
     )
     t.chk("staff delete (no-pic)", st, 302)
-    t.chk("showcase rows gone from db",
-          (db_row("SELECT count(*) FROM locations WHERE id = ?", (rid,)),
-           db_row("SELECT count(*) FROM users WHERE id IN (?, ?)",
-                  (uid, uid2))),
-          ((0,), (0,)))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/locations/{rid}/delete?redirect=/pos/locations", {}
+    )
+    t.chk("location re-delete", st, 302)
+    t.chk("showcase rows soft-deleted in db",
+          (db_row("SELECT deleted_at FROM locations WHERE id = ?", (rid,))
+           [0] is not None,
+           db_row("SELECT deleted_at FROM users WHERE id IN (?, ?)",
+                  (uid, uid2))[0] is not None),
+          (True, True))
     st, body, _ = c.get("/pos/locations")
     t.chk("locations empty state after delete",
           (st, "No Locations yet." in body.decode()), (200, True))
@@ -210,6 +285,22 @@ def main():
     t.chk("pos users page after deletes (showcase rows gone)",
           (st, "pos_avatar_1" not in body.decode()
            and "pos_avatar_2" not in body.decode()), (200, True))
+
+    # ---- read_only page (/pos/dictionaries) ------------------------------
+    st, body, _ = c.get("/pos/dictionaries")
+    html = body.decode()
+    t.chk("dictionaries page (read_only)", st, 200)
+    t.chk("dictionaries th = 4 columns + actions", th_count(html), 5)
+    t.chk("dictionaries lists seed rows", html.count('data-row-id="') >= 1, True)
+    t.chk("read_only: no create form", 'data-md-op="create"' not in html, True)
+    t.chk("read_only: no edit buttons", "master-edit-btn" not in html, True)
+    t.chk("read_only: no delete forms", 'data-md-op="delete"' not in html, True)
+    t.chk("read_only: no restore forms", 'data-md-op="restore"' not in html, True)
+    t.chk("read_only: no add-child buttons", "add-child-btn" not in html, True)
+    t.chk("read_only: write route not registered",
+          c.req("POST", "/pos/dictionaries/create",
+                b"a=b", {"Content-Type": "application/x-www-form-urlencoded"})[0],
+          404)
 
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
