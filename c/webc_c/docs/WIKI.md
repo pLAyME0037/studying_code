@@ -185,8 +185,23 @@ vanilla JS only.
   OPEN. Fixed create_order_item opt-field index bug (unit_cost got the
   quantity; assert now pins price/qty/total + defaults). Suite: 325 PASS
   (pos_test 184).
-- Next: Phase 5d PARTY (/pos/customers, /pos/users+children, /pos/staff,
-  /pos/org) -> 5e..5g -> sidebar grouped nav -> reports
+- Phase 5d DONE: PARTY — /pos/customers (tier FK CUSTOMER_TYPE, points,
+  Since; children users + customer_interactions with {kind,payload} event
+  cell), /pos/staff (code + {first,last} name cell + user/org/location
+  FKs; child cash_shifts via md_shifts_child_columns), /pos/org
+  (code/name + ORG_TYPE FK + self-FK parent; children users + staff),
+  /pos/users gains Roles + Staff child tabs. Files: customers.c,
+  staff.c (owns all 3 staff shapes: master, under-users, under-org),
+  org.c, customer_interactions.c, user_roles.c; pos.c users handlers
+  extended (phone/customer_id/org_unit_id opts, body-first, query
+  fallback); shifts.c staff_id moved to opt (shared master+child
+  handler). Test helper child_thead(): anchor on
+  `</thead><tbody id="mc-tbody-{table}-` (data-tab lands on the wrong
+  header -- tab buttons precede panel contents; a non-greedy regex
+  backtracks across </thead> and swallows earlier headers). Suite: 370
+  PASS (pos_test 229).
+- Next: Phase 5e ACCESS (/pos/roles + permissions children, /pos/i18n),
+  then 5f CONFIG, 5g MONITOR -> sidebar grouped nav -> reports
   (docs/POS_PLAN.md).
 
 ## Gotchas

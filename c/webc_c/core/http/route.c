@@ -19,6 +19,11 @@
 #include "src/pos/order_items.h"
 #include "src/pos/payments.h"
 #include "src/pos/deliveries.h"
+#include "src/pos/customers.h"
+#include "src/pos/staff.h"
+#include "src/pos/org.h"
+#include "src/pos/customer_interactions.h"
+#include "src/pos/user_roles.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -250,6 +255,35 @@ void route_initialize(void) {
     route_new(&routes, "/pos/deliveries", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_update);
     route_new(&routes, "/pos/deliveries", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_delete);
     route_new(&routes, "/pos/deliveries", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_deliveries_restore);
+
+    // Phase 5d PARTY
+    route_new(&routes, "/pos/customers", NULL,       "GET",  ROUTE_EXACT,     serve_pos_customers);
+    route_new(&routes, "/pos/customers/create", NULL, "POST", ROUTE_EXACT,    serve_pos_customers_create);
+    route_new(&routes, "/pos/customers", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_customers_update);
+    route_new(&routes, "/pos/customers", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_customers_delete);
+    route_new(&routes, "/pos/customers", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_customers_restore);
+
+    route_new(&routes, "/pos/staff", NULL,       "GET",  ROUTE_EXACT,     serve_pos_staff);
+    route_new(&routes, "/pos/staff/create", NULL, "POST", ROUTE_EXACT,    serve_pos_staff_create);
+    route_new(&routes, "/pos/staff", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_staff_update);
+    route_new(&routes, "/pos/staff", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_staff_delete);
+    route_new(&routes, "/pos/staff", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_staff_restore);
+
+    route_new(&routes, "/pos/org", NULL,       "GET",  ROUTE_EXACT,     serve_pos_org);
+    route_new(&routes, "/pos/org/create", NULL, "POST", ROUTE_EXACT,    serve_pos_org_create);
+    route_new(&routes, "/pos/org", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_org_update);
+    route_new(&routes, "/pos/org", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_org_delete);
+    route_new(&routes, "/pos/org", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_org_restore);
+
+    route_new(&routes, "/pos/customer_interactions/create", NULL, "POST", ROUTE_EXACT,    serve_pos_customer_interactions_create);
+    route_new(&routes, "/pos/customer_interactions", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_update);
+    route_new(&routes, "/pos/customer_interactions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_delete);
+    route_new(&routes, "/pos/customer_interactions", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_restore);
+
+    route_new(&routes, "/pos/user_roles/create", NULL, "POST", ROUTE_EXACT,    serve_pos_user_roles_create);
+    route_new(&routes, "/pos/user_roles", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_update);
+    route_new(&routes, "/pos/user_roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_delete);
+    route_new(&routes, "/pos/user_roles", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_user_roles_restore);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

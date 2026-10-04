@@ -40,6 +40,20 @@ MD_Column md_shifts_columns[] = {
 };
 const size_t md_shifts_columns_count = ARRAY_LEN(md_shifts_columns);
 
+// Shift as a child tab under /pos/staff: staff_id is the fk_column
+// (query string), so it is not a column here.
+MD_Column md_shifts_child_columns[] = {
+    { .name = "org_unit_id", .label = "Org", .type = COL_TYPE_FK_SELECT,
+      .nullable = false, .fk_table = "org_units", .fk_label = "ou_name" },
+    { .name = "status", .label = "Status", .type = COL_TYPE_TEXT,
+      .nullable = false },
+    { .name = "opening_cash", .label = "Cash", .type = COL_TYPE_NUM,
+      .nullable = false, .cell = &shift_cash_cell },
+    { .name = "notes", .label = "Notes", .type = COL_TYPE_TEXT,
+      .nullable = true },
+};
+const size_t md_shifts_child_columns_count = ARRAY_LEN(md_shifts_child_columns);
+
 // DB mutations only -- list loading lives in the master_child engine.
 static bool create_cash_shift(db_t *db, String_View *fields, size_t count) {
     if (count < 8) return false;
@@ -61,9 +75,9 @@ static bool create_cash_shift(db_t *db, String_View *fields, size_t count) {
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
     if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);  // org
-    if (!sql_bind(&stmt, 2, SQL_SV(fields[1]))) return_defer(false);  // staff
+    if (!sql_bind(&stmt, 2, pos_sv(fields[2]))) return_defer(false);  // staff (opt)
     // status CHECKs OPEN/CLOSED/AUDITED: blank input -> column default.
-    String_View status = fields[2].count ? fields[2] : sv_from_cstr("OPEN");
+    String_View status = fields[1].count ? fields[1] : sv_from_cstr("OPEN");
     if (!sql_bind(&stmt, 3, SQL_SV(status)))    return_defer(false);
     if (!sql_bind(&stmt, 4, pos_sv(fields[3])))  return_defer(false);  // closed_at
     if (!sql_bind(&stmt, 5, pos_num(fields[4]))) return_defer(false);  // opening
@@ -115,11 +129,16 @@ static bool update_cash_shift(db_t *db, String_View *fields, size_t count,
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    for (int i = 1; i <= 8; ++i) {
-        if (!sql_bind(&stmt, i, SQL_SV(fields[i - 1]))) return_defer(false);
-    }
-    if (!sql_bind(&stmt, 9, SQL_SV(id))) return_defer(false);
-    if (!sql_final_step(&stmt))          return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);  // org
+    if (!sql_bind(&stmt, 2, SQL_SV(fields[2]))) return_defer(false);  // staff
+    if (!sql_bind(&stmt, 3, SQL_SV(fields[1]))) return_defer(false);  // status
+    if (!sql_bind(&stmt, 4, SQL_SV(fields[3]))) return_defer(false);  // closed
+    if (!sql_bind(&stmt, 5, SQL_SV(fields[4]))) return_defer(false);  // opening
+    if (!sql_bind(&stmt, 6, SQL_SV(fields[5]))) return_defer(false);  // closing
+    if (!sql_bind(&stmt, 7, SQL_SV(fields[6]))) return_defer(false);  // expected
+    if (!sql_bind(&stmt, 8, SQL_SV(fields[7]))) return_defer(false);  // notes
+    if (!sql_bind(&stmt, 9, SQL_SV(id)))        return_defer(false);
+    if (!sql_final_step(&stmt))                 return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -172,9 +191,12 @@ void serve_pos_shifts(Serve_Context *sc) {
     serve_master_child(sc, &config);
 }
 
-static const char *shf_fields[] = { "org_unit_id", "staff_id", "status" };
+static const char *shf_fields[] = { "org_unit_id", "status" };
+// staff_id is an opt: the /pos/shifts master form carries it in the body,
+// the /pos/staff child form passes it in the query string.
 static const char *shf_opt_fields[] = {
-    "closed_at", "opening_cash", "closing_cash", "expected_cash", "notes",
+    "staff_id", "closed_at", "opening_cash", "closing_cash", "expected_cash",
+    "notes",
 };
 SERVE_CREATE(pos_shifts, cash_shift, shf_fields, shf_opt_fields)
 SERVE_UPDATE(pos_shifts, cash_shift, shf_fields, shf_opt_fields)

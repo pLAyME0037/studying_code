@@ -21,6 +21,10 @@ void serve_pos_users_update(Serve_Context *sc);
 void serve_pos_users_delete(Serve_Context *sc);
 void serve_pos_users_restore(Serve_Context *sc);
 
+/* users view shared by /pos/customers and /pos/org child tabs */
+extern MD_Column md_pos_users_columns[];
+extern const size_t md_pos_users_columns_count;
+
 /* read_only view: GET route only, no write routes registered */
 void serve_pos_dictionaries(Serve_Context *sc);
 

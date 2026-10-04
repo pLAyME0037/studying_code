@@ -5,6 +5,8 @@
 
 #include "module/webc_template.h"
 #include "src/db/db.h"
+#include "src/pos/pos_util.h"   // pos_sv/pos_num binders (fk opts)
+#include "src/pos/staff.h"   // users child tab: staff shape
 #include "core/layout/header.h"
 #include "core/layout/footer.h"
 #include "core/http/utils.h"
@@ -166,21 +168,25 @@ MD_Column md_pos_users_columns[] = {
 const size_t md_pos_users_columns_count = ARRAY_LEN(md_pos_users_columns);
 
 static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
-    if (count < 4) return false;
+    if (count < 7) return false;
     // Plain INSERT (not OR REPLACE): a colliding username/email must fail
     // loudly instead of silently dropping the other row. Field order is
     // usr_fields = {name, username, email, profile_pic}; profile_pic may
     // be empty (first key must be non-empty for the SERVE_* 400 guard).
+    // phone/customer_id/org_unit_id follow as usr_opt_fields.
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "INSERT INTO users "
-                         "(name, username, email, profile_pic) "
-                         "VALUES (?, ?, ?, ?);",
+                         "(name, username, email, profile_pic, phone, "
+                          "customer_id, org_unit_id) "
+                         "VALUES (?, ?, ?, ?, ?, ?, ?);",
         [SQL_MYSQL]    = "INSERT INTO users "
-                         "(name, username, email, profile_pic) "
-                         "VALUES (?, ?, ?, ?);",
+                         "(name, username, email, profile_pic, phone, "
+                          "customer_id, org_unit_id) "
+                         "VALUES (?, ?, ?, ?, ?, ?, ?);",
         [SQL_POSTGRES] = "INSERT INTO users "
-                         "(name, username, email, profile_pic) "
-                         "VALUES ($1, $2, $3, $4);",
+                         "(name, username, email, profile_pic, phone, "
+                          "customer_id, org_unit_id) "
+                         "VALUES ($1, $2, $3, $4, $5, $6, $7);",
     };
     sql_stmt stmt = {0};
     bool result = true;
@@ -188,6 +194,9 @@ static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
     for (int i = 1; i <= 4; ++i) {
         if (!sql_bind(&stmt, i, SQL_SV(fields[i - 1]))) return_defer(false);
     }
+    if (!sql_bind(&stmt, 5, pos_sv(fields[4]))) return_defer(false);  // phone
+    if (!sql_bind(&stmt, 6, pos_sv(fields[5]))) return_defer(false);  // customer
+    if (!sql_bind(&stmt, 7, pos_sv(fields[6]))) return_defer(false);  // org
     if (!sql_final_step(&stmt))                  return_defer(false);
 defer:
     sql_finalize(&stmt);
@@ -197,26 +206,38 @@ defer:
 static bool update_pos_user(db_t *db, String_View *fields, size_t count,
                             String_View id)
 {
-    if (count < 4) return false;
-    // Empty picture keeps the stored one (same COALESCE rule as /users).
+    if (count < 7) return false;
+    // Empty picture/phone/fks keep the stored one (same COALESCE rule as
+    // /users): a child edit form carries only the shared columns, and its
+    // fk rides the query string (same value back), while a master edit
+    // sends neither -> row unchanged.
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "UPDATE users SET name = ?, username = ?, email = ?, "
-                         "profile_pic = COALESCE(NULLIF(?, ''), profile_pic) "
+                         "profile_pic = COALESCE(NULLIF(?, ''), profile_pic), "
+                         "phone = COALESCE(NULLIF(?, ''), phone), "
+                         "customer_id = COALESCE(NULLIF(?, ''), customer_id), "
+                         "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id) "
                          "WHERE id = ?;",
         [SQL_MYSQL]    = "UPDATE users SET name = ?, username = ?, email = ?, "
-                         "profile_pic = COALESCE(NULLIF(?, ''), profile_pic) "
+                         "profile_pic = COALESCE(NULLIF(?, ''), profile_pic), "
+                         "phone = COALESCE(NULLIF(?, ''), phone), "
+                         "customer_id = COALESCE(NULLIF(?, ''), customer_id), "
+                         "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id) "
                          "WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE users SET name = $1, username = $2, email = $3, "
-                         "profile_pic = COALESCE(NULLIF($4, ''), profile_pic) "
-                         "WHERE id = $5;",
+                         "profile_pic = COALESCE(NULLIF($4, ''), profile_pic), "
+                         "phone = COALESCE(NULLIF($5, ''), phone), "
+                         "customer_id = COALESCE(NULLIF($6, ''), customer_id), "
+                         "org_unit_id = COALESCE(NULLIF($7, ''), org_unit_id) "
+                         "WHERE id = $8;",
     };
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt))    return_defer(false);
-    for (int i = 1; i <= 4; ++i) {
+    for (int i = 1; i <= 7; ++i) {
         if (!sql_bind(&stmt, i, SQL_SV(fields[i - 1]))) return_defer(false);
     }
-    if (!sql_bind(&stmt, 5, SQL_SV(id)))         return_defer(false);
+    if (!sql_bind(&stmt, 8, SQL_SV(id)))         return_defer(false);
     if (!sql_final_step(&stmt))                  return_defer(false);
 defer:
     sql_finalize(&stmt);
@@ -260,7 +281,41 @@ defer:
     return result;
 }
 
+// role links under a user: role_id FK + link timestamp.
+static MD_Column md_pos_user_role_columns[] = {
+    { .name = "role_id", .label = "Role", .type = COL_TYPE_FK_SELECT,
+      .nullable = false, .fk_table = "roles", .fk_label = "role_name" },
+    { .name = "created_at", .label = "Linked", .type = COL_TYPE_DATE,
+      .nullable = false },
+};
+static const size_t md_pos_user_role_columns_count =
+    ARRAY_LEN(md_pos_user_role_columns);
+
 void serve_pos_users(Serve_Context *sc) {
+    // Children: role links + the staff record (staff columns live in
+    // src/pos/staff.c -- the staff module owns every staff shape).
+    MD_ChildTab children[] = {
+        {
+            .table        = "user_roles",
+            .title        = "Roles",
+            .fk_column    = "user_id",
+            .id_column    = "id",
+            .crud_path    = "/pos/user_roles",
+            .columns      = md_pos_user_role_columns,
+            .column_count = md_pos_user_role_columns_count,
+            .soft_delete  = 1,
+        },
+        {
+            .table        = "staff",
+            .title        = "Staff",
+            .fk_column    = "user_id",
+            .id_column    = "id",
+            .crud_path    = "/pos/staff",
+            .columns      = md_staff_child_columns,
+            .column_count = md_staff_child_columns_count,
+            .soft_delete  = 1,
+        },
+    };
     MD_MasterConfig config = {
         .table          = "users",
         .title          = "Staff",
@@ -268,13 +323,18 @@ void serve_pos_users(Serve_Context *sc) {
         .crud_path      = "/pos/users",
         .columns        = md_pos_users_columns,
         .column_count   = md_pos_users_columns_count,
+        .children       = children,
+        .children_count = ARRAY_LEN(children),
         .soft_delete    = 1,
     };
     serve_master_child(sc, &config);
 }
 
 static const char *usr_fields[] = { "name", "username", "email", "profile_pic" };
-static const char *usr_opt_fields[] = { "phone" };
+// phone/customer_id/org_unit_id are query-driven: the /pos/customers and
+// /pos/org child tabs pass their fk in the query string (body first,
+// query fallback).
+static const char *usr_opt_fields[] = { "phone", "customer_id", "org_unit_id" };
 SERVE_CREATE(pos_users, pos_user, usr_fields, usr_opt_fields)
 SERVE_UPDATE(pos_users, pos_user, usr_fields, usr_opt_fields)
 SERVE_SOFT_DELETE(pos_users, pos_user)

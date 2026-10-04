@@ -73,6 +73,26 @@ def th_count(html):
     return m.group(1).count("<th") if m else -1
 
 
+def child_thead(html, table):
+    """<th> count of `table`'s child-tab header.
+
+    Tab buttons carry data-tab too and all precede the panel contents, so
+    anchoring on data-tab alone lands on the wrong thead. Anchor on the
+    tbody id instead (the thead sits directly before it), then take the
+    nearest preceding <thead> -- a plain non-greedy regex would backtrack
+    across </thead> and swallow earlier headers.
+    """
+    anchor = re.search(r'</thead>\s*<tbody id="mc-tbody-%s-' % table, html)
+    if not anchor:
+        return -1
+    start = html.rfind("<thead", 0, anchor.start())
+    if start == -1:
+        return -1
+    content = html.find(">", start) + 1   # skip "<thead ..."; it holds "<th" too
+    end = html.find("</thead>", start)
+    return html[content:end].count("<th")
+
+
 def main():
     c.wait_ready()
 
@@ -577,10 +597,8 @@ def main():
     st, body, _ = c.get("/pos/stocks")
     html = body.decode()
     t.chk("ledger row in child tab", "ADJUST" in html, True)
-    lm = re.search(r'data-tab="stock_ledger".*?<thead[^>]*>(.*?)</thead>',
-                   html, re.S)
     t.chk("ledger child thead = 4 cols + actions",
-          lm.group(1).count("<th") if lm else -1, 5)
+          child_thead(html, "stock_ledger"), 5)
     t.chk("ledger pager container",
           f'data-pg-container="mc-tbody-stock_ledger-{sid2}"' in html, True)
 
@@ -734,10 +752,8 @@ def main():
           (f'data-row-id="{iid}"' in html and f'data-row-id="{pay_id}"' in html
            and f'data-row-id="{did}"' in html), True)
     for tab, want in (("order_items", 4), ("payments", 4), ("deliveries", 4)):
-        tm = re.search(r'data-tab="%s".*?<thead[^>]*>(.*?)</thead>' % tab,
-                       html, re.S)
         t.chk(f"{tab} child thead = 3 cols + actions",
-              tm.group(1).count("<th") if tm else -1, want)
+              child_thead(html, tab), want)
 
     # ---- cascade: order delete/restore stamps children -------------------
     st, _, _ = c.post_urlencoded(
@@ -823,6 +839,199 @@ def main():
           c.req("POST", "/pos/finance/create",
                 b"a=b", {"Content-Type": "application/x-www-form-urlencoded"})[0],
           404)
+
+    # ---- Phase 5d: PARTY (/pos/customers, /pos/users+, /pos/staff, /pos/org)
+    st, body, _ = c.get("/pos/customers")
+    html = body.decode()
+    t.chk("customers page", st, 200)
+    t.chk("customers th = tier+points+since+actions", th_count(html), 4)
+    t.chk("customers empty state", "No Customers yet." in html, True)
+    cm = re.search(r'name="customer_type_dict_id"[^>]*>(.*?)</select>',
+                   html, re.S)
+    t.chk("tier options scoped to CUSTOMER_TYPE (fk_where)",
+          cm.group(1).count("<option") if cm else -1, 4)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/customers/create?redirect=/pos/customers",
+        {"customer_type_dict_id": "TEIR_2", "loyalty_points": "250"})
+    t.chk("customer create", st, 302)
+    cid = db_row("SELECT id FROM customers WHERE loyalty_points = 250")[0]
+    t.chk("customer row db (tier/points, metadata default)",
+          db_row("SELECT customer_type_dict_id, loyalty_points, metadata "
+                 "FROM customers WHERE id = ?", (cid,)),
+          ("TEIR_2", 250, None))
+
+    st, body, _ = c.get("/pos/customers")
+    html = body.decode()
+    row, edit = row_and_edit(html, cid)
+    tier_label = db_row("SELECT label FROM dictionaries WHERE id = 'TEIR_2'")[0]
+    t.chk("customer row shows tier label + points",
+          (bool(row) and tier_label in row and "250" in row), True)
+    t.chk("customer child tabs (users/activity)",
+          ('data-tab="users"' in html
+           and 'data-tab="customer_interactions"' in html), True)
+
+    # user child under the customer (fk via query)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/users/create?customer_id={cid}&redirect=/pos/customers",
+        {"name": "Chanthou", "username": "chanthou1",
+         "email": "chanthou1@example.com", "profile_pic": "",
+         "created_at": ""})
+    t.chk("user child create under customer", st, 302)
+    uid5d = db_row("SELECT id FROM users WHERE username = 'chanthou1'")[0]
+    t.chk("user child db (customer_id set, phone/org null)",
+          db_row("SELECT customer_id, phone, org_unit_id FROM users "
+                 "WHERE id = ?", (uid5d,)),
+          (cid, None, None))
+    st, body, _ = c.get("/pos/customers")
+    html = body.decode()
+    t.chk("user child row under customer",
+          f'data-row-id="{uid5d}"' in html, True)
+
+    # interaction child under the customer
+    st, _, _ = c.post_urlencoded(
+        f"/pos/customer_interactions/create?customer_id={cid}"
+        "&redirect=/pos/customers",
+        {"user_id": uid5d, "interaction_type": "REVIEW",
+         "raw_payload": '{"score":5}'})
+    t.chk("interaction create (child)", st, 302)
+    itc5d = db_row("SELECT id FROM customer_interactions "
+                   "WHERE customer_id = ? AND interaction_type = 'REVIEW'",
+                   (cid,))[0]
+    t.chk("interaction db (user, payload)",
+          db_row("SELECT user_id, raw_payload FROM customer_interactions "
+                 "WHERE id = ?", (itc5d,)),
+          (uid5d, '{"score":5}'))
+    st, body, _ = c.get("/pos/customers")
+    html = body.decode()
+    t.chk("interaction row under customer",
+          f'data-row-id="{itc5d}"' in html, True)
+    t.chk("interaction child thead = user+event cells + actions",
+          child_thead(html, "customer_interactions"), 3)
+
+    # ---- /pos/users: new Roles + Staff child tabs -------------------------
+    st, body, _ = c.get("/pos/users")
+    html = body.decode()
+    t.chk("users page children (Roles + Staff)",
+          ('data-tab="user_roles"' in html and 'data-tab="staff"' in html),
+          True)
+
+    db_exec("INSERT INTO roles (id, org_unit_id, role_code, role_name) "
+            "VALUES (?, ?, ?, ?)",
+            ("pos-role-5d", "pos-ou-1", "POS-ROLE-5D", "Cashier 5D"))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/user_roles/create?user_id={uid5d}&redirect=/pos/users",
+        {"role_id": "pos-role-5d", "created_at": ""})
+    t.chk("user_role child create (fk via query)", st, 302)
+    url5d = db_row("SELECT id FROM user_roles "
+                   "WHERE user_id = ? AND role_id = ?",
+                   (uid5d, "pos-role-5d"))[0]
+    t.chk("user_role link row (live)",
+          db_row("SELECT deleted_at FROM user_roles WHERE id = ?", (url5d,)),
+          (None,))
+    st, body, _ = c.get("/pos/users")
+    html = body.decode()
+    t.chk("role link row under user",
+          (f'data-row-id="{url5d}"' in html and "Cashier 5D" in html), True)
+    t.chk("user_roles child thead = role+linked + actions",
+          child_thead(html, "user_roles"), 3)
+
+    # staff child under the user (user_id via query; org/location in body)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/staff/create?user_id={uid5d}&redirect=/pos/users",
+        {"staff_code": "POS-STF-5D", "first_name": "Vanny",
+         "last_name": "Ly", "org_unit_id": "pos-ou-1",
+         "location_id": loc_id, "created_at": ""})
+    t.chk("staff child create under user", st, 302)
+    stf5d = db_row("SELECT id FROM staff WHERE staff_code = 'POS-STF-5D'")[0]
+    t.chk("staff child db (user/org/location, type/hire/phone null)",
+          db_row("SELECT user_id, org_unit_id, location_id, "
+                 "staff_type_dict_id, hire_date, phone FROM staff "
+                 "WHERE id = ?", (stf5d,)),
+          (uid5d, "pos-ou-1", loc_id, None, None, None))
+    st, body, _ = c.get("/pos/users")
+    t.chk("staff child row under user",
+          f'data-row-id="{stf5d}"' in body.decode(), True)
+
+    # ---- /pos/staff master + cash_shifts child ----------------------------
+    st, body, _ = c.get("/pos/staff")
+    html = body.decode()
+    t.chk("staff page", st, 200)
+    t.chk("staff th = code+name+user+org+location+actions", th_count(html), 6)
+    row, edit = row_and_edit(html, stf5d)
+    t.chk("staff row found", bool(row), True)
+    t.chk("staff row labels (name cell / user / org)",
+          ("Vanny" in row and "Chanthou" in row and "Main Depot" in row),
+          True)
+    t.chk("staff name cell = 2 parts",
+          len(re.findall(r'<span class="text-xs', row.split("</td>")[1])), 2)
+    t.chk("staff child tab (shifts)", 'data-tab="cash_shifts"' in html, True)
+
+    # shift child under the staff member (staff_id via query)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/shifts/create?staff_id={stf5d}&redirect=/pos/staff",
+        {"org_unit_id": "pos-ou-1", "status": "", "opening_cash": "300",
+         "closing_cash": "", "expected_cash": "", "notes": "eve"})
+    t.chk("shift child create under staff", st, 302)
+    shid5d = db_row("SELECT id FROM cash_shifts WHERE notes = 'eve'")[0]
+    t.chk("shift child db (staff from query, status default OPEN)",
+          db_row("SELECT staff_id, status, opening_cash FROM cash_shifts "
+                 "WHERE id = ?", (shid5d,)),
+          (stf5d, "OPEN", 300.0))
+
+    # ---- /pos/org ---------------------------------------------------------
+    st, body, _ = c.get("/pos/org")
+    html = body.decode()
+    t.chk("org page", st, 200)
+    t.chk("org th = code+name+type+parent+actions", th_count(html), 5)
+    t.chk("org shows fixture root", 'data-row-id="pos-ou-1"' in html, True)
+    om = re.search(r'name="ou_type_dict_id"[^>]*>(.*?)</select>', html, re.S)
+    t.chk("org type options scoped to ORG_TYPE (fk_where)",
+          om.group(1).count("<option") if om else -1, 4)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/org/create?redirect=/pos/org",
+        {"ou_code": "POS-OU-2", "ou_name": "Branch East",
+         "ou_type_dict_id": "BRANCH", "parent_id": "pos-ou-1"})
+    t.chk("org create", st, 302)
+    ou2 = db_row("SELECT id FROM org_units WHERE ou_code = 'POS-OU-2'")[0]
+    t.chk("org row db (parent/type, metadata default)",
+          db_row("SELECT parent_id, ou_type_dict_id, metadata "
+                 "FROM org_units WHERE id = ?", (ou2,)),
+          ("pos-ou-1", "BRANCH", None))
+    st, body, _ = c.get("/pos/org")
+    html = body.decode()
+    row, edit = row_and_edit(html, ou2)
+    org_type_label = db_row("SELECT label FROM dictionaries "
+                            "WHERE id = 'BRANCH'")[0]
+    t.chk("org row labels (parent name + type label)",
+          (bool(row) and "Main Depot" in row and org_type_label in row), True)
+    t.chk("org child tabs (users/staff)",
+          ('data-tab="users"' in html and 'data-tab="staff"' in html), True)
+
+    # org soft delete + restore (branch has no children -> cascade no-op)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/org/{ou2}/delete?redirect=/pos/org", {})
+    t.chk("org soft delete", st, 302)
+    st, body, _ = c.get("/pos/org?deleted=1")
+    t.chk("org in trash view", f'data-row-id="{ou2}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/org/{ou2}/restore?redirect=/pos/org?deleted=1")
+    t.chk("org restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/org?deleted=1"))
+
+    # customer soft delete + restore (no customers cascade in schema)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/customers/{cid}/delete?redirect=/pos/customers", {})
+    t.chk("customer soft delete", st, 302)
+    st, body, _ = c.get("/pos/customers?deleted=1")
+    t.chk("customer in trash view",
+          f'data-row-id="{cid}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/customers/{cid}/restore"
+        f"?redirect=/pos/customers?deleted=1")
+    t.chk("customer restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/customers?deleted=1"))
 
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
