@@ -211,9 +211,14 @@ vanilla JS only.
   fields[] is a hard error under -pedantic). Roles have NO soft-delete
   cascade trigger: links stay live while the role hides (test pins
   this). Suite: 396 PASS (pos_test 255).
-- Next: Phase 5f CONFIG (/pos/locations showcase already live, i18n =
-  languages->translations, /pos/config system_configs), 5g MONITOR
-  (alerts, audit read_only) -> sidebar grouped nav -> reports
+- Phase 5f DONE: CONFIG — /pos/i18n (languages: code/name + 0/1 flag
+  numerics; child translations via query, UNIQUE(language_id, key)),
+  /pos/config (system_configs master: key/value/json/encrypted + since).
+  /pos/locations + /pos/dictionaries were already live from the
+  showcase phases. Files: i18n.c, translations.c, config.c. Suite: 420
+  PASS (pos_test 279).
+- Next: Phase 5g MONITOR (/pos/alerts system_alerts, /pos/audit
+  audit_logs read_only) -> sidebar grouped nav -> reports
   (docs/POS_PLAN.md).
 
 ## Gotchas

@@ -1146,6 +1146,106 @@ def main():
     t.chk("role restore redirects to trash view",
           (st, hdrs.get("Location")), (302, "/pos/roles?deleted=1"))
 
+    # ---- Phase 5f: CONFIG (/pos/i18n, /pos/config) ------------------------
+    st, body, _ = c.get("/pos/i18n")
+    html = body.decode()
+    t.chk("i18n page", st, 200)
+    t.chk("i18n th = code+name+default+active+actions", th_count(html), 5)
+    t.chk("i18n lists seeded languages",
+          ('data-row-id="lang_km"' in html and 'data-row-id="lang_en"' in html),
+          True)
+    t.chk("i18n child tab (translations)", 'data-tab="translations"' in html,
+          True)
+    t.chk("translations child thead = key+value + actions",
+          child_thead(html, "translations"), 3)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/i18n/create?redirect=/pos/i18n",
+        {"code": "ar", "name": "Arabic", "is_default": "0",
+         "is_active": "1"})
+    t.chk("language create", st, 302)
+    lang5f = db_row("SELECT id FROM languages WHERE code = 'ar'")[0]
+    t.chk("language row db (flags numeric)",
+          db_row("SELECT is_default, is_active FROM languages WHERE id = ?",
+                 (lang5f,)),
+          (0, 1))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/i18n/{lang5f}/update?redirect=/pos/i18n",
+        {"code": "ar", "name": "Arabic Renamed", "is_default": "0",
+         "is_active": "0"})
+    t.chk("language update saved",
+          db_row("SELECT name, is_active FROM languages WHERE id = ?",
+                 (lang5f,)),
+          ("Arabic Renamed", 0))
+
+    # translation child (language_id via query; UNIQUE key per language)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/translations/create?language_id={lang5f}&redirect=/pos/i18n",
+        {"trans_key": "greeting", "trans_value": "សួស្តី"})
+    t.chk("translation child create", st, 302)
+    trn5f = db_row("SELECT id FROM translations "
+                   "WHERE language_id = ? AND trans_key = 'greeting'",
+                   (lang5f,))[0]
+    t.chk("translation row db",
+          db_row("SELECT trans_value FROM translations WHERE id = ?", (trn5f,)),
+          ("សួស្តី",))
+    st, body, _ = c.get("/pos/i18n")
+    html = body.decode()
+    t.chk("translation row under language",
+          (f'data-row-id="{trn5f}"' in html and "greeting" in html), True)
+    st, _, _ = c.post_urlencoded(
+        f"/pos/translations/create?language_id={lang5f}&redirect=/pos/i18n",
+        {"trans_key": "greeting", "trans_value": "dup"})
+    t.chk("duplicate translation key rejected (UNIQUE pair)", st, 500)
+
+    st, _, _ = c.post_urlencoded(
+        f"/pos/i18n/{lang5f}/delete?redirect=/pos/i18n", {})
+    t.chk("language soft delete", st, 302)
+    st, body, _ = c.get("/pos/i18n?deleted=1")
+    t.chk("language in trash view",
+          f'data-row-id="{lang5f}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/i18n/{lang5f}/restore?redirect=/pos/i18n?deleted=1")
+    t.chk("language restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/i18n?deleted=1"))
+
+    st, body, _ = c.get("/pos/config")
+    html = body.decode()
+    t.chk("config page", st, 200)
+    t.chk("config th = key+value+json+encrypted+since+actions",
+          th_count(html), 6)
+    t.chk("config empty state", "No Configs yet." in html, True)
+
+    st, _, _ = c.post_urlencoded(
+        "/pos/config/create?redirect=/pos/config",
+        {"config_key": "pos.theme", "config_value": "dark",
+         "json_payload": "{}", "is_encrypted": "0"})
+    t.chk("config create", st, 302)
+    cfg5f = db_row("SELECT id FROM system_configs WHERE config_key = ?",
+                   ("pos.theme",))[0]
+    t.chk("config row db",
+          db_row("SELECT config_value, json_payload, is_encrypted "
+                 "FROM system_configs WHERE id = ?", (cfg5f,)),
+          ("dark", "{}", 0))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/config/{cfg5f}/update?redirect=/pos/config",
+        {"config_key": "pos.theme", "config_value": "light",
+         "json_payload": "{}", "is_encrypted": "0"})
+    t.chk("config update saved",
+          db_row("SELECT config_value FROM system_configs WHERE id = ?",
+                 (cfg5f,)),
+          ("light",))
+    st, _, _ = c.post_urlencoded(
+        f"/pos/config/{cfg5f}/delete?redirect=/pos/config", {})
+    t.chk("config soft delete", st, 302)
+    st, body, _ = c.get("/pos/config?deleted=1")
+    t.chk("config in trash view",
+          f'data-row-id="{cfg5f}"' in body.decode(), True)
+    st, hdrs, _, _ = c.req_full(
+        "POST", f"/pos/config/{cfg5f}/restore?redirect=/pos/config?deleted=1")
+    t.chk("config restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/config?deleted=1"))
+
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
     t.chk("people page (demo)", st, 200)

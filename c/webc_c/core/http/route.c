@@ -27,6 +27,9 @@
 #include "src/pos/roles.h"
 #include "src/pos/permissions.h"
 #include "src/pos/role_permissions.h"
+#include "src/pos/i18n.h"
+#include "src/pos/translations.h"
+#include "src/pos/config.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -310,6 +313,24 @@ void route_initialize(void) {
     route_new(&routes, "/pos/role_members", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_update);
     route_new(&routes, "/pos/role_members", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_delete);
     route_new(&routes, "/pos/role_members", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_role_members_restore);
+
+    // Phase 5f CONFIG
+    route_new(&routes, "/pos/i18n", NULL,       "GET",  ROUTE_EXACT,     serve_pos_i18n);
+    route_new(&routes, "/pos/i18n/create", NULL, "POST", ROUTE_EXACT,    serve_pos_i18n_create);
+    route_new(&routes, "/pos/i18n", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_i18n_update);
+    route_new(&routes, "/pos/i18n", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_i18n_delete);
+    route_new(&routes, "/pos/i18n", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_i18n_restore);
+
+    route_new(&routes, "/pos/config", NULL,       "GET",  ROUTE_EXACT,     serve_pos_config);
+    route_new(&routes, "/pos/config/create", NULL, "POST", ROUTE_EXACT,    serve_pos_config_create);
+    route_new(&routes, "/pos/config", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_config_update);
+    route_new(&routes, "/pos/config", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_config_delete);
+    route_new(&routes, "/pos/config", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_config_restore);
+
+    route_new(&routes, "/pos/translations/create", NULL, "POST", ROUTE_EXACT,    serve_pos_translations_create);
+    route_new(&routes, "/pos/translations", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_translations_update);
+    route_new(&routes, "/pos/translations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_translations_delete);
+    route_new(&routes, "/pos/translations", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_translations_restore);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);
