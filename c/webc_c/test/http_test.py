@@ -294,8 +294,7 @@ def main():
     # grouped POS sidebar: 10 color-step group headers, one nav-link per
     # entry (25) + the logout button, exactly one active highlight here
     header_cls = ('class="px-2 py-1 text-xs font-semibold uppercase '
-                  'tracking-wide text-slate-500 dark:text-slate-400 '
-                  'bg-slate-100 dark:bg-slate-800 nav-label"')
+                  'tracking-wide text-overlay0 bg-surface0/60 nav-label"')
     t.chk("sidebar group headers (color-step)", html.count(header_cls), 10)
     t.chk("sidebar nav links (25 entries + logout)",
           html.count('class="nav-link'), 26)
@@ -305,9 +304,10 @@ def main():
                'href="/pos/customers"', 'href="/pos/stocks"',
                'href="/pos/roles"', 'href="/pos/locations"',
                'href="/pos/alerts"', 'href="/reports"')), True)
+    # Phase 12: the active row carries one nav-active class, styled by the
+    # unlayered .nav-link.nav-active rule (Catppuccin blue in both themes).
     t.chk("sidebar active highlight (People here)",
-          html.count('bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 '
-                     'dark:text-indigo-300'), 1)
+          html.count('nav-active'), 1)
     t.chk("people master create form",
           'action="/users/create?redirect=/people"' in html, "True")
     t.chk("people lists legacy user", "Legacy Renamed" in html, "True")

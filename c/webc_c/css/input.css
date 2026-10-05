@@ -5,13 +5,88 @@
 @source "./display";
 @source "./index.html";
 
+/* ===== Catppuccin palette (Phase 12 theme) =============================
+   Raw --ctp-* values live on :root (Latte, light) and .dark (Mocha,
+   dark); @theme inline wires every utility straight to those variables,
+   so ONE .dark class on <html> flips the whole app - no dark: variants
+   needed on colors. js/themeSwitcher.js toggles the class (localStorage,
+   default light, "device" follows the OS preference).
+
+   Naming: base/mantle/crust = background steps (page/card/deep), text/
+   subtext0/overlay0 = ink steps (primary/secondary/faint), surface0/
+   surface1 = hairline lines, * color names are the Catppuccin accents.
+   onbase = text color ON a saturated accent (accent surfaces are dark in
+   Latte + light in Mocha, so the same token reads on both).
+   NOTE: never write `text-base` - Tailwind's font-size utility of that
+   name wins; use `text-onbase` for accent-contrast text. */
+:root {
+    --ctp-base: #eff1f5;
+    --ctp-mantle: #e6e9ef;
+    --ctp-crust: #dce0e8;
+    --ctp-text: #4c4f69;
+    --ctp-subtext0: #6c6f85;
+    --ctp-overlay0: #9ca0b0;
+    --ctp-surface0: #ccd0da;
+    --ctp-surface1: #bcc0cc;
+    --ctp-onbase: #eff1f5;
+    --ctp-blue: #1e66f5;
+    --ctp-mauve: #8839ef;
+    --ctp-green: #40a02b;
+    --ctp-red: #d20f39;
+    --ctp-peach: #fe640b;
+    --ctp-yellow: #df8e1d;
+    --ctp-teal: #179299;
+    --ctp-lavender: #7287fd;
+}
+
+.dark {
+    --ctp-base: #1e1e2e;
+    --ctp-mantle: #181825;
+    --ctp-crust: #11111b;
+    --ctp-text: #cdd6f4;
+    --ctp-subtext0: #a6adc8;
+    --ctp-overlay0: #6c7086;
+    --ctp-surface0: #313244;
+    --ctp-surface1: #45475a;
+    --ctp-onbase: #1e1e2e;
+    --ctp-blue: #89b4fa;
+    --ctp-mauve: #cba6f7;
+    --ctp-green: #a6e3a1;
+    --ctp-red: #f38ba8;
+    --ctp-peach: #fab387;
+    --ctp-yellow: #f9e2af;
+    --ctp-teal: #94e2d5;
+    --ctp-lavender: #b4befe;
+}
+
+@theme inline {
+    --color-base: var(--ctp-base);
+    --color-mantle: var(--ctp-mantle);
+    --color-crust: var(--ctp-crust);
+    --color-text: var(--ctp-text);
+    --color-subtext0: var(--ctp-subtext0);
+    --color-overlay0: var(--ctp-overlay0);
+    --color-surface0: var(--ctp-surface0);
+    --color-surface1: var(--ctp-surface1);
+    --color-onbase: var(--ctp-onbase);
+    --color-blue: var(--ctp-blue);
+    --color-mauve: var(--ctp-mauve);
+    --color-green: var(--ctp-green);
+    --color-red: var(--ctp-red);
+    --color-peach: var(--ctp-peach);
+    --color-yellow: var(--ctp-yellow);
+    --color-teal: var(--ctp-teal);
+    --color-lavender: var(--ctp-lavender);
+}
+
 /* CSS Variables for Sidebar */
 :root {
     --sidebar-width: 15rem;
     --sidebar-collapsed-width: 3rem;
 }
 
-/* Sidebar - Flex-based layout (not fixed) */
+/* Sidebar - Flex-based layout (not fixed). Background/line colors come
+   from the tokens above, so the .dark overrides of old are gone. */
 #sidebar {
     width: var(--sidebar-width);
     flex-shrink: 0;
@@ -19,13 +94,8 @@
     overflow-y: auto;
     overflow-x: hidden;
     transition: width 0.25s ease;
-    border-right: 1px solid #e5e7eb;
-    background-color: #ffffff;
-}
-
-.dark #sidebar {
-    border-right-color: #374151;
-    background-color: #1f2937;
+    border-right: 1px solid var(--ctp-surface0);
+    background-color: var(--ctp-mantle);
 }
 
 main {
@@ -85,11 +155,7 @@ html.sidebar-collapsed #sidebar .user-card img {
 }
 
 html.sidebar-collapsed #sidebar .nav-link:hover {
-    background-color: #f3f4f6;
-}
-
-.dark html.sidebar-collapsed #sidebar .nav-link:hover {
-    background-color: #374151;
+    background-color: var(--ctp-surface0);
 }
 
 #sidebar .sidebar-tooltip {
@@ -103,8 +169,8 @@ html.sidebar-collapsed #sidebar .sidebar-tooltip {
     position: fixed;
     padding: 0.25rem 0.5rem;
     border-radius: 0.375rem;
-    background: #111827;
-    color: #f9fafb;
+    background: var(--ctp-crust);
+    color: var(--ctp-base);
     font-size: 0.75rem;
     white-space: nowrap;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -124,7 +190,7 @@ html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem;
-    color: #4b5563;
+    color: var(--ctp-subtext0);
     text-decoration: none;
     border-radius: 0.5rem;
     margin: 0rem;
@@ -132,28 +198,16 @@ html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
 }
 
 .nav-link:hover {
-    background-color: #f3f4f6;
+    background-color: var(--ctp-surface0);
+    color: var(--ctp-text);
 }
 
-.dark .nav-link {
-    color: #9ca3af;
-}
-
-.dark .nav-link:hover {
-    background-color: #374151;
-}
-
-.nav-link.bg-indigo-50,
-.nav-link.bg-indigo-900\/50 {
-    background-color: #eef2ff;
-    color: #4f46e5;
+/* Active row: sidebar.h.tt swaps in this one class (keeps the raw rule
+   that beats the utility layer - unlayered CSS wins over utilities). */
+.nav-link.nav-active {
+    background-color: color-mix(in srgb, var(--ctp-blue) 16%, transparent);
+    color: var(--ctp-blue);
     font-weight: 600;
-}
-
-.dark .nav-link.bg-indigo-50,
-.dark .nav-link.bg-indigo-900\/50 {
-    background-color: rgba(49, 46, 129, 0.5);
-    color: #c7d2fe;
 }
 
 .nav-label {
@@ -162,7 +216,7 @@ html.sidebar-collapsed #sidebar .user-card:hover .sidebar-tooltip {
 
 main {
     scrollbar-width: thin;
-    scrollbar-color: #d1d5db transparent;
+    scrollbar-color: var(--ctp-surface1) transparent;
 }
 
 main::-webkit-scrollbar {
@@ -174,22 +228,14 @@ main::-webkit-scrollbar-track {
 }
 
 main::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
+    background-color: var(--ctp-surface1);
     border-radius: 4px;
     border: 2px solid transparent;
     background-clip: content-box;
 }
 
 main::-webkit-scrollbar-thumb:hover {
-    background-color: #9ca3af;
-}
-
-.dark main::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
-}
-
-.dark main::-webkit-scrollbar-thumb:hover {
-    background-color: #6b7280;
+    background-color: var(--ctp-overlay0);
 }
 
 /* ===== Mobile overlay sidebar (viewport < 768px, matches Tailwind md) ===== */

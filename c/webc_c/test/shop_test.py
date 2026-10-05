@@ -129,7 +129,7 @@ def main():
     st, body, _ = c.get(f"/?cat={cat_id}")
     html = body.decode()
     t.chk("category filter page", st, 200)
-    shown = set(re.findall(r'text-slate-400 truncate">([^<]+) · ', html))
+    shown = set(re.findall(r'text-overlay0 truncate">([^<]+) · ', html))
     t.chk("category filter renders rows", len(shown) >= 1, True)
     t.chk("category filter only own skus", shown <= cat_skus, True)
 
@@ -373,6 +373,87 @@ def main():
 
     # storefront stays public for guests
     t.chk("storefront public after logout", c.get("/")[0], 200)
+
+    # ---- Phase 12: theme + language dropdown ------------------------------
+    st, body, _ = c.get("/")
+    html = body.decode()
+    t.chk("storefront default lang", '<html lang="km">' in html, True)
+    t.chk("storefront loads themeSwitcher",
+          'src="/js/themeSwitcher.js"' in html, True)
+    t.chk("storefront theme buttons",
+          html.count("data-set-theme="), 3)
+    t.chk("storefront theme buttons drive controller",
+          html.count("window.themeController.setTheme("), 3)
+    t.chk("storefront language form", "data-lang-form" in html, True)
+    t.chk("storefront language options km+en",
+          html.count('<option value="'), 2)
+    t.chk("storefront active option selected",
+          'value="km" selected' in html, True)
+    t.chk("storefront Khmer default placeholder",
+          "ស្វែងរកផលិតផល..." in html, True)
+    t.chk("no leftover indigo in storefront",
+          "indigo" not in html, True)
+
+    # compiled Tailwind output carries the Catppuccin token bridge
+    proj = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    outcss = open(os.path.join(proj, "css", "output.css"),
+                  encoding="utf-8").read()
+    t.chk("output.css Latte :root tokens",
+          ":root{--ctp-base:#eff1f5" in outcss, True)
+    t.chk("output.css Mocha .dark tokens",
+          ".dark{--ctp-base:#1e1e2e" in outcss, True)
+    t.chk("output.css utilities read vars",
+          "background-color:var(--ctp-base)" in outcss, True)
+    t.chk("output.css nav-active rule", "nav-active" in outcss, True)
+
+    # 0006 seeded both languages for every tr() key (70 keys x 2); other
+    # suites add rows via /pos/translations, so assert the seeded floor.
+    t.chk("0006 seeded translations",
+          db_row("SELECT COUNT(*) FROM translations "
+                 "WHERE deleted_at IS NULL")[0] >= 140, True)
+
+    # unknown code: redirect without touching the cookie jar
+    st, hdr, _, _ = c.req_full("GET", "/lang?code=zz&back=/")
+    t.chk("invalid lang code redirects", st, 303)
+    t.chk("invalid lang code sets no cookie",
+          "webc_lang" in hdr.get("Set-Cookie", ""), False)
+    t.chk("invalid lang code leaves jar empty",
+          "webc_lang" in c.cookies, False)
+
+    # open-redirect guard on the return path
+    st, hdr, _, _ = c.req_full(
+        "GET", "/lang?code=km&back=" + urllib.parse.quote("//evil.com"))
+    t.chk("lang back=//evil.com lands on /", hdr.get("Location"), "/")
+
+    # valid switch: cookie set -> English UI + lang attribute
+    st, hdr, _, _ = c.req_full("GET", "/lang?code=en&back=/")
+    t.chk("lang switch redirects", st, 303)
+    sc = hdr.get("Set-Cookie", "")
+    t.chk("lang switch sets webc_lang",
+          "webc_lang=en" in sc and "Path=/" in sc, True)
+    t.chk("lang cookie in jar", c.cookies.get("webc_lang"), "en")
+    st, body, _ = c.get("/")
+    html = body.decode()
+    t.chk("english storefront lang attr", '<html lang="en">' in html, True)
+    t.chk("english placeholder", "Search products..." in html, True)
+    t.chk("english page title", "<title>Products</title>" in html, True)
+
+    # cookie survives a page reload, then reset to km for the checks below
+    st, body, _ = c.get("/")
+    t.chk("english persists on reload",
+          '<html lang="en">' in body.decode(), True)
+    c.cookies.pop("webc_lang", None)
+    t.chk("default lang back to km",
+          '<html lang="km">' in c.get("/")[1].decode(), True)
+
+    # admin shell (header.h.tt): HTML_LANG + LANG_FORM macros on /dashboard
+    c.login_as("sd.staff1", "posadmin1")
+    dhtml = c.get("/dashboard")[1].decode()
+    t.chk("admin doc lang attr", '<html lang="km">' in dhtml, True)
+    t.chk("admin language form", "data-lang-form" in dhtml, True)
+    t.chk("admin theme buttons kept", "setTheme('dark')" in dhtml, True)
+    c.req_full("GET", "/logout")
+    c.cookies.pop("webc_sid", None)
 
     ok = t.summary()
     sys.exit(0 if ok else 1)

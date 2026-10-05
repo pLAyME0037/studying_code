@@ -34,6 +34,7 @@
 #include "src/pos/audit.h"
 #include "core/report/report.h"
 #include "core/auth/auth.h"
+#include "core/i18n/i18n.h"
 #include "src/shop/shop.h"
 #include "serve.h"
 
@@ -186,6 +187,8 @@ void route_initialize(void) {
     route_new(&routes, "/login", NULL, "POST", ROUTE_EXACT, serve_auth_login_post);
     route_new(&routes, "/logout", NULL, "GET", ROUTE_EXACT, serve_auth_logout);
     route_new(&routes, "/logout", NULL, "POST", ROUTE_EXACT, serve_auth_logout);
+    // Phase 12: language switch - validate the code, set webc_lang, 303 back.
+    route_new(&routes, "/lang", NULL, "GET", ROUTE_EXACT, serve_lang_set);
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);
     // users master + their notes, one master-detail page
     route_new(&routes, "/people", NULL, "GET", ROUTE_EXACT, serve_people);
@@ -380,6 +383,10 @@ void route_request(Serve_Context *sc) {
     if (!route_init) {
         route_initialize();
     }
+
+    // Phase 12: request-scoped i18n state (tr() and <html lang> read it).
+    // Must run before auth_gate() - the login page translates too.
+    i18n_begin(sc);
 
     // Staff gate: /pos, /dashboard and /reports redirect to /login with a
     // validated ?next= when no live session cookie is present.

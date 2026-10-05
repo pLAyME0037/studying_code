@@ -1387,7 +1387,7 @@ def main():
     t.chk("reports index pdf+docx links (4 reports)",
           html.count('href="/reports/'), 8)
     t.chk("reports sidebar group present (10 color-step headers)",
-          html.count('bg-slate-100 dark:bg-slate-800 nav-label'), 10)
+          html.count('bg-surface0/60 nav-label'), 10)
     t.chk("sales report view has seeded orders",
           db_row("SELECT COUNT(*) FROM v_pos_sales_delivery_report")[0] >= 40,
           True)
@@ -1432,7 +1432,7 @@ def main():
     t.chk("demo master row still 4 columns + actions",
           m.group(2).count("<td") if m else -1, 5)
 
-    # ---- Phase 10/11: schema completeness (0001..0005 + history) ---------
+    # ---- Phase 10/11: schema completeness (0001..0006 + history) ---------
     want = sorted((
         "audit_logs", "cash_shifts", "categories", "customer_interactions",
         "customers", "deliveries", "dictionaries", "financial_ledgers",

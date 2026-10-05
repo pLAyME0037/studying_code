@@ -361,6 +361,67 @@ vanilla JS only.
 - Suite: 558 PASS (http_test 99 / pos_test 325 / shop_test 88 /
   mysql 40 / https 6).
 
+## Phase 12 — Catppuccin theme + language dropdown DONE (suite 587 PASS)
+- Theme = token flip, not variant sprawl: css/input.css defines raw
+  `--ctp-*` values on `:root` (Catppuccin Latte, light) and `.dark`
+  (Catppuccin Mocha), then `@theme inline { --color-*: var(--ctp-*) }`
+  so every Tailwind color utility resolves through the variables - one
+  `.dark` class on <html> recolors everything, no `dark:` variants needed
+  on colors. Tokens: base/mantle/crust (bg steps), text/subtext0/overlay0
+  (ink steps), surface0/surface1 (hairlines), `onbase` (text ON accent
+  surfaces: Latte accents are dark->light text, Mocha light->dark text,
+  one token reads right on both), accents blue/mauve/green/red/peach/
+  yellow/teal/lavender. WARNING: never write `text-base` - Tailwind's
+  font-size utility of that name wins; accent-contrast text is `text-onbase`.
+  All old `.dark` raw overrides (sidebar/nav/scrollbar/tooltip) deleted:
+  the vars flip themselves. Active nav = `.nav-link.nav-active` unlayered
+  rule (color-mix blue 16% + blue text) keyed off ONE swapped class.
+- Switcher: existing js/themeSwitcher.js (localStorage, default light,
+  `device` follows OS) drives both documents - 3 buttons in the storefront
+  top bar (data-set-theme + onclick window.themeController.setTheme) and
+  the 3 kept in header.h.tt; render_page_shell now ships the script in
+  <head> (admin full-doc header already had it). No JS -> light stays.
+- i18n runtime (core/i18n/i18n.{h,c}): file-static request state bound by
+  `i18n_begin(sc)` at the top of route_request BEFORE auth_gate (route_request
+  is atomic - coroutines only yield at socket I/O outside it - same safety
+  as user_data()). Lazy: cookie webc_lang (charset-validated) -> membership
+  in `SELECT id,code,name FROM languages WHERE is_active=1 AND deleted_at IS
+  NULL ORDER BY is_default DESC, code LIMIT 50` (langs[0] = default) ->
+  fallback default; then load `trans_key,trans_value ... LIMIT 512` for
+  active + default (skipped when equal). `tr(key, fallback)` chain: active
+  row -> default row -> C literal; READS ONLY, never writes on GET;
+  empty DB value skips to the next level. mysql (no 0006 rows) gets C
+  literals + `<html lang="km">` and keeps 200s. Static assets never resolve
+  (no DB touch unless a page renders text).
+- /lang: GET /lang?code=&back= (ROUTE_EXACT) validates charset + active
+  membership, sets `webc_lang=<code>; Path=/; SameSite=Lax; Max-Age=1y`
+  and 303s to `back` only when same-site (`/` prefix, not `//`), else `/`;
+  invalid code -> plain 303, no cookie. i18n_lang_form_html(back) emits
+  hidden back + `<select onchange="this.form.submit()">` (2+ langs only)
+  + <noscript> submit button. Storefront back = uri+query, admin back =
+  current_path (LANG_FORM macro in core/layout/header.c next to HTML_LANG
+  for `<html lang>`).
+- Restyle was colors-only (structure untouched): src/shop/{shop,cart,
+  checkout}.c + core/auth login page now emit tokens (accent buttons
+  bg-blue text-onbase hover:brightness-90, card bg-mantle border-surface0,
+  cart header bar bg-text, chips active bg-blue / all-chip bg-text),
+  sidebar.h.tt + header.h.tt shell tokenized (deep per-cell admin accents
+  and reports intentionally untouched - reports stay Khmer).
+- Migration 0006_i18n: sqlite INSERT OR IGNORE of 70 keys x lang_km+
+  lang_en (km values extracted from the C fallbacks so DB and literal are
+  byte-identical), mysql/postgres = comment-only skip (no semicolons in
+  comments; precedent 0004), registered in db.c -> history rows 5->6.
+  New keys/languages still via /pos/i18n CRUD.
+- Tests: shop_test +29 (Phase 12 section: lang="km", theme script + 3
+  buttons x2 controllers, lang form/options/selected, Khmer placeholder,
+  output.css pins :root+.dark+var()+nav-active, seeded>=140, invalid
+  code no-cookie, //evil back -> /, code=en -> cookie + English UI +
+  lang="en" persisting across reload, admin header-macro doc); http_test
+  + pos_test sidebar asserts updated to `bg-surface0/60 nav-label` and
+  `nav-active` (counts 10/26/1 unchanged); mysql Migrations 5->6.
+- Suite: 587 PASS (http_test 99 / pos_test 325 / shop_test 117 /
+  mysql 40 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

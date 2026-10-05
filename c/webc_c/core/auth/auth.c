@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "core/http/utils.h"
+#include "core/i18n/i18n.h"
 #include "src/db/db.h"
 
 // Cookie + hashing constants. Passwords are stored as "<salt>$<hex>" where
@@ -161,40 +162,59 @@ static void render_login(Serve_Context *sc, String_View next, const char *err) {
     String_Builder content = {0};
     sb_append_cstr(&content,
         "<div class=\"min-h-screen flex items-center justify-center"
-        " bg-slate-100\">"
+        " bg-base\">"
         "<form method=\"POST\" action=\"/login\" data-login-form"
-        " class=\"w-full max-w-xs bg-white border border-slate-300\">"
-        "<div class=\"bg-slate-900 text-white px-3 py-2\">"
-        "<div class=\"text-sm font-semibold\">កត់ឈ្មោះចូល</div>"
-        "<div class=\"text-xs text-slate-400\">POS Admin</div></div>"
+        " class=\"w-full max-w-xs bg-mantle border border-surface0\">"
+        "<div class=\"bg-text text-onbase px-3 py-2\">"
+        "<div class=\"text-sm font-semibold\">");
+    sb_append_html_escaped(&content, tr("auth.title", "កត់ឈ្មោះចូល"));
+    sb_append_cstr(&content, "</div>"
+        "<div class=\"text-xs text-onbase/70\">POS Admin</div></div>"
         "<div class=\"px-3 py-3 flex flex-col gap-3\">");
     if (err && err[0]) {
         sb_append_cstr(&content,
-            "<div data-login-error class=\"bg-red-50 border-l-2"
-            " border-red-500 text-red-700 px-2 py-1.5 text-xs\">");
+            "<div data-login-error class=\"bg-red/10 border-l-2"
+            " border-red text-red px-2 py-1.5 text-xs\">");
         sb_append_html_escaped(&content, err);
         sb_append_cstr(&content, "</div>");
     }
     sb_append_cstr(&content,
-        "<label class=\"text-xs text-slate-500\">ឈ្មោះអ្នកប្រើ</label>"
+        "<label class=\"text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("auth.label_username", "ឈ្មោះអ្នកប្រើ"));
+    sb_append_cstr(&content,
+        "</label>"
         "<input name=\"username\" autocomplete=\"username\" required"
-        " class=\"border border-slate-300 px-2 py-1.5 text-sm w-full\">"
-        "<label class=\"text-xs text-slate-500\">ពាក្យសម្ងាត់</label>"
+        " class=\"border border-surface0 bg-base text-text px-2 py-1.5"
+        " text-sm w-full\">"
+        "<label class=\"text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("auth.label_password", "ពាក្យសម្ងាត់"));
+    sb_append_cstr(&content,
+        "</label>"
         "<input name=\"password\" type=\"password\" autocomplete=\"current-password\""
         " required"
-        " class=\"border border-slate-300 px-2 py-1.5 text-sm w-full\">"
+        " class=\"border border-surface0 bg-base text-text px-2 py-1.5"
+        " text-sm w-full\">"
         "<input type=\"hidden\" name=\"next\" value=\"");
     sb_append_html_escaped(&content, next.count ? temp_sprintf("%.*s", (int) next.count, next.data) : "");
     sb_append_cstr(&content,
         "\">"
-        "<button type=\"submit\" class=\"bg-indigo-600 hover:bg-indigo-700"
-        " text-white px-2 py-1.5 text-sm w-full\">ចូល</button>"
-        "<a href=\"/\" class=\"text-xs text-indigo-600 hover:underline"
-        " text-center\">ត្រឡប់ទៅហាង</a>"
+        "<button type=\"submit\" class=\"bg-blue text-onbase"
+        " hover:brightness-90"
+        " px-2 py-1.5 text-sm w-full\">");
+    sb_append_html_escaped(&content, tr("auth.submit", "ចូល"));
+    sb_append_cstr(&content,
+        "</button>"
+        "<a href=\"/\" class=\"text-xs text-blue hover:underline"
+        " text-center\">");
+    sb_append_html_escaped(&content,
+                           tr("auth.back", "ត្រឡប់ទៅហាង"));
+    sb_append_cstr(&content, "</a>"
         "</div></form></div>");
 
     sc->body.count = 0;
-    String_View title = sv_from_cstr("ចូលគណនី");
+    String_View title = sv_from_cstr(tr("auth.page_title", "ចូលគណនី"));
     render_page_shell(sc, title, sb_to_sv(content));
     http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));
     sb_free(content);
@@ -216,7 +236,9 @@ void serve_auth_login_post(Serve_Context *sc) {
     if (!next_safe(next)) next = sv_from_cstr("/dashboard");
 
     if (username.count == 0 || password.count == 0) {
-        render_login(sc, next, "សូមបំពេញឈ្មោះនិងពាក្យសម្ងាត់");
+        render_login(sc, next,
+                     tr("auth.err_fill",
+                        "សូមបំពេញឈ្មោះនិងពាក្យសម្ងាត់"));
         return;
     }
 
@@ -263,7 +285,9 @@ void serve_auth_login_post(Serve_Context *sc) {
                        stored);
     if (!ok) {
         db_close(db);
-        render_login(sc, next, "ឈ្មោះឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ");
+        render_login(sc, next,
+                     tr("auth.err_bad",
+                        "ឈ្មោះឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ"));
         return;
     }
 

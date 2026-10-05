@@ -23,6 +23,7 @@
 #include "serve.h"
 #include "route.h"
 #include "utils.h"
+#include "../i18n/i18n.h"
 
 #include "../../src/user/user.h"
 #include "../../module/coroutine/coroutine.h"
@@ -599,12 +600,17 @@ void render_page_shell(Serve_Context *sc,
 {
     String_Builder *sb = &sc->body;
     sb_append_cstr(sb, "<!DOCTYPE html>\n");
-    sb_append_cstr(sb, "<html lang=\"en\"><head>");
+    sb_append_cstr(sb, "<html lang=\"");
+    sb_append_cstr(sb, i18n_html_lang());   // active language cookie
+    sb_append_cstr(sb, "\"><head>");
     sb_append_cstr(sb, "<meta charset=\"utf-8\">");
     sb_append_cstr(sb, "<title>");
     sb_append_sv(sb, title);
     sb_append_cstr(sb, "</title>");
     sb_append_cstr(sb, "<link rel=\"stylesheet\" href=\"/css/output.css\">");
+    // Phase 12 theme: localStorage light/dark, .dark class flips the
+    // Catppuccin @theme tokens. No JS -> light stays (the default :root).
+    sb_append_cstr(sb, "<script src=\"/js/themeSwitcher.js\"></script>");
     sb_append_cstr(sb, "</head><body>");
     sb_append_sv(sb, content);
     sb_append_cstr(sb, "</body></html>");

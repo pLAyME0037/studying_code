@@ -1,0 +1,8 @@
+-- ============================================================================
+-- 0006_i18n -- INTENTIONALLY SKIPPED for MySQL (documented in
+-- docs/POS_PLAN.md Phase 12): the seed rows reference languages rows that
+-- only the sqlite 0003 file seeds (lang_km/lang_en), and the mysql test
+-- path keeps the storefront on tr()'s C-literal fallback anyway.
+-- A comment-only file is valid: sql_exec_script() skips statements that
+-- contain no query text ("Query was empty" is avoided by the splitter).
+-- ============================================================================

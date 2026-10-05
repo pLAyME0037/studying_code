@@ -234,6 +234,70 @@ Accept: ./test/run.sh all green (558 PASS); guest can browse+buy while
 /pos /dashboard /reports redirect guests to /login.
 
 -----------------------------------------------------------------------
+PHASE 12 — Catppuccin light/dark theme + DB-backed language dropdown
+-----------------------------------------------------------------------
+Goal: one theme switch flips storefront + admin shell (Latte light /
+Mocha dark), and a top-bar <select> picks the UI language from the
+languages/translations tables (admin labels, reports stay Khmer).
+- css/input.css: raw --ctp-* token values on :root (Latte) and .dark
+  (Mocha) + @theme inline { --color-*: var(--ctp-*) } so utilities read
+  the variables directly and ONE .dark class flips every color. Token
+  set: base/mantle/crust/text/subtext0/overlay0/surface0/surface1/onbase
+  + accents blue/mauve/green/red/peach/yellow/teal/lavender. onbase =
+  text on a saturated accent (Latte accent dark w/ light text, Mocha
+  accent light w/ dark text). Old .dark raw overrides for sidebar/nav/
+  scrollbar deleted (tokens self-flip); active nav row = one nav-active
+  class + unlayered .nav-link.nav-active rule (color-mix blue 16%).
+  Never write text-base (font-size utility wins) - use text-onbase.
+- js/themeSwitcher.js reused unchanged (localStorage, default light,
+  device follows OS): storefront top bar gets 3 data-set-theme buttons
+  (onclick themeController.setTheme), admin header.h.tt keeps its 3.
+  render_page_shell now emits the script in <head> too (admin full-doc
+  header already had it); no JS -> light stays.
+- core/i18n/i18n.{h,c} (new): file-static request state bound by
+  i18n_begin(sc) at the top of route_request (atomic, no yields - same
+  pattern as user_data()). Lazy resolve on first tr()/lang access so
+  static assets never touch the DB: cookie webc_lang validated against
+  active languages (ORDER BY is_default DESC -> langs[0] = default),
+  else default, else "" (mysql skips 0006 -> C literals, 200 kept).
+  Row loads: SELECT trans_key,trans_value LIMIT 512 for active + default
+  (skipped when same). tr(key, fallback) chain: active -> default -> C
+  literal; reads only, NEVER writes on GET. i18n_html_lang() for
+  <html lang> ("km" fallback); i18n_lang_form_html(back) renders the
+  hidden-back <select onchange="this.form.submit()"> + <noscript>
+  button (empty when <2 active langs); serve_lang_set validates code
+  charset + membership, sets webc_lang (1y, Path=/, SameSite=Lax) and
+  303s to back only when same-site (/ prefix, not //), else /.
+- route.c: i18n_begin(sc) before auth_gate() (login translates too) +
+  GET /lang ROUTE_EXACT; serve.c render_page_shell: <html lang> +
+  themeSwitcher.js; core/layout/header.c: HTML_LANG/LANG_FORM macros so
+  header.h.tt emits lang + top-bar dropdown (back = current_path);
+  storefront chrome builds back from uri+query. Reports stay Khmer,
+  admin labels stay English (they only translate if keys are added at
+  /pos/i18n).
+- Restyle = colors only, structure untouched: src/shop/*.c
+  (slate/indigo/white/emerald -> tokens, accent buttons bg-blue
+  text-onbase hover:brightness-90, cart header bg-text bar, chips
+  bg-blue active / bg-mantle idle), core/auth login page tokens, sidebar/
+  header .tt shell -> tokens (deep per-cell admin accents untouched).
+- migrations/0006_i18n/sqlite3.sql: INSERT OR IGNORE, 70 keys x 2 langs
+  (km byte-identical to the C fallbacks, en = UI English) covering
+  shop./cart./checkout./order./auth./status.* keys; mysql+postgres files
+  comment-only skip (no semicolons in comments); registered in db.c
+  (history 5->6). New keys/languages stay at /pos/i18n CRUD.
+- Tests: shop_test Phase 12 section (lang="km" default, theme script +
+  3 buttons x2 controllers, lang form + 2 options + selected, Khmer
+  placeholder, output.css pins :root/.dark/var()/nav-active, 140 seeded
+  rows floor, invalid code -> no cookie, //evil back -> /, code=en ->
+  cookie + English UI + lang="en" persisting on reload, admin doc via
+  header macros); http_test + pos_test sidebar assertions updated to
+  bg-surface0/60 nav-label + nav-active (counts 10/26/1 unchanged);
+  mysql Migrations 5->6.
+Accept: ./test/run.sh all green (587 PASS); / flips theme via top-bar
+buttons, /lang?code=en switches storefront+admin UI to English for a
+year, server bytes identical without JS (light theme, km, forms work).
+
+-----------------------------------------------------------------------
 RISKS / NOTES
 -----------------------------------------------------------------------
 - sqlite users DROP+RENAME inside migration tx: notes FK points at table

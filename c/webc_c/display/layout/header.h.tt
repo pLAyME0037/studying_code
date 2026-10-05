@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="({ STR(HTML_LANG); })">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,14 +29,14 @@
     </style>
 </head>
 
-<body class="h-full bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
+<body class="h-full bg-base text-text transition-colors duration-300">
     <div class="flex flex-col h-screen">
-        <header class="shrink-0 sticky top-0 z-30 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <header class="shrink-0 sticky top-0 z-30 bg-mantle shadow-sm border-b border-surface0">
             <div class="flex items-center justify-between px-4 py-1">
 
                 <div class="flex items-center gap-2">
                     <button data-sidebar-toggle 
-                            class="p-2 -ml-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            class="p-2 -ml-2 rounded-lg text-subtext0 hover:bg-surface0 focus:outline-none focus:ring-2 focus:ring-blue">
                         <svg class="w-6 h-6" 
                              fill="none" 
                              stroke="currentColor" 
@@ -49,14 +49,14 @@
                     </button>
 
                     <div class="hidden md:flex items-center gap-2">
-                        <span class="font-bold text-xl text-gray-800 dark:text-white tracking-tight">
+                        <span class="font-bold text-xl text-text tracking-tight">
                             Clinic
                         </span>
                     </div>
 
-                    <div class="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-2 hidden md:block"></div>
+                    <div class="h-6 w-px bg-surface1 mx-2 hidden md:block"></div>
 
-                    <h1 class="text-lg font-semibold text-gray-800 dark:text-white truncate">
+                    <h1 class="text-lg font-semibold text-text truncate">
                         ({ STR(PAGE_TITLE); })
                     </h1>
                 </div>
@@ -64,7 +64,7 @@
                 <div class="flex items-center space-x-3">
                     <div class="flex items-center gap-1">
                         ({ {
-                            char *theme_btn = "px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"; })
+                            char *theme_btn = "px-2 py-1 rounded text-sm text-subtext0 hover:bg-surface0 hover:text-text"; })
                             <button onclick="window.themeController.setTheme('light')"
                                     class="({ STR(theme_btn); })">
                                 Light
@@ -79,6 +79,9 @@
                             </button>
                         ({ } })
                     </div>
+                    <div class="flex items-center gap-1">
+                        ({ STR(LANG_FORM); })
+                    </div>
                 </div>
             </div>
         </header>
@@ -87,5 +90,5 @@
             ({ #include "../component/sidebar.h" })
 
             <div class="flex-1 flex flex-col min-w-0">
-                <main class="flex-1 overflow-y-auto flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900">
+                <main class="flex-1 overflow-y-auto flex flex-col min-w-0 bg-base">
                     <div class="flex-1 py-6 px-4 sm:px-6 lg:px-8">

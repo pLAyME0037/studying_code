@@ -1,6 +1,7 @@
 #include "module/nob.h"
 #include "../../src/db/db.h"
 #include "../../src/user/user.h"
+#include "../i18n/i18n.h"
 
 void render_page_header(String_Builder *sb,
                         const char     *page_title,
@@ -26,7 +27,13 @@ void render_page_header(String_Builder *sb,
 #define NAV_ACTIVE(prefix) (strncmp((current_path), (prefix), strlen(prefix)) == 0)
 #define CURRENT_PATH current_path
 #define PAGE_TITLE page_title
+// Phase 12: <html lang> follows the active language, the top bar carries
+// the language <select> (back = the page being rendered).
+#define HTML_LANG i18n_html_lang()
+#define LANG_FORM i18n_lang_form_html(current_path)
 #include "../../build/h_to_html/layout/header.h"
+#undef LANG_FORM
+#undef HTML_LANG
 #undef PAGE_TITLE
 #undef CURRENT_PATH
 #undef NAV_ACTIVE

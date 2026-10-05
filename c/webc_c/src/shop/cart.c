@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "core/http/utils.h"
+#include "core/i18n/i18n.h"
 #include "src/db/db.h"
 
 // Cookie cart: "id:qty,id:qty,..." - HttpOnly, no server state. Every load
@@ -144,37 +145,50 @@ void serve_shop_cart(Serve_Context *sc) {
     String_Builder content = {0};
     shop_chrome_start(&content, sc, "/cart");
     sb_append_cstr(&content,
-        "<div class=\"bg-white border border-slate-200\">"
-        "<div class=\"bg-slate-900 text-white px-3 py-2 flex items-center"
-        " justify-between\"><span class=\"text-sm font-semibold\">"
-        "រទេះទំនិញ</span>"
-        "<a href=\"/\" class=\"text-xs text-slate-300 hover:text-white\">"
-        "បន្តទិញ</a></div>");
+        "<div class=\"bg-mantle border border-surface0\">"
+        "<div class=\"bg-text text-onbase px-3 py-2 flex items-center"
+        " justify-between\"><span class=\"text-sm font-semibold\">");
+    sb_append_html_escaped(&content, tr("cart.title", "រទេះទំនិញ"));
+    sb_append_cstr(&content,
+        "</span>"
+        "<a href=\"/\" class=\"text-xs text-onbase/70 hover:text-onbase\">");
+    sb_append_html_escaped(&content, tr("cart.continue", "បន្តទិញ"));
+    sb_append_cstr(&content, "</a></div>");
 
     if (cart.count == 0) {
         sb_append_cstr(&content,
             "<div class=\"text-center px-3 py-8\">"
-            "<div class=\"text-slate-500 text-sm\">រទេះទំនិញទំនេរ</div>"
-            "<a href=\"/\" class=\"text-xs text-indigo-600 hover:underline\">"
-            "មើលផលិតផល</a></div>");
+            "<div class=\"text-overlay0 text-sm\">");
+        sb_append_html_escaped(&content,
+                               tr("cart.empty", "រទេះទំនិញទំនេរ"));
+        sb_append_cstr(&content,
+            "</div>"
+            "<a href=\"/\" class=\"text-xs text-blue hover:underline\">");
+        sb_append_html_escaped(&content,
+                               tr("cart.view_products", "មើលផលិតផល"));
+        sb_append_cstr(&content, "</a></div>");
     } else {
         for (size_t i = 0; i < cart.count; ++i) {
             Shop_Cart_Item *it = &cart.items[i];
             if (!it->valid) continue;
             sb_append_cstr(&content,
                 "<div data-cart-row class=\"px-3 py-2 border-b"
-                " border-slate-100 flex items-center gap-3\">"
+                " border-surface0 flex items-center gap-3\">"
                 "<div class=\"flex-1 min-w-0\">"
-                "<div class=\"text-sm font-medium text-slate-800 truncate\">");
+                "<div class=\"text-sm font-medium text-text truncate\">");
             sb_append_html_escaped(&content, it->name);
             sb_append_cstr(&content,
-                "</div><div class=\"text-xs text-slate-400\">");
+                "</div><div class=\"text-xs text-overlay0\">");
             sb_append_html_escaped(&content, it->sku);
             sb_append_cstr(&content, " · ");
             sb_append_cstr(&content, shop_money(it->price));
             if ((double) it->qty > it->stock) {
                 sb_append_cstr(&content,
-                    " · <span class=\"text-red-500\">ស្តុកមិនគ្រប់គ្រាន់</span>");
+                    " · <span class=\"text-red\">");
+                sb_append_html_escaped(&content,
+                                       tr("cart.low_stock",
+                                          "ស្តុកមិនគ្រប់គ្រាន់"));
+                sb_append_cstr(&content, "</span>");
             }
             sb_append_cstr(&content,
                 "</div></div>"
@@ -187,10 +201,13 @@ void serve_shop_cart(Serve_Context *sc) {
                 "<input type=\"number\" name=\"qty\" value=\"");
             sb_appendf(&content, "%d", it->qty);
             sb_append_cstr(&content,
-                "\" min=\"0\" class=\"border border-slate-300 px-1 py-1.5"
+                "\" min=\"0\" class=\"border border-surface0 bg-mantle"
+                " text-text px-1 py-1.5"
                 " text-sm w-16\">"
-                "<button class=\"border border-slate-300 px-2 py-1.5 text-xs"
-                " bg-white hover:bg-slate-50\">កែ</button>"
+                "<button class=\"border border-surface0 px-2 py-1.5 text-xs"
+                " bg-mantle text-subtext0 hover:bg-surface0\">");
+            sb_append_html_escaped(&content, tr("cart.edit", "កែ"));
+            sb_append_cstr(&content, "</button>"
                 "</form>"
                 "<div class=\"text-sm w-24 text-right font-medium\">");
             sb_append_cstr(&content, shop_money(it->price * it->qty));
@@ -200,29 +217,39 @@ void serve_shop_cart(Serve_Context *sc) {
                 "<input type=\"hidden\" name=\"product_id\" value=\"");
             sb_append_html_escaped(&content, it->id);
             sb_append_cstr(&content,
-                "\"><button class=\"text-red-500 text-xs hover:underline\">"
-                "លុប</button></form></div>");
+                "\"><button class=\"text-red text-xs hover:underline\">");
+            sb_append_html_escaped(&content, tr("cart.remove", "លុប"));
+            sb_append_cstr(&content, "</button></form></div>");
         }
         sb_append_cstr(&content,
             "<div class=\"px-3 py-2 flex items-center justify-between"
-            " bg-slate-100 border-t border-slate-200\">"
-            "<span class=\"text-sm font-semibold text-slate-700\">សរុប</span>"
-            "<span class=\"text-sm font-semibold text-slate-900\">");
+            " bg-surface0/50 border-t border-surface0\">"
+            "<span class=\"text-sm font-semibold text-text\">");
+        sb_append_html_escaped(&content, tr("cart.subtotal", "សរុប"));
+        sb_append_cstr(&content,
+            "</span>"
+            "<span class=\"text-sm font-semibold text-text\">");
         sb_append_cstr(&content, shop_money(cart.subtotal));
         sb_append_cstr(&content,
             "</span></div>"
             "<div class=\"px-3 py-2 flex items-center justify-end gap-2"
-            " border-t border-slate-200\">"
-            "<a href=\"/\" class=\"border border-slate-300 px-2 py-1.5"
-            " text-sm bg-white hover:bg-slate-50\">បន្តទិញ</a>"
-            "<a href=\"/checkout\" class=\"bg-indigo-600 hover:bg-indigo-700"
-            " text-white px-2 py-1.5 text-sm\">បង់ប្រាក់</a>"
+            " border-t border-surface0\">"
+            "<a href=\"/\" class=\"border border-surface0 px-2 py-1.5"
+            " text-sm bg-mantle text-text hover:bg-surface0\">");
+        sb_append_html_escaped(&content, tr("cart.continue", "បន្តទិញ"));
+        sb_append_cstr(&content,
+            "</a>"
+            "<a href=\"/checkout\" class=\"bg-blue text-onbase"
+            " hover:brightness-90"
+            " px-2 py-1.5 text-sm\">");
+        sb_append_html_escaped(&content, tr("cart.checkout", "បង់ប្រាក់"));
+        sb_append_cstr(&content, "</a>"
             "</div>");
     }
     sb_append_cstr(&content, "</div>");
 
     shop_chrome_end(&content);
-    shop_render(sc, 200, "រទេះទំនិញ", &content);
+    shop_render(sc, 200, tr("cart.title", "រទេះទំនិញ"), &content);
     sb_free(content);
 }
 

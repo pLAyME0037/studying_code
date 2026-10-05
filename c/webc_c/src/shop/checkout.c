@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "core/http/utils.h"
+#include "core/i18n/i18n.h"
 #include "src/db/db.h"
 
 // Guest checkout - the ONLY customer-facing order path (Phase 11):
@@ -30,15 +31,12 @@ static const char *sv_cstr(String_View s) {
     return temp_sprintf("%.*s", (int) s.count, s.data);
 }
 
-static const char *status_khmer(const char *code) {
-    if (!code) return "";
-    if (strcmp(code, "PENDING") == 0) return "កំពុងរង់ចាំ";
-    if (strcmp(code, "PAID") == 0) return "បានបង់ប្រាក់";
-    if (strcmp(code, "PACKED") == 0) return "បានផ្គត់ផ្គង់";
-    if (strcmp(code, "SHIPPED") == 0) return "បានផ្ញើ";
-    if (strcmp(code, "DELIVERED") == 0) return "បានដឹកជញ្ជូន";
-    if (strcmp(code, "CANCELLED") == 0) return "បានលុបចោល";
-    return code;
+// Order status label: tr("status.<code>") with the raw dictionary id as
+// the last fallback (unknown codes pass through untranslated).
+static const char *status_label(const char *code) {
+    if (!code || !code[0]) return "";
+    const char *t = tr(temp_sprintf("status.%s", code), "");
+    return t[0] ? t : code;
 }
 
 // ---------------------------------------------------------------------------
@@ -57,73 +55,103 @@ static void render_checkout(Serve_Context *sc, const Shop_Cart *cart,
 
     // Summary (live DB prices only).
     sb_append_cstr(&content,
-        "<div class=\"bg-white border border-slate-200 self-start\">"
-        "<div class=\"bg-slate-900 text-white px-3 py-2 text-sm"
-        " font-semibold\">ការបញ្ជាទិញរបស់អ្នក</div>");
+        "<div class=\"bg-mantle border border-surface0 self-start\">"
+        "<div class=\"bg-text text-onbase px-3 py-2 text-sm"
+        " font-semibold\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.order_title",
+                              "ការបញ្ជាទិញរបស់អ្នក"));
+    sb_append_cstr(&content, "</div>");
     for (size_t i = 0; i < cart->count; ++i) {
         const Shop_Cart_Item *it = &cart->items[i];
         if (!it->valid) continue;
         sb_append_cstr(&content,
-            "<div class=\"px-3 py-2 border-b border-slate-100 flex"
+            "<div class=\"px-3 py-2 border-b border-surface0 flex"
             " items-center gap-2 text-sm\">"
-            "<div class=\"flex-1 min-w-0\"><div class=\"text-slate-800"
+            "<div class=\"flex-1 min-w-0\"><div class=\"text-text"
             " truncate\">");
         sb_append_html_escaped(&content, it->name);
-        sb_append_cstr(&content, "</div><div class=\"text-xs text-slate-400\">");
+        sb_append_cstr(&content, "</div><div class=\"text-xs text-overlay0\">");
         sb_append_html_escaped(&content, it->sku);
         sb_append_cstr(&content, " × ");
         sb_appendf(&content, "%d", it->qty);
-        sb_append_cstr(&content, "</div></div><div class=\"text-slate-700\">");
+        sb_append_cstr(&content, "</div></div><div class=\"text-text\">");
         sb_append_cstr(&content, shop_money(it->price * it->qty));
         sb_append_cstr(&content, "</div></div>");
     }
     sb_append_cstr(&content,
         "<div class=\"px-3 py-2 flex items-center justify-between"
-        " bg-slate-100 border-t border-slate-200 text-sm\">"
-        "<span class=\"font-semibold text-slate-700\">សរុប</span>"
-        "<span class=\"font-semibold text-slate-900\">");
+        " bg-surface0/50 border-t border-surface0 text-sm\">"
+        "<span class=\"font-semibold text-text\">");
+    sb_append_html_escaped(&content, tr("checkout.total", "សរុប"));
+    sb_append_cstr(&content,
+        "</span>"
+        "<span class=\"font-semibold text-text\">");
     sb_append_cstr(&content, shop_money(cart->subtotal));
     sb_append_cstr(&content, "</span></div></div>");
 
     // Form.
     sb_append_cstr(&content,
         "<form method=\"POST\" action=\"/checkout\" data-checkout-form"
-        " class=\"bg-white border border-slate-200 px-3 py-3 flex flex-col"
+        " class=\"bg-mantle border border-surface0 px-3 py-3 flex flex-col"
         " gap-2\">");
     if (err && err[0]) {
         sb_append_cstr(&content,
-            "<div data-checkout-error class=\"bg-red-50 border-l-2"
-            " border-red-500 text-red-700 px-2 py-1.5 text-xs\">");
+            "<div data-checkout-error class=\"bg-red/10 border-l-2"
+            " border-red text-red px-2 py-1.5 text-xs\">");
         sb_append_html_escaped(&content, err);
         sb_append_cstr(&content, "</div>");
     }
     sb_append_cstr(&content,
-        "<label class=\"text-xs text-slate-500\">ឈ្មោះ</label>"
+        "<label class=\"text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.label_name", "ឈ្មោះ"));
+    sb_append_cstr(&content,
+        "</label>"
         "<input name=\"name\" required value=\"");
     sb_append_html_escaped(&content, sv_cstr(name));
     sb_append_cstr(&content,
-        "\" class=\"border border-slate-300 px-2 py-1.5 text-sm\">"
-        "<label class=\"text-xs text-slate-500\">លេខទូរស័ព្ទ</label>"
+        "\" class=\"border border-surface0 bg-base text-text px-2 py-1.5"
+        " text-sm\">"
+        "<label class=\"text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.label_phone", "លេខទូរស័ព្ទ"));
+    sb_append_cstr(&content,
+        "</label>"
         "<input name=\"phone\" required value=\"");
     sb_append_html_escaped(&content, sv_cstr(phone));
     sb_append_cstr(&content,
-        "\" class=\"border border-slate-300 px-2 py-1.5 text-sm\">"
-        "<label class=\"text-xs text-slate-500\">អាសយដ្ឋាន</label>"
+        "\" class=\"border border-surface0 bg-base text-text px-2 py-1.5"
+        " text-sm\">"
+        "<label class=\"text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.label_address", "អាសយដ្ឋាន"));
+    sb_append_cstr(&content,
+        "</label>"
         "<input name=\"address\" required value=\"");
     sb_append_html_escaped(&content, sv_cstr(addr));
     sb_append_cstr(&content,
-        "\" class=\"border border-slate-300 px-2 py-1.5 text-sm\">"
-        "<label class=\"text-xs text-slate-500\">មតិ (ស្រេចចិត្ត)</label>"
+        "\" class=\"border border-surface0 bg-base text-text px-2 py-1.5"
+        " text-sm\">"
+        "<label class=\"text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.label_note", "មតិ (ស្រេចចិត្ត)"));
+    sb_append_cstr(&content,
+        "</label>"
         "<input name=\"note\" value=\"");
     sb_append_html_escaped(&content, sv_cstr(note));
     sb_append_cstr(&content,
-        "\" class=\"border border-slate-300 px-2 py-1.5 text-sm\">"
-        "<button class=\"bg-indigo-600 hover:bg-indigo-700 text-white px-2"
-        " py-1.5 text-sm\">បញ្ជាទិញ</button>"
+        "\" class=\"border border-surface0 bg-base text-text px-2 py-1.5"
+        " text-sm\">"
+        "<button class=\"bg-blue text-onbase hover:brightness-90 px-2"
+        " py-1.5 text-sm\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.submit", "បញ្ជាទិញ"));
+    sb_append_cstr(&content, "</button>"
         "</form></div>");
 
     shop_chrome_end(&content);
-    shop_render(sc, 200, "ការបង់ប្រាក់", &content);
+    shop_render(sc, 200, tr("checkout.page_title", "ការបង់ប្រាក់"), &content);
     sb_free(content);
 }
 
@@ -167,17 +195,18 @@ void serve_shop_checkout_post(Serve_Context *sc) {
     }
     if (!sv_nonempty(name)) {
         render_checkout(sc, &cart, name, phone, addr, note,
-                        "សូមបំពេញឈ្មោះ");
+                        tr("checkout.err_name", "សូមបំពេញឈ្មោះ"));
         return;
     }
     if (!sv_nonempty(phone) || phone.count < 6) {
         render_checkout(sc, &cart, name, phone, addr, note,
-                        "សូមបញ្ចូលលេខទូរស័ព្ទត្រឹមត្រូវ");
+                        tr("checkout.err_phone",
+                           "សូមបញ្ចូលលេខទូរស័ព្ទត្រឹមត្រូវ"));
         return;
     }
     if (!sv_nonempty(addr)) {
         render_checkout(sc, &cart, name, phone, addr, note,
-                        "សូមបំពេញអាសយដ្ឋាន");
+                        tr("checkout.err_address", "សូមបំពេញអាសយដ្ឋាន"));
         return;
     }
 
@@ -218,7 +247,9 @@ void serve_shop_checkout_post(Serve_Context *sc) {
         }
         sql_finalize(&stmt);
     }
-    if (!org_id[0] || !staff_id[0]) fail = "មិនអាចកំណត់ហាងបានទេ";
+    if (!org_id[0] || !staff_id[0]) {
+        fail = tr("checkout.err_org", "មិនអាចកំណត់ហាងបានទេ");
+    }
 
     // Customer: reuse by phone, else create customers (+ users) rows.
     char customer_id[40] = {0};
@@ -273,7 +304,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
             }
             sql_finalize(&stmt);
             if (!customer_id[0]) {
-                fail = "មិនអាចបង្កើតគណនីអតិថិជនបានទេ";
+                fail = tr("checkout.err_customer",
+                          "មិនអាចបង្កើតគណនីអតិថិជនបានទេ");
             } else if (found_uid[0]
                        && strcmp(found_type, "CUSTOMER") == 0) {
                 // Existing customer-type user without a link: attach it so
@@ -293,7 +325,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     && sql_final_step(&stmt)) {
                     // linked
                 } else {
-                    fail = "មិនអាចភ្ជាប់គណនីអតិថិជនបានទេ";
+                    fail = tr("checkout.err_link",
+                              "មិនអាចភ្ជាប់គណនីអតិថិជនបានទេ");
                 }
                 sql_finalize(&stmt);
             } else if (!found_uid[0]) {
@@ -330,7 +363,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     && sql_final_step(&stmt)) {
                     // created
                 } else {
-                    fail = "មិនអាចបង្កើតគណនីអតិថិជនបានទេ";
+                    fail = tr("checkout.err_customer",
+                          "មិនអាចបង្កើតគណនីអតិថិជនបានទេ");
                 }
                 sql_finalize(&stmt);
             }
@@ -388,7 +422,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
             && sql_final_step(&stmt)) {
             // inserted
         } else {
-            fail = "មិនអាចរក្សាទុកការបញ្ជាទិញបានទេ";
+            fail = tr("checkout.err_save_order",
+                      "មិនអាចរក្សាទុកការបញ្ជាទិញបានទេ");
         }
         sql_finalize(&stmt);
     }
@@ -461,7 +496,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                 && sql_final_step(&stmt)) {
                 // line stored
             } else {
-                fail = "មិនអាចរក្សាទុកខ្សែទំនិញបានទេ";
+                fail = tr("checkout.err_save_line",
+                          "មិនអាចរក្សាទុកខ្សែទំនិញបានទេ");
             }
             sql_finalize(&stmt);
             if (fail) break;
@@ -486,13 +522,15 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     ++n_rows;
                 }
             } else {
-                fail = "មិនអាចអានស្តុកបានទេ";
+                fail = tr("checkout.err_read_stock",
+                          "មិនអាចអានស្តុកបានទេ");
             }
             sql_finalize(&stmt);
             if (fail) break;
 
             if (available + 1e-9 < (double) it->qty) {
-                fail = "ស្តុកមិនគ្រប់គ្រាន់សម្រាប់ការបញ្ជាទិញនេះ";
+                fail = tr("checkout.err_low_stock",
+                          "ស្តុកមិនគ្រប់គ្រាន់សម្រាប់ការបញ្ជាទិញនេះ");
                 break;
             }
 
@@ -512,7 +550,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     && sql_final_step(&stmt)) {
                     // decremented
                 } else {
-                    fail = "មិនអាចកែប្រែស្តុកបានទេ";
+                    fail = tr("checkout.err_dec_stock",
+                              "មិនអាចកែប្រែស្តុកបានទេ");
                 }
                 sql_finalize(&stmt);
                 if (fail) break;
@@ -528,7 +567,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     && sql_final_step(&stmt)) {
                     // ledger row
                 } else {
-                    fail = "មិនអាចកត់ត្រាបញ្ជីស្តុកបានទេ";
+                    fail = tr("checkout.err_ledger",
+                              "មិនអាចកត់ត្រាបញ្ជីស្តុកបានទេ");
                 }
                 sql_finalize(&stmt);
                 need -= take;
@@ -558,7 +598,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
             && sql_final_step(&stmt)) {
             // delivery row
         } else {
-            fail = "មិនអាចកំណត់ការដឹកជញ្ជូនបានទេ";
+            fail = tr("checkout.err_delivery",
+                      "មិនអាចកំណត់ការដឹកជញ្ជូនបានទេ");
         }
         sql_finalize(&stmt);
     }
@@ -649,16 +690,16 @@ void serve_shop_order(Serve_Context *sc) {
                 const char *qt = sql_col_text(&stmt, 2);
                 const char *tl = sql_col_text(&stmt, 3);
                 sb_append_cstr(&lines,
-                    "<div class=\"px-3 py-2 border-b border-slate-100"
+                    "<div class=\"px-3 py-2 border-b border-surface0"
                     " flex items-center gap-2 text-sm\">"
-                    "<div class=\"flex-1 min-w-0 text-slate-800 truncate\">");
+                    "<div class=\"flex-1 min-w-0 text-text truncate\">");
                 sb_append_html_escaped(&lines, nm);
                 sb_append_cstr(&lines, "</div>"
-                    "<div class=\"text-xs text-slate-400\">× ");
+                    "<div class=\"text-xs text-overlay0\">× ");
                 sb_appendf(&lines, "%.0f",
                            qt && qt[0] ? atof(qt) : 0.0);
                 sb_append_cstr(&lines, "</div>"
-                    "<div class=\"text-slate-700\">");
+                    "<div class=\"text-text\">");
                 sb_append_cstr(&lines,
                     shop_money((tl && tl[0] ? atof(tl) : 0.0)));
                 sb_append_cstr(&lines, "</div></div>");
@@ -673,45 +714,70 @@ void serve_shop_order(Serve_Context *sc) {
     String_Builder content = {0};
     shop_chrome_start(&content, sc, "/order");
     sb_append_cstr(&content,
-        "<div class=\"bg-white border border-slate-200 max-w-lg mx-auto"
+        "<div class=\"bg-mantle border border-surface0 max-w-lg mx-auto"
         " w-full\">"
-        "<div class=\"bg-emerald-700 text-white px-3 py-3\">"
-        "<div class=\"font-semibold\">អរគុណសម្រាប់ការបញ្ជាទិញ!</div>"
-        "<div class=\"text-xs text-emerald-100\">លេខបញ្ជាទិញ: ");
+        "<div class=\"bg-green text-onbase px-3 py-3\">"
+        "<div class=\"font-semibold\">");
+    sb_append_html_escaped(&content,
+                           tr("order.thanks", "អរគុណសម្រាប់ការបញ្ជាទិញ!"));
+    sb_append_cstr(&content,
+        "</div>"
+        "<div class=\"text-xs text-onbase/80\">");
+    sb_append_html_escaped(&content, tr("order.number", "លេខបញ្ជាទិញ"));
+    sb_append_cstr(&content, ": ");
     sb_append_html_escaped(&content, number);
     sb_append_cstr(&content, " · ");
     sb_append_html_escaped(&content, created);
     sb_append_cstr(&content, "</div></div>"
-        "<div class=\"px-3 py-2 border-b border-slate-200 flex items-center"
+        "<div class=\"px-3 py-2 border-b border-surface0 flex items-center"
         " gap-2\">"
-        "<span class=\"bg-amber-100 text-amber-800 border border-amber-200"
+        "<span class=\"bg-yellow text-onbase border border-yellow"
         " px-2 py-0.5 text-xs\">");
-    sb_append_html_escaped(&content, status_khmer(status));
+    sb_append_html_escaped(&content, status_label(status));
     sb_append_cstr(&content, "</span>"
-        "<span class=\"text-xs text-slate-400\">ស្ថានភាពបច្ចុប្បន្ន</span>"
+        "<span class=\"text-xs text-overlay0\">");
+    sb_append_html_escaped(&content,
+                           tr("order.status_now", "ស្ថានភាពបច្ចុប្បន្ន"));
+    sb_append_cstr(&content, "</span>"
         "</div>");
     sb_append_buf(&content, lines.items, lines.count);
     sb_append_cstr(&content,
         "<div class=\"px-3 py-2 flex items-center justify-between"
-        " bg-slate-100 border-y border-slate-200 text-sm\">"
-        "<span class=\"font-semibold text-slate-700\">សរុបត្រូវបង់</span>"
-        "<span class=\"font-semibold text-slate-900\">");
+        " bg-surface0/50 border-y border-surface0 text-sm\">"
+        "<span class=\"font-semibold text-text\">");
+    sb_append_html_escaped(&content,
+                           tr("checkout.total_due", "សរុបត្រូវបង់"));
+    sb_append_cstr(&content,
+        "</span>"
+        "<span class=\"font-semibold text-text\">");
     sb_append_cstr(&content, shop_money(total));
     sb_append_cstr(&content, "</span></div>"
-        "<div class=\"px-3 py-2 text-xs text-slate-500 border-b"
-        " border-slate-100\">ឈ្មោះ: ");
+        "<div class=\"px-3 py-2 text-xs text-subtext0 border-b"
+        " border-surface0\">");
+    sb_append_html_escaped(&content, tr("checkout.label_name", "ឈ្មោះ"));
+    sb_append_cstr(&content, ": ");
     sb_append_html_escaped(&content, rname);
-    sb_append_cstr(&content, " · ទូរស័ព្ទ: ");
+    sb_append_cstr(&content, " · ");
+    sb_append_html_escaped(&content, tr("checkout.label_phone", "លេខទូរស័ព្ទ"));
+    sb_append_cstr(&content, ": ");
     sb_append_html_escaped(&content, rphone);
-    sb_append_cstr(&content, "<br>អាសយដ្ឋាន: ");
+    sb_append_cstr(&content, "<br>");
+    sb_append_html_escaped(&content, tr("checkout.label_address", "អាសយដ្ឋាន"));
+    sb_append_cstr(&content, ": ");
     sb_append_html_escaped(&content, raddr);
     sb_append_cstr(&content,
         "</div>"
-        "<div class=\"px-3 py-2 text-xs text-slate-500\">"
-        "យើងនឹងទាក់ទងលោកអ្នកដើម្បីបញ្ជាក់ការបញ្ជាទិញ។</div>"
-        "<div class=\"px-3 py-2 border-t border-slate-200\">"
-        "<a href=\"/\" class=\"text-xs text-indigo-600 hover:underline\">"
-        "« ត្រឡប់ទៅហាង</a>"
+        "<div class=\"px-3 py-2 text-xs text-subtext0\">");
+    sb_append_html_escaped(&content,
+                           tr("order.contact_note",
+                              "យើងនឹងទាក់ទងលោកអ្នកដើម្បីបញ្ជាក់ការ"
+                              "បញ្ជាទិញ។"));
+    sb_append_cstr(&content,
+        "</div>"
+        "<div class=\"px-3 py-2 border-t border-surface0\">"
+        "<a href=\"/\" class=\"text-xs text-blue hover:underline\">");
+    sb_append_html_escaped(&content, tr("shop.back", "« ត្រឡប់ទៅហាង"));
+    sb_append_cstr(&content, "</a>"
         "</div></div>");
     shop_chrome_end(&content);
     shop_render(sc, 200, number, &content);

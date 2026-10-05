@@ -1,0 +1,6 @@
+-- ============================================================================
+-- 0006_i18n -- POSTGRES PORT: translation seed is intentionally NOT ported
+-- (same reason as mysql.sql: the seeded languages rows live in the sqlite
+-- 0003 file only, and the postgres driver exec is a stub anyway - this
+-- file is a specification placeholder).
+-- ============================================================================
