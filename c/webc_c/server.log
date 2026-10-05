@@ -1,0 +1,2 @@
+ERROR: Could not bind socket: Address already in use
+DB pool initialized with 8 connections

@@ -193,6 +193,47 @@ PHASE 10 — Verification
 Accept: ./test/run.sh all green; wiki current.
 
 -----------------------------------------------------------------------
+PHASE 11 — Storefront at /, staff auth, checkout-only orders
+-----------------------------------------------------------------------
+Goal: customers order by clicking buy (guest checkout), staff-only pages
+gated by session login. Orders are never freely inputable by guests.
+- migrations/0005_auth (sqlite3/mysql/postgres): user_sessions table +
+  indexes, admin hash UPDATE (sd.staff1 / posadmin1, salt webc2026),
+  sqlite-only order-date fix (sd-ord-040/041/042 were +12..14h future and
+  outranked fresh rows in created_at DESC -> pinned to now-3/-2/-1 hour).
+- core/auth: EVP sha256 salt$hash verify, sessions in user_sessions
+  (dialect expiry), auth_gate(sc) at top of route_request (303
+  /login?next=... for /pos /dashboard /reports prefixes), GET/POST /login
+  (housekeeping DELETE expired, C-minted sid, webc_sid HttpOnly 7d
+  SameSite=Lax cookie), /logout (DELETE + clear -> 303 /). next= is
+  sanitized to a same-site path (//evil.com -> /dashboard).
+- core/http: set_cookie + http_set_cookie + http_req_header +
+  http_cookie_find plumbing (Set-Cookie on redirect/attachment, cleared in
+  sc_reset); webc_uuid() (/dev/urandom + time/counter fallback); form_text().
+- src/shop: render_page_shell storefront chrome (own color steps, no admin
+  sidebar), / index (cat chips + ?q= + ?page= 12/page + pager), /product/<id>,
+  cookie cart webc_cart (id:qty,... HttpOnly, DB-validated, junk dropped,
+  dupes merged, cap 999/line, 40 lines) at /cart[/add|/buynow|/update|/remove],
+  /checkout GET+POST (server computes all money, posted amounts ignored;
+  txn validates live stock, greedily decrements + negative stock_ledger
+  rows, org/staff = ORDER BY id LIMIT 1, PENDING, delivery row carries
+  contact, customers+users pair created/reused by phone, cart cleared ->
+  303 /order/<uuid> public confirmation).
+- sidebar: Dashboard href / -> /dashboard, logout action /notes -> /logout
+  (nav counts 10/26 unchanged); route.c adds shop/auth routes, auth_gate()
+  call; server byte-identical without JS (plain forms + cookie cart).
+- Tests: testlib Client cookie jar + login_as; pos_test auth section first
+  (guest 303, bad login marker, staff login 200, /dashboard 200) + table
+  check 29->30 (+user_sessions); new test/shop_test.py last (storefront,
+  filters, pager disjoint, detail 404, cart add/update/remove/buynow,
+  guest checkout happy path + forged amounts ignored + stock/ledger/
+  delivery/customer assertions, over-stock + empty-cart rejects, guest
+  lockdown incl. forged POST /pos/orders/create changing nothing, login/
+  logout incl. old-sid replay, evil next guard); mysql history 4->5.
+Accept: ./test/run.sh all green (558 PASS); guest can browse+buy while
+/pos /dashboard /reports redirect guests to /login.
+
+-----------------------------------------------------------------------
 RISKS / NOTES
 -----------------------------------------------------------------------
 - sqlite users DROP+RENAME inside migration tx: notes FK points at table

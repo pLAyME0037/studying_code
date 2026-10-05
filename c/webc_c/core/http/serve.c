@@ -440,6 +440,7 @@ void sc_reset(Serve_Context *sc) {
     sc->method         = sv_from_cstr("");
     sc->uri            = sv_from_cstr("");
     sc->query_string   = sv_from_cstr("");
+    sc->set_cookie     = NULL;
 }
 
 const char *http_reason_phrase_by_status_code(int status_code) {
@@ -481,6 +482,7 @@ void http_render_response(Serve_Context *sc,
     String_Builder *response = &sc->response;
     sb_append_cstr(response, temp_sprintf("HTTP/1.1 %d %s\r\n", status_code, http_reason_phrase_by_status_code(status_code)));
     sb_append_cstr(response, temp_sprintf("Content-Type: %s\r\n", content_type));
+    if (sc->set_cookie) sb_append_cstr(response, temp_sprintf("Set-Cookie: %s\r\n", sc->set_cookie));
     sb_append_cstr(response, "Last-Modified: "WEBC_BUILD_TIME"\r\n");
     sb_append_cstr(response, temp_sprintf("Content-Length: %zu\r\n", body.count));
     sb_append_cstr(response, "Connection: close\r\n");
@@ -499,6 +501,7 @@ void http_render_response_attachment(Serve_Context *sc,
     sb_append_cstr(response, "HTTP/1.1 200 OK\r\n");
     sb_append_cstr(response, temp_sprintf("Content-Type: %s\r\n", content_type));
     sb_append_cstr(response, temp_sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", filename));
+    if (sc->set_cookie) sb_append_cstr(response, temp_sprintf("Set-Cookie: %s\r\n", sc->set_cookie));
     sb_append_cstr(response, "Last-Modified: "WEBC_BUILD_TIME"\r\n");
     sb_append_cstr(response, temp_sprintf("Content-Length: %zu\r\n", body.count));
     sb_append_cstr(response, "Connection: close\r\n");
@@ -513,6 +516,7 @@ void http_render_redirect(Serve_Context *sc,
     String_Builder *response = &sc->response;
     sb_append_cstr(response, temp_sprintf("HTTP/1.1 %d %s\r\n", status_code, http_reason_phrase_by_status_code(status_code)));
     sb_append_cstr(response, temp_sprintf("Location: %s\r\n", location));
+    if (sc->set_cookie) sb_append_cstr(response, temp_sprintf("Set-Cookie: %s\r\n", sc->set_cookie));
     sb_append_cstr(response, "Content-Length: 0\r\n");
     sb_append_cstr(response, "Connection: close\r\n");
     sb_append_cstr(response, "\r\n");
@@ -530,6 +534,63 @@ const char *http_redirect_target(Serve_Context *sc, const char *fallback) {
         return temp_sprintf("%.*s", (int)target.count, target.data);
     }
     return fallback;
+}
+
+// Case-insensitive ASCII compare of `a` against the first `b_len` bytes of
+// a C string (header names per RFC 7230 are case-insensitive).
+static bool sv_ci_eq_prefix(String_View a, const char *b, size_t b_len) {
+    if (a.count != b_len) return false;
+    for (size_t i = 0; i < b_len; ++i) {
+        char x = a.data[i], y = b[i];
+        if ('A' <= x && x <= 'Z') x = (char) (x - 'A' + 'a');
+        if ('A' <= y && y <= 'Z') y = (char) (y - 'A' + 'a');
+        if (x != y) return false;
+    }
+    return true;
+}
+
+String_View http_req_header(Serve_Context *sc, const char *name) {
+    String_View req  = sb_to_sv(sc->request);
+    size_t      nlen = strlen(name);
+    size_t      i    = 0;
+    bool        first_line = true;
+    while (i < req.count) {
+        size_t eol = i;
+        while (eol < req.count && req.data[eol] != '\n') ++eol;
+        size_t e = eol;
+        if (e > i && req.data[e - 1] == '\r') --e;
+        if (e == i && !first_line) break;  // blank line: end of the head
+        first_line = false;
+        if (e > i + nlen && req.data[i + nlen] == ':') {
+            String_View key = sv_from_parts(req.data + i, nlen);
+            if (sv_ci_eq_prefix(key, name, nlen)) {
+                size_t v = i + nlen + 1;
+                while (v < e && req.data[v] == ' ') ++v;
+                return sv_trim(sv_from_parts(req.data + v, e - v));
+            }
+        }
+        i = eol + 1;
+    }
+    return (String_View) {0};
+}
+
+bool http_cookie_find(Serve_Context *sc, const char *name, String_View *out) {
+    String_View cookie = http_req_header(sc, "Cookie");
+    if (!cookie.count) return false;
+    String_View rest = cookie;
+    while (rest.count > 0) {
+        String_View pair = sv_chop_by_delim(&rest, ';');
+        String_View key  = sv_trim(sv_chop_by_delim(&pair, '='));
+        if (sv_ci_eq_prefix(key, name, strlen(name))) {
+            if (out) *out = sv_trim(pair);
+            return true;
+        }
+    }
+    return false;
+}
+
+void http_set_cookie(Serve_Context *sc, const char *value) {
+    sc->set_cookie = value;
 }
 
 void render_page_shell(Serve_Context *sc,

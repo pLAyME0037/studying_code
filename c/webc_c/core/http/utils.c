@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdio.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -276,5 +277,36 @@ bool route_id_parse(String_View seg, Route_Id *out)
     }
 
     if (out) *out = id;
+    return true;
+}
+
+bool webc_uuid(char out[37]) {
+    unsigned char b[16];
+    size_t got = 0;
+    FILE *f = fopen("/dev/urandom", "rb");
+    if (f) {
+        got = fread(b, 1, sizeof(b), f);
+        fclose(f);
+    }
+    if (got != sizeof(b)) {
+        // Demo-grade fallback: time mixed with a process-local counter.
+        static unsigned ctr = 0;
+        unsigned long long t = (unsigned long long) time(NULL)
+            ^ ((unsigned long long) clock() << 16) ^ (++ctr * 0x9E3779B97F4A7C15ULL);
+        for (int i = 0; i < 16; ++i) {
+            t = t * 6364136223846793005ULL + 1442695040888963407ULL;
+            b[i] = (unsigned char) (t >> 56);
+        }
+    }
+    b[6] = (unsigned char) ((b[6] & 0x0F) | 0x40);  // version 4
+    b[8] = (unsigned char) ((b[8] & 0x3F) | 0x80);  // variant 10
+    static const char hex[] = "0123456789abcdef";
+    int o = 0;
+    for (int i = 0; i < 16; ++i) {
+        if (i == 4 || i == 6 || i == 8 || i == 10) out[o++] = '-';
+        out[o++] = hex[b[i] >> 4];
+        out[o++] = hex[b[i] & 0xF];
+    }
+    out[36] = '\0';
     return true;
 }

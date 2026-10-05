@@ -33,6 +33,8 @@
 #include "src/pos/alerts.h"
 #include "src/pos/audit.h"
 #include "core/report/report.h"
+#include "core/auth/auth.h"
+#include "src/shop/shop.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -167,7 +169,23 @@ static route_da routes = {0};
 static bool route_init = false;
 
 void route_initialize(void) {
-    route_new(&routes, "/", NULL, "GET", ROUTE_EXACT, serve_dashboard);
+    // Phase 11: / is the storefront, the admin dashboard moved to /dashboard
+    // (auth_gate() keeps /pos, /dashboard and /reports behind staff login).
+    route_new(&routes, "/", NULL, "GET", ROUTE_EXACT, serve_shop_index);
+    route_new(&routes, "/dashboard", NULL, "GET", ROUTE_EXACT, serve_dashboard);
+    route_new(&routes, "/product", "", "GET", ROUTE_ID_ACTION, serve_shop_product);
+    route_new(&routes, "/cart", NULL, "GET", ROUTE_EXACT, serve_shop_cart);
+    route_new(&routes, "/cart/add", NULL, "POST", ROUTE_EXACT, serve_shop_cart_add);
+    route_new(&routes, "/cart/buynow", NULL, "POST", ROUTE_EXACT, serve_shop_cart_buynow);
+    route_new(&routes, "/cart/update", NULL, "POST", ROUTE_EXACT, serve_shop_cart_update);
+    route_new(&routes, "/cart/remove", NULL, "POST", ROUTE_EXACT, serve_shop_cart_remove);
+    route_new(&routes, "/checkout", NULL, "GET", ROUTE_EXACT, serve_shop_checkout);
+    route_new(&routes, "/checkout", NULL, "POST", ROUTE_EXACT, serve_shop_checkout_post);
+    route_new(&routes, "/order", "", "GET", ROUTE_ID_ACTION, serve_shop_order);
+    route_new(&routes, "/login", NULL, "GET", ROUTE_EXACT, serve_auth_login);
+    route_new(&routes, "/login", NULL, "POST", ROUTE_EXACT, serve_auth_login_post);
+    route_new(&routes, "/logout", NULL, "GET", ROUTE_EXACT, serve_auth_logout);
+    route_new(&routes, "/logout", NULL, "POST", ROUTE_EXACT, serve_auth_logout);
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);
     // users master + their notes, one master-detail page
     route_new(&routes, "/people", NULL, "GET", ROUTE_EXACT, serve_people);
@@ -362,6 +380,10 @@ void route_request(Serve_Context *sc) {
     if (!route_init) {
         route_initialize();
     }
+
+    // Staff gate: /pos, /dashboard and /reports redirect to /login with a
+    // validated ?next= when no live session cookie is present.
+    if (auth_gate(sc)) return;
 
     for (size_t i = 0; i < routes.count; ++i) {
         const route_t *r = &routes.items[i];

@@ -11,6 +11,31 @@ class Client:
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.cookies = {}  # name -> value, kept across requests (Phase 11)
+
+    def _apply_cookies(self, headers):
+        headers = dict(headers or {})
+        jar = "; ".join(f"{k}={v}" for k, v in self.cookies.items())
+        if jar and "Cookie" not in headers:
+            headers["Cookie"] = jar
+        return headers
+
+    def _store_cookies(self, resp):
+        for k, v in resp.getheaders():
+            if k.lower() != "set-cookie":
+                continue
+            pair = v.split(";", 1)[0]
+            name, _, val = pair.partition("=")
+            name = name.strip()
+            if not name:
+                continue
+            expired = val.strip() == "" or any(
+                a.strip().lower() == "max-age=0" for a in v.split(";")[1:]
+            )
+            if expired:
+                self.cookies.pop(name, None)
+            else:
+                self.cookies[name] = val
 
     def req(self, method, path, body=None, headers=None, timeout=None):
         """Returns (status:int, data:bytes, content_type:str)."""
@@ -18,12 +43,29 @@ class Client:
             self.host, self.port, timeout=timeout or self.timeout
         )
         try:
-            conn.request(method, path, body=body, headers=headers or {})
+            conn.request(
+                method, path, body=body, headers=self._apply_cookies(headers)
+            )
             resp = conn.getresponse()
             data = resp.read()
+            self._store_cookies(resp)
             return resp.status, data, resp.getheader("Content-Type", "")
         finally:
             conn.close()
+
+    def login_as(self, username, password):
+        """POST /login; the webc_sid Set-Cookie lands in the jar.
+
+        Returns (status, headers_dict)."""
+        st, hdr, _, _ = self.req_full(
+            "POST",
+            "/login",
+            body=urllib.parse.urlencode(
+                {"username": username, "password": password}
+            ).encode(),
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+        return st, hdr
 
     def req_full(self, method, path, body=None, headers=None):
         """Like req() but also returns the response headers as a dict."""
@@ -31,9 +73,12 @@ class Client:
             self.host, self.port, timeout=self.timeout
         )
         try:
-            conn.request(method, path, body=body, headers=headers or {})
+            conn.request(
+                method, path, body=body, headers=self._apply_cookies(headers)
+            )
             resp = conn.getresponse()
             data = resp.read()
+            self._store_cookies(resp)
             return (resp.status, dict(resp.getheaders()), data,
                     resp.getheader("Content-Type", ""))
         finally:

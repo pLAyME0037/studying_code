@@ -96,6 +96,25 @@ def child_thead(html, table):
 def main():
     c.wait_ready()
 
+    # ---- Phase 11: /pos requires staff login -----------------------------
+    st, hdr, _, _ = c.req_full("GET", "/pos/locations")
+    t.chk("guest /pos redirects to login", st, 303)
+    t.chk("guest /pos next= carries the path",
+          "next=/pos/locations" in hdr.get("Location", ""), True)
+
+    st, body, _ = c.post_urlencoded(
+        "/login", {"username": "sd.staff1", "password": "wrong"}
+    )
+    t.chk("bad login stays on the form", st, 200)
+    t.chk("bad login error marker", b"data-login-error" in body, True)
+
+    st, hdr = c.login_as("sd.staff1", "posadmin1")
+    t.chk("staff login redirects", st, 303)
+    t.chk("login sets webc_sid cookie",
+          "webc_sid" in hdr.get("Set-Cookie", ""), True)
+    t.chk("staff /pos after login", c.get("/pos/locations")[0], 200)
+    t.chk("staff /dashboard after login", c.get("/dashboard")[0], 200)
+
     # ---- /pos/locations: 4-part stack cell -------------------------------
     st, body, _ = c.get("/pos/locations")
     html = body.decode()
@@ -1413,7 +1432,7 @@ def main():
     t.chk("demo master row still 4 columns + actions",
           m.group(2).count("<td") if m else -1, 5)
 
-    # ---- Phase 10: schema completeness (0001..0004 + history) -----------
+    # ---- Phase 10/11: schema completeness (0001..0005 + history) ---------
     want = sorted((
         "audit_logs", "cash_shifts", "categories", "customer_interactions",
         "customers", "deliveries", "dictionaries", "financial_ledgers",
@@ -1421,12 +1440,12 @@ def main():
         "orders", "org_units", "payments", "permissions", "product_variants",
         "products", "role_permissions", "roles", "staff", "stock_ledger",
         "system_alerts", "system_configs", "translations", "user_roles",
-        "users", "Migrations",
+        "users", "user_sessions", "Migrations",
     ))
     got = sorted(db_row(
         "SELECT GROUP_CONCAT(name) FROM sqlite_master "
         "WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")[0].split(","))
-    t.chk("all 29 tables exist after migrations 0001-0004", got, want)
+    t.chk("all 30 tables exist after migrations 0001-0005", got, want)
 
     ok = t.summary()
     sys.exit(0 if ok else 1)

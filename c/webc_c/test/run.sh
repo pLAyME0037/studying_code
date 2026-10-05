@@ -50,6 +50,9 @@ python3 test/http_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 # Phase 2: composite-column pages share this server + DB (needs http_test's
 # rows to be in place first, and cleans up its own rows as it goes).
 python3 test/pos_test.py "$HOST" "$PORT" "$TMP" || rc=$?
+# Phase 11: storefront + checkout + auth suite runs LAST - the guest users
+# and web orders it creates must not disturb earlier suites' counts.
+python3 test/shop_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 
 if ! wait "$MYSQL_PID"; then
     rc=1

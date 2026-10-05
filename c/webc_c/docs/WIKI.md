@@ -309,8 +309,62 @@ vanilla JS only.
   walk, A4 PDF open) still not possible here - no desktop browser.
 - Suite: 462 PASS (http_test 99 / pos_test 317 / mysql 40 / https 6).
 
+## Phase 11 — Storefront at / + staff auth + checkout-only orders DONE (suite 558 PASS)
+- Route split: `/` is the public shop (src/shop: shop chrome via
+  render_page_shell, no admin sidebar), admin home moved to `/dashboard`.
+  auth_gate(sc) runs at the top of route_request - prefix match on
+  /pos /dashboard /reports redirects guests 303 to /login?next=<path>;
+  everything else (shop, demo, product/order confirmation pages) stays
+  public. next= is sanitized to a same-site path (//evil.com -> /dashboard).
+- Auth: salt$sha256(salt+password) via EVP, hash set by 0005 for demo
+  staff sd.staff1 / posadmin1 (salt webc2026). Sessions live in
+  user_sessions (0005), cookie webc_sid HttpOnly SameSite=Lax Max-Age 7d;
+  POST /login mints a C-side uuid sid (webc_uuid, /dev/urandom fallback),
+  /logout DELETEs the row + clears the cookie, expired rows reaped on
+  login. Only user_type ADMIN + ACTIVE may log in.
+- Cart = server-read cookie webc_cart ("id:qty,...", HttpOnly): loader
+  validates against live products, drops junk, merges dupes, caps qty 999
+  / 40 lines; add/buynow/update/remove are plain form POSTs (303 back),
+  so the whole flow works byte-identical without JS.
+- Checkout is the only customer order path: POST /checkout ignores every
+  posted amount (subtotal/total/unit_price forged fields are read nowhere),
+  recomputes from base_price in one txn - validates qty against live
+  stock, greedily decrements stock rows + writes negative stock_ledger
+  rows (reference ORDER, balance_after), creates/reuses customers+users
+  by phone (staff-owned phone -> customers row only, no user hijack),
+  org/staff = ORDER BY id LIMIT 1 fallback, order_number WEB-YYMMDD-8hex,
+  status PENDING, delivery row carries the guest contact (no payment row),
+  cart cleared, 303 to public /order/<uuid>. Over-stock or empty cart
+  rolls back with data-checkout-error, orders count untouched.
+- Manual /pos/orders/create kept for staff behind the same guard (guest
+  POST bounces to /login and changes nothing - asserted).
+- sidebar.h.tt: Dashboard href / -> /dashboard, logout action /notes ->
+  /logout (nav counts 10/26 unchanged, no test pinned either value).
+- Gotchas hit: (1) 0004's sd-ord-040/041/042 got +12..14h FUTURE
+  timestamps (+ hours bug) and outranked fresh orders in created_at DESC -
+  0005 now pins them to now-3/-2/-1 hour (sqlite-only, idempotent);
+  (2) sql_bind maps String_View{data=NULL} to SQL NULL, so a form value
+  bound into `? = ''` tautologies MUST be initialized to sv_from_cstr("")
+  or the whole WHERE collapses to NULL (fixed in shop index q/cat);
+  (3) `pkill -f "webc serve 8091"` matches the pkill command line itself
+  and kills the shell - write the pattern with a bracket (809[1]) and keep
+  the plain port out of that command.
+- Tests: testlib Client got a cookie jar (Set-Cookie store, Max-Age=0
+  delete, Cookie replay) + login_as(); pos_test auth section runs FIRST
+  (guest 303 -> next= path, bad-login marker, staff login 200 on
+  /pos+/dashboard) and the table check is now 30 (0001-0005, +user_sessions);
+  new test/shop_test.py runs LAST (88 checks: storefront/search/cat/page
+  disjoint, detail 404s, cart ops, checkout happy path + forged amounts +
+  stock/ledger/delivery/customer assertions, over-stock/empty rejects,
+  guest lockdown + forged create, login/logout incl. old-sid replay);
+  mysql history rows 4->5.
+- Suite: 558 PASS (http_test 99 / pos_test 325 / shop_test 88 /
+  mysql 40 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
+- String_View with data=NULL binds SQL NULL (not '') - initialize
+  form-derived views with sv_from_cstr("") before `= ''` tautologies.
 - No sb_append_ch — use sb_append_buf(sb, &c, 1).
 - tt-generated headers are hex — grep for hex escapes, not literal text.
 - Demo tests assume default per_page=20 shows everything (row counts < 20) —

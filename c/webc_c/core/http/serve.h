@@ -14,6 +14,10 @@ typedef struct {
     String_View    method;
     String_View    uri;
     String_View    query_string;
+    // Raw value for a single Set-Cookie response header, queued by a handler
+    // with http_set_cookie() and emitted by the next http_render_*() call
+    // (cleared per request in sc_reset).
+    const char    *set_cookie;
 } Serve_Context;
 
 void sc_reset(Serve_Context *sc);
@@ -29,6 +33,15 @@ void http_render_redirect(Serve_Context *sc, int status_code, const char *locati
 // Target for post-mutation redirects: a validated ?redirect= path when the
 // form supplied one (master-detail page actions), else `fallback`.
 const char *http_redirect_target(Serve_Context *sc, const char *fallback);
+// First request header with this name (case-insensitive), sliced from the
+// raw request head; empty view when absent.
+String_View http_req_header(Serve_Context *sc, const char *name);
+// Value of `name` inside the Cookie request header. Cart/session values are
+// url-safe by construction, so no decoding happens here. False when absent.
+bool http_cookie_find(Serve_Context *sc, const char *name, String_View *out);
+// Queue the value of the Set-Cookie response header for the next render
+// (login session / cart cookie, including clears via Max-Age=0).
+void http_set_cookie(Serve_Context *sc, const char *value);
 void render_page_shell(Serve_Context *sc, String_View title, String_View content);
 void serve_error(Serve_Context *sc, int status_code);
 void serve_resource(Serve_Context *sc, const char *resource_path, const char *content_type);
