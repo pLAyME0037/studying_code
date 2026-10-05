@@ -22,6 +22,9 @@ void coroutine_server_run(const char *addr, uint16_t port);
 
 const char *http_reason_phrase_by_status_code(int status_code);
 void http_render_response(Serve_Context *sc, int status_code, const char *content_type, String_View body);
+// As http_render_response, plus a Content-Disposition: attachment header
+// (report downloads).
+void http_render_response_attachment(Serve_Context *sc, const char *content_type, const char *filename, String_View body);
 void http_render_redirect(Serve_Context *sc, int status_code, const char *location);
 // Target for post-mutation redirects: a validated ?redirect= path when the
 // form supplied one (master-detail page actions), else `fallback`.

@@ -236,6 +236,46 @@ vanilla JS only.
 - Next: Phase 6-8 reports spike (HTML vs FODT), Khmer A4 PDF/DOC
   (docs/POS_PLAN.md).
 
+## Phase 8 — Reports (Khmer A4 PDF/DOC) DONE (suite 456 PASS)
+- Spike PICKED HTML (throwaway in /tmp): html -> soffice honors
+  @page A4 (595.304x841.89), embeds NotoSansKhmer, ~1.4s, table
+  fidelity ok. Hand-rolled FODT first attempt fell back to Letter
+  (master-page plumbing) -> stayed with HTML as the source format.
+- core/report/report.{h,c} (new): registry {id, khmer_title, sql,
+  khmer headers, footer} with 4 MVP reports -- sales_summary (view
+  v_pos_sales_delivery_report), daily_orders (dictionaries join),
+  low_stock (inventory+products), product_ranking (SUM group-by);
+  builder emits UTF-8 Khmer HTML (shop header from system_configs
+  pos.shop_name, fallback "ហាង POS", download date + row count meta);
+  extra result columns fall back to index labels, NULL cells -> "".
+- Converter quirks (recorded so nobody re-dbugs them):
+  * every call wraps soffice in `timeout 25` (no hang -> 502 + log);
+  * pdf: ONE step, html opens as Writer/Web -> A4 for free;
+  * docx: Writer/Web has NO docx export filter -> html --infilter
+    "HTML (StarWriter)" --convert-to fodt (plain text), patch
+    fo:page-width 8.5in->21cm / 11in->29.7cm (Writer ignores @page),
+    fodt --convert-to docx. Both outputs verified A4 (pdfinfo +
+    word/document.xml pgSz 11906x16838 twips);
+  * shared persistent profile /tmp/webc_lo_profile (warm starts, no
+    per-request litter), per-request mkdtemp workdir removed on both
+    paths, WEBC_SOFFICE env overrides the binary;
+  * format-string gotcha: "-env:UserInstallation=%s%s--convert-to"
+    swallowed --convert-to when the infilter arg was NULL (missing
+    space) -> 502 on everything; space added between the args.
+- Routes: GET /reports (ROUTE_EXACT index, plain links table) +
+  GET /reports/ (ROUTE_PREFIX) parsing /reports/<id>.<ext>; id
+  charset-guarded [A-Za-z0-9_-] (traversal -> 404), unknown id/ext ->
+  404, soffice fail -> 502 (new reason phrase + new
+  http_render_response_attachment helper in serve.c with
+  Content-Disposition: attachment).
+- Sidebar: Reports group added (10 groups / 25 entries); http_test
+  counts updated (header=10, nav-link=26, +href="/reports").
+- pos_test +13 checks (index Khmer/links/sidebar, pdf %PDF+attachment
+  +font-size, docx PK+attachment, 404s). Suite: 456 PASS
+  (http_test 99 / pos_test 311 / mysql 40 / https 6).
+- Next: Phase 9 seed data (migrations/0004_seed_pos), then Phase 10
+  verification (docs/POS_PLAN.md).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - No sb_append_ch — use sb_append_buf(sb, &c, 1).

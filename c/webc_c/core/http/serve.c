@@ -462,6 +462,7 @@ const char *http_reason_phrase_by_status_code(int status_code) {
         [413] = "Payload Too Large",
         [500] = "Internal Server Error",
         [501] = "Not Implemented",
+        [502] = "Bad Gateway",
         [503] = "Service Unavailable",
     };
 
@@ -480,6 +481,24 @@ void http_render_response(Serve_Context *sc,
     String_Builder *response = &sc->response;
     sb_append_cstr(response, temp_sprintf("HTTP/1.1 %d %s\r\n", status_code, http_reason_phrase_by_status_code(status_code)));
     sb_append_cstr(response, temp_sprintf("Content-Type: %s\r\n", content_type));
+    sb_append_cstr(response, "Last-Modified: "WEBC_BUILD_TIME"\r\n");
+    sb_append_cstr(response, temp_sprintf("Content-Length: %zu\r\n", body.count));
+    sb_append_cstr(response, "Connection: close\r\n");
+    sb_append_cstr(response, "\r\n");
+    sb_append_buf(response, body.data, body.count);
+}
+
+// Downloads: same envelope, plus Content-Disposition: attachment. `filename`
+// is caller-validated (report ids are [A-Za-z0-9_-] so no quoting issues).
+void http_render_response_attachment(Serve_Context *sc,
+                                     const char    *content_type,
+                                     const char    *filename,
+                                     String_View    body)
+{
+    String_Builder *response = &sc->response;
+    sb_append_cstr(response, "HTTP/1.1 200 OK\r\n");
+    sb_append_cstr(response, temp_sprintf("Content-Type: %s\r\n", content_type));
+    sb_append_cstr(response, temp_sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", filename));
     sb_append_cstr(response, "Last-Modified: "WEBC_BUILD_TIME"\r\n");
     sb_append_cstr(response, temp_sprintf("Content-Length: %zu\r\n", body.count));
     sb_append_cstr(response, "Connection: close\r\n");

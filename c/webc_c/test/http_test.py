@@ -291,20 +291,20 @@ def main():
     html = body.decode()
     t.chk("people sidebar link", 'href="/people"' in html, "True")
 
-    # grouped POS sidebar: 9 color-step group headers, one nav-link per
-    # entry (24) + the logout button, exactly one active highlight here
+    # grouped POS sidebar: 10 color-step group headers, one nav-link per
+    # entry (25) + the logout button, exactly one active highlight here
     header_cls = ('class="px-2 py-1 text-xs font-semibold uppercase '
                   'tracking-wide text-slate-500 dark:text-slate-400 '
                   'bg-slate-100 dark:bg-slate-800 nav-label"')
-    t.chk("sidebar group headers (color-step)", html.count(header_cls), 9)
-    t.chk("sidebar nav links (24 entries + logout)",
-          html.count('class="nav-link'), 25)
+    t.chk("sidebar group headers (color-step)", html.count(header_cls), 10)
+    t.chk("sidebar nav links (25 entries + logout)",
+          html.count('class="nav-link'), 26)
     t.chk("sidebar pos links present",
           all(p in html for p in
               ('href="/pos/products"', 'href="/pos/orders"',
                'href="/pos/customers"', 'href="/pos/stocks"',
                'href="/pos/roles"', 'href="/pos/locations"',
-               'href="/pos/alerts"')), True)
+               'href="/pos/alerts"', 'href="/reports"')), True)
     t.chk("sidebar active highlight (People here)",
           html.count('bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 '
                      'dark:text-indigo-300'), 1)

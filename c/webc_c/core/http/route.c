@@ -32,6 +32,7 @@
 #include "src/pos/config.h"
 #include "src/pos/alerts.h"
 #include "src/pos/audit.h"
+#include "core/report/report.h"
 #include "serve.h"
 
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
@@ -343,6 +344,11 @@ void route_initialize(void) {
 
     // read_only view: GET only
     route_new(&routes, "/pos/audit", NULL, "GET", ROUTE_EXACT, serve_pos_audit);
+
+    // Phase 8 reports: index first (ROUTE_EXACT only matches the bare
+    // path), then the prefix grabber parses /reports/<id>.<ext> itself.
+    route_new(&routes, "/reports",  NULL, "GET", ROUTE_EXACT,  serve_reports_index);
+    route_new(&routes, "/reports/", NULL, "GET", ROUTE_PREFIX, serve_report_download);
 
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);
     route_new(&routes, "/js/",         NULL, NULL, ROUTE_PREFIX, serve_resource_route);

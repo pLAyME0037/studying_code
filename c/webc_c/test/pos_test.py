@@ -1329,6 +1329,44 @@ def main():
     t.chk("read_only+trash: restore button still gated out",
           'data-md-op="restore"' not in html, True)
 
+    # ---- Phase 8: reports (Khmer A4, LibreOffice) ------------------------
+    st, body, _ = c.get("/reports")
+    html = body.decode()
+    t.chk("reports index", st, 200)
+    t.chk("reports index Khmer titles",
+          ("របាយការណ៍លក់និងដឹកជញ្ជូន" in html
+           and "ចំណាត់ថ្នាក់កំពូលផលិតផល" in html
+           and "របាយការណ៍ស្តុកទាប" in html), True)
+    t.chk("reports index pdf+docx links (4 reports)",
+          html.count('href="/reports/'), 8)
+    t.chk("reports sidebar group present (10 color-step headers)",
+          html.count('bg-slate-100 dark:bg-slate-800 nav-label'), 10)
+
+    # PDF: one-step html->Writer/Web honors @page A4
+    st, hdr, body, ctype = c.req_full("GET", "/reports/daily_orders.pdf")
+    t.chk("report pdf (status, type)", (st, ctype), (200, "application/pdf"))
+    t.chk("report pdf %PDF magic", body[:4], b"%PDF")
+    t.chk("report pdf attachment header",
+          'attachment; filename="daily_orders.pdf"'
+          in hdr.get("Content-Disposition", ""), True)
+    t.chk("report pdf embeds Khmer fonts (size)", len(body) > 8000, True)
+
+    # DOCX: html->fodt->(A4 patch)->docx (Writer/Web has no docx filter)
+    st, hdr, body, ctype = c.req_full("GET", "/reports/sales_summary.docx")
+    t.chk("report docx (status, type)",
+          (st, ctype.split(";")[0]),
+          (200,
+           "application/vnd.openxmlformats-officedocument"
+           ".wordprocessingml.document"))
+    t.chk("report docx PK magic", body[:2], b"PK")
+    t.chk("report docx attachment header",
+          'attachment; filename="sales_summary.docx"'
+          in hdr.get("Content-Disposition", ""), True)
+
+    t.chk("unknown report id -> 404", c.get("/reports/nope.pdf")[0], 404)
+    t.chk("bad extension -> 404",
+          c.get("/reports/sales_summary.txt")[0], 404)
+
     # ---- demo pages did not move ----------------------------------------
     st, _, _ = c.get("/people")
     t.chk("people page (demo)", st, 200)
