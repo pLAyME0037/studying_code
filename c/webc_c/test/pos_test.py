@@ -225,7 +225,7 @@ def main():
           [0] is not None, True)
     st, body, _ = c.get("/pos/locations")
     t.chk("live view hides deleted location",
-          (st, "No Locations yet." in body.decode()), (200, True))
+          (st, f'data-row-id="{rid}"' not in body.decode()), (200, True))
     st, body, _ = c.get("/pos/locations?deleted=1")
     html = body.decode()
     row, _ = row_and_edit(html, rid)
@@ -299,8 +299,9 @@ def main():
                   (uid, uid2))[0] is not None),
           (True, True))
     st, body, _ = c.get("/pos/locations")
-    t.chk("locations empty state after delete",
-          (st, "No Locations yet." in body.decode()), (200, True))
+    t.chk("locations after delete: test row gone, seed rows remain",
+          (st, f'data-row-id="{rid}"' not in body.decode()
+           and 'data-row-id="sd-loc-' in body.decode()), (200, True))
     st, body, _ = c.get("/pos/users")
     t.chk("pos users page after deletes (showcase rows gone)",
           (st, "pos_avatar_1" not in body.decode()
@@ -327,7 +328,8 @@ def main():
     html = body.decode()
     t.chk("categories page", st, 200)
     t.chk("categories th = code+name+parent+created+actions", th_count(html), 5)
-    t.chk("categories empty state", "No Categories yet." in html, True)
+    t.chk("categories seeded rows (0004 seed)",
+          html.count('data-row-id="sd-cat-') >= 1, True)
 
     st, _, _ = c.post_urlencoded(
         "/pos/categories/create?redirect=/pos/categories",
@@ -374,7 +376,8 @@ def main():
     t.chk("products page", st, 200)
     t.chk("products th = product+codes+prices+category+type+actions",
           th_count(html), 6)
-    t.chk("products empty state", "No Products yet." in html, True)
+    t.chk("products seeded rows fill page 1 (0004 seed)",
+          html.count('data-row-id="sd-prod-'), 20)
 
     st, _, _ = c.post_urlencoded(
         "/pos/products/create?redirect=/pos/products",
@@ -499,12 +502,27 @@ def main():
         db_exec("INSERT INTO products (name, sku, category_id, base_price) "
                 "VALUES (?, ?, ?, ?)",
                 (f"Bulk {i}", f"BULK-{i}", kid, 1.0))
+    st, b1html, _ = c.get("/pos/products")
     st, body, _ = c.get("/pos/products?page=2")
     html = body.decode()
     t.chk("products ?page=2", st, 200)
-    t.chk("page 2 window = 6 of 26 rows", html.count('<tr class="hover:'), 6)
+    # 50 seeded + 26 test-created = 76 -> page 2 = rows 21..40 (full 20).
+    t.chk("page 2 window = 20 of 76 rows", html.count('<tr class="hover:'), 20)
     t.chk("products pager present",
           'data-pg-container="mc-tbody"' in html, True)
+    # Phase 10: seeded volume -> windows must be disjoint, clamped
+    ids1 = set(re.findall(r'<tr class="hover:[^>]*data-row-id="([^"]+)"',
+                          b1html.decode()))
+    ids2 = set(re.findall(r'<tr class="hover:[^>]*data-row-id="([^"]+)"',
+                          html))
+    t.chk("page 1/2 rows disjoint", sorted(ids1 & ids2), [])
+    st, b999, _ = c.get("/pos/products?page=999")
+    n999 = len(re.findall(r'<tr class="hover:',
+                          b999.decode()))
+    t.chk("page=999 clamps (200, <= per_page rows)", (st, n999 <= 20),
+          (200, True))
+    t.chk("seeded products >= 50 (pagination volume)",
+          db_row("SELECT COUNT(*) FROM products")[0] >= 50, True)
 
     st, body, _ = c.get("/pos/categories")
     html = body.decode()
@@ -632,8 +650,9 @@ def main():
     st, body, _ = c.get("/pos/stocks?page=2")
     html = body.decode()
     t.chk("stocks ?page=2", st, 200)
-    t.chk("stocks page 2 = 7 of 27 rows",
-          html.count('<tr class="hover:'), 7)
+    # 50 seeded + 27 test-created = 77 -> page 2 = rows 21..40 (full 20).
+    t.chk("stocks page 2 = 20 of 77 rows",
+          html.count('<tr class="hover:'), 20)
     t.chk("stocks pager present",
           'data-pg-container="mc-tbody"' in html, True)
 
@@ -644,7 +663,9 @@ def main():
             ("Phnom Penh", "Chamkarmon", "Boeung Keng Kang", "BKK1"))
     loc_id = db_row("SELECT id FROM locations "
                     "ORDER BY created_at DESC LIMIT 1")[0]
-    user_id = db_row("SELECT id FROM users LIMIT 1")[0]
+    user_id = db_row("SELECT id FROM users "
+                     "WHERE id NOT IN (SELECT user_id FROM staff) "
+                     "LIMIT 1")[0]
     db_exec("INSERT INTO staff (id, user_id, org_unit_id, staff_code, "
             "first_name, last_name, location_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
             ("pos-stf-1", user_id, "pos-ou-1", "POS-STF-1",
@@ -655,7 +676,8 @@ def main():
     t.chk("orders page", st, 200)
     t.chk("orders th = order+org+staff+customer+status+amounts+actions",
           th_count(html), 7)
-    t.chk("orders empty state", "No Orders yet." in html, True)
+    t.chk("orders seeded rows (0004 seed)",
+          html.count('data-row-id="sd-ord-') >= 1, True)
     sm = re.search(r'name="order_status_dict_id"[^>]*>(.*?)</select>',
                    html, re.S)
     t.chk("status options scoped to ORDER_STATUS (fk_where)",
@@ -787,7 +809,8 @@ def main():
     html = body.decode()
     t.chk("shifts page", st, 200)
     t.chk("shifts th = org+staff+status+cash+notes+actions", th_count(html), 6)
-    t.chk("shifts empty state", "No Shifts yet." in html, True)
+    t.chk("shifts seeded rows (0004 seed)",
+          html.count('data-row-id="sd-shift-') >= 1, True)
 
     st, _, _ = c.post_urlencoded(
         "/pos/shifts/create?redirect=/pos/shifts",
@@ -829,7 +852,8 @@ def main():
     t.chk("finance page (read_only)", st, 200)
     t.chk("finance th = org+type+account+amounts+description+actions",
           th_count(html), 6)
-    t.chk("finance empty state", "No Finance yet." in html, True)
+    t.chk("finance seeded rows (0004 seed)",
+          html.count('data-row-id="sd-led-') >= 1, True)
     t.chk("finance read_only: no write UI",
           ('data-md-op="create"' not in html
            and "master-edit-btn" not in html
@@ -845,7 +869,8 @@ def main():
     html = body.decode()
     t.chk("customers page", st, 200)
     t.chk("customers th = tier+points+since+actions", th_count(html), 4)
-    t.chk("customers empty state", "No Customers yet." in html, True)
+    t.chk("customers seeded rows (0004 seed)",
+          html.count('data-row-id="sd-cus-') >= 1, True)
     cm = re.search(r'name="customer_type_dict_id"[^>]*>(.*?)</select>',
                    html, re.S)
     t.chk("tier options scoped to CUSTOMER_TYPE (fk_where)",
@@ -1038,8 +1063,8 @@ def main():
     html = body.decode()
     t.chk("permissions page", st, 200)
     t.chk("permissions th = code+name+module+since+actions", th_count(html), 5)
-    t.chk("permissions empty state (no seeds)",
-          "No Permissions yet." in html, True)
+    t.chk("permissions seeded rows (0004 seed)",
+          html.count('data-row-id="sd-perm-') >= 1, True)
 
     st, _, _ = c.post_urlencoded(
         "/pos/permissions/create?redirect=/pos/permissions",
@@ -1252,14 +1277,16 @@ def main():
     t.chk("alerts page", st, 200)
     t.chk("alerts th = user+order+type+flags+payload+actions",
           th_count(html), 6)
-    t.chk("alerts empty state", "No Alerts yet." in html, True)
+    t.chk("alerts seeded rows (0004 seed)",
+          html.count('data-row-id="sd-alert-') >= 1, True)
 
     st, _, _ = c.post_urlencoded(
         "/pos/alerts/create?redirect=/pos/alerts",
         {"user_id": uid5d, "order_id": oid, "alert_type": "POPUP",
          "raw_payload": '{"m":1}', "is_seen": "1", "is_sent": "0"})
     t.chk("alert create", st, 302)
-    al5g = db_row("SELECT id FROM system_alerts WHERE alert_type = 'POPUP'")[0]
+    al5g = db_row("SELECT id FROM system_alerts "
+                  "WHERE raw_payload = ?", ('{"m":1}',))[0]
     t.chk("alert row db (user/order/type/payload/flags)",
           db_row("SELECT user_id, order_id, raw_payload, is_seen, is_sent "
                  "FROM system_alerts WHERE id = ?", (al5g,)),
@@ -1296,7 +1323,8 @@ def main():
     t.chk("audit page (read_only)", st, 200)
     t.chk("audit th = user+table+record+action+diff+when+actions",
           th_count(html), 7)
-    t.chk("audit empty state", "No Audit yet." in html, True)
+    t.chk("audit seeded rows (0004 seed)",
+          html.count('data-row-id="sd-aud-') >= 1, True)
     t.chk("audit read_only: no write UI",
           ('data-md-op="create"' not in html
            and "master-edit-btn" not in html
@@ -1341,6 +1369,12 @@ def main():
           html.count('href="/reports/'), 8)
     t.chk("reports sidebar group present (10 color-step headers)",
           html.count('bg-slate-100 dark:bg-slate-800 nav-label'), 10)
+    t.chk("sales report view has seeded orders",
+          db_row("SELECT COUNT(*) FROM v_pos_sales_delivery_report")[0] >= 40,
+          True)
+    t.chk("low-stock report has rows",
+          db_row("SELECT COUNT(*) FROM inventory_stocks "
+                 "WHERE quantity <= min_threshold")[0] >= 1, True)
 
     # PDF: one-step html->Writer/Web honors @page A4
     st, hdr, body, ctype = c.req_full("GET", "/reports/daily_orders.pdf")
@@ -1378,6 +1412,21 @@ def main():
                   html, re.S)
     t.chk("demo master row still 4 columns + actions",
           m.group(2).count("<td") if m else -1, 5)
+
+    # ---- Phase 10: schema completeness (0001..0004 + history) -----------
+    want = sorted((
+        "audit_logs", "cash_shifts", "categories", "customer_interactions",
+        "customers", "deliveries", "dictionaries", "financial_ledgers",
+        "inventory_stocks", "languages", "locations", "notes", "order_items",
+        "orders", "org_units", "payments", "permissions", "product_variants",
+        "products", "role_permissions", "roles", "staff", "stock_ledger",
+        "system_alerts", "system_configs", "translations", "user_roles",
+        "users", "Migrations",
+    ))
+    got = sorted(db_row(
+        "SELECT GROUP_CONCAT(name) FROM sqlite_master "
+        "WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")[0].split(","))
+    t.chk("all 29 tables exist after migrations 0001-0004", got, want)
 
     ok = t.summary()
     sys.exit(0 if ok else 1)

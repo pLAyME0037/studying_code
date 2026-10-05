@@ -1,0 +1,5 @@
+-- ============================================================================
+-- 0004_seed_pos -- POSTGRES PORT: seed data is intentionally NOT ported
+-- (same reason as mysql.sql: sqlite-only feature tests). The postgres
+-- driver exec is a stub anyway -- this file is a specification placeholder.
+-- ============================================================================

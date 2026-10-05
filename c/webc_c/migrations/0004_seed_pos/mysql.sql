@@ -1,0 +1,9 @@
+-- ============================================================================
+-- 0004_seed_pos -- INTENTIONALLY SKIPPED for MySQL (documented in
+-- docs/POS_PLAN.md Phase 9): the seed data exists only for the sqlite
+-- dialect because the POS feature tests (test/pos_test.py) are sqlite-only
+-- and assert against these exact rows. Applying the same volumes to MySQL
+-- would double migration time for no coverage.
+-- A comment-only file is valid: sql_exec_script() skips statements that
+-- contain no query text ("Query was empty" is avoided by the splitter).
+-- ============================================================================

@@ -276,6 +276,39 @@ vanilla JS only.
 - Next: Phase 9 seed data (migrations/0004_seed_pos), then Phase 10
   verification (docs/POS_PLAN.md).
 
+## Phase 9+10 — Seed data + verification DONE (suite 462 PASS)
+- migrations/0004_seed_pos/sqlite3.sql (idempotent INSERT OR IGNORE,
+  relative timestamps): 5 Khmer locations, 1 org unit, 5 categories,
+  50 products (10 nouns x 5 adjectives) + 50 variants + 50 stocks
+  (first six <= min -> low_stock report rows), 8 customers, 8 users
+  (3 staff + 5 customer-linked -> customer_name in the sales view),
+  3 staff, 3 roles / 8 permissions / 11+3 links, 2 cash shifts,
+  42 orders across last 14 days (subtotal = SUM(line items), inserted
+  items-first since FKs are off during migrations), 84 lines, 42
+  payments (every 4th half-paid, every 7th PENDING), 14 deliveries,
+  42 credits w/ running-balance window + 6 expenses, 4 alerts, 4
+  audit rows. mysql.sql/postgres.sql = documented comment-only skips
+  (fragment_has_stmt() skips comment-only fragments - verified).
+- ALL seed created_at sit in the PAST (-300..-1 days): demo pages sort
+  newest-first, so test/demo rows must keep page 1 of per_page=20.
+- Master order flipped id DESC -> created_at DESC in
+  master_child.c (the "%s DESC single line"): seed ids 'sd-*' sort
+  above random uuids lexicographically and pushed freshly created rows
+  off page 1 -> row_and_edit lookups failed. Every master table has
+  created_at (views are never master lists) - verified via PRAGMA.
+- Test updates for populated tables: 7 empty-state checks -> seed-row
+  presence checks; products/stocks page-2 windows 6->20 / 7->20
+  (76/77 rows); two ambiguous db_row lookups fixed (staff fixture:
+  users LIMIT 1 -> first non-staff user, staff.user_id is UNIQUE;
+  alert: alert_type='POPUP' -> raw_payload filter, seed had a POPUP);
+  mysql_test history rows 3->4.
+- Phase 10 additions: page1/page2 row-id sets disjoint, page=999
+  clamps (200, <= per_page rows), seeded products >= 50, sales report
+  view >= 40 rows, low-stock rows >= 1, exact 29-table existence
+  check (28 migrations + Migrations). Manual browser smoke (webc dev
+  walk, A4 PDF open) still not possible here - no desktop browser.
+- Suite: 462 PASS (http_test 99 / pos_test 317 / mysql 40 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - No sb_append_ch — use sb_append_buf(sb, &c, 1).

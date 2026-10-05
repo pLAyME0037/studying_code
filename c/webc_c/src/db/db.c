@@ -68,6 +68,11 @@ static const Migration migrations[] = {
         [SQL_MYSQL]    = "migrations/0003_pos_eshop/mysql.sql",
         [SQL_POSTGRES] = "migrations/0003_pos_eshop/postgres.sql",
     }},
+    { "0004_seed_pos", {
+        [SQL_SQLITE]   = "migrations/0004_seed_pos/sqlite3.sql",
+        [SQL_MYSQL]    = "migrations/0004_seed_pos/mysql.sql",
+        [SQL_POSTGRES] = "migrations/0004_seed_pos/postgres.sql",
+    }},
 };
 
 /* Bootstrap table recording which migrations are already applied. It must

@@ -220,12 +220,16 @@ static bool md_load_master_with_children(db_t                  *db,
         }
     }
     sb_append_null(&cl);
-    // ORDER BY %s DESC is the single line that decides master order.
-    // Child lists are always loaded in full (they are bounded per master
-    // and the template windows them); only the master list takes a window.
+    // ORDER BY created_at DESC is the single line that decides master
+    // order: newest first, so freshly created rows stay on page 1 even
+    // once seeded/backfill rows exist (id DESC put lexicographically
+    // large seed ids above random uuids). Every master table carries
+    // created_at; views are never master lists. Child lists are always
+    // loaded in full (they are bounded per master and the template
+    // windows them); only the master list takes a window.
     char *sql = temp_sprintf("SELECT %s FROM %s%s ORDER BY %s DESC%s;",
             cl.items, config->table, md_soft_where(config->soft_delete, show_deleted),
-            config->id_column,
+            "created_at",
             slice ? temp_sprintf(" LIMIT %zu OFFSET %zu", slice->per_page, slice->offset)
                   : "");
     sql_stmt stmt = {0};
