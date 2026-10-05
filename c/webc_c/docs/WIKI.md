@@ -223,8 +223,17 @@ vanilla JS only.
   audit.c. Test pins read_only+trash gating (restore button stays out
   when ?deleted=1). ALL Phase 5 module pages are now live (5a-5g: 21
   routes groups / ~17 pages). Suite: 439 PASS (pos_test 298).
-- Next: Phase 5 sidebar grouped nav (Dashboard, Catalog, Sales, Party,
-  Inventory, Access, Config, Monitoring, Reports -> then reports spike
+- Sidebar grouped nav DONE: data-driven in display/component/sidebar.h.tt
+  (Nav_Item {group,path,label,icon} array in the template prologue, one
+  `({ for ... })` loop; non-NULL group renders the color-step header:
+  slate-100/800 bg + slate text, no borders/margins). 9 groups in plan
+  order (Dashboard, Catalog, Sales, Party, Inventory, Access, Config,
+  Monitoring, Demo) / 24 entries; single-path SVG icons (loop emits one
+  <path>); active check keeps the "/" special case (NAV_ACTIVE is a
+  prefix match, so "/" would match everything). Reports group joins when
+  its pages land. http_test +4 checks (header count=9, nav-link=25,
+  pos hrefs, single indigo active). Suite: 443 PASS (http_test 99).
+- Next: Phase 6-8 reports spike (HTML vs FODT), Khmer A4 PDF/DOC
   (docs/POS_PLAN.md).
 
 ## Gotchas
