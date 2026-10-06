@@ -108,6 +108,27 @@
         </div>
 
         <div class="relative group/item mb-1">
+            <a href="/people"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/people"),
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" stroke-width="2" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    People
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+                People
+            </div>
+        </div>
+
+        <div class="relative group/item mb-1">
             <a href="/version"
                class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/version"),
                    "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",

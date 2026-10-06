@@ -355,8 +355,20 @@ int main(int argc, char **argv) {
                 "need it to find the location of ~/.sqlite3/webc/ directory.\n");
         return 1;
     }
-    WEBC_DIR_PATH = strdup(temp_sprintf("%s/.sqlite3/webc", HOME_PATH));
-    WEBC_DB_PATH = strdup(temp_sprintf("%s/db", WEBC_DIR_PATH));
+    // WEBC_DB overrides the database location (tests, alternate instances).
+    // Its parent directory becomes the "webc dir" the legacy-file migration
+    // logic operates on.
+    const char *webc_db = getenv("WEBC_DB");
+    if (webc_db && webc_db[0]) {
+        WEBC_DB_PATH = strdup(webc_db);
+        const char *slash = strrchr(webc_db, '/');
+        WEBC_DIR_PATH = strdup(slash && slash != webc_db
+                               ? temp_sprintf("%.*s", (int) (slash - webc_db), webc_db)
+                               : ".");
+    } else {
+        WEBC_DIR_PATH = strdup(temp_sprintf("%s/.sqlite3/webc", HOME_PATH));
+        WEBC_DB_PATH = strdup(temp_sprintf("%s/db", WEBC_DIR_PATH));
+    }
     WEBC_TRACE_MIGRATION_QUERIES = getenv("WEBC_TRACE_MIGRATION_QUERIES") != NULL;
 
     const char *program_name = shift(argv, argc);

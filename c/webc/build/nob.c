@@ -1,6 +1,10 @@
 #include <unistd.h>
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
+// Go Rebuild Urself needs -I. because nob.c lives in build/ while its
+// #include "module/nob.h" resolves relative to this file's directory first.
+#define NOB_REBUILD_URSELF(binary_path, source_path) \
+    "cc", "-x", "c", "-I.", "-o", binary_path, source_path
 #include "module/nob.h"
 
 #define BUILD_FOLDER "./build/"
@@ -71,6 +75,7 @@ int build_bundle(const char *webc_build_time) {
         { .file_path = "./resource/image/user1.png" },
         { .file_path = "./resource/image/know_me.png" },
         { .file_path = "./js/ListExpandSwitcher.js" },
+        { .file_path = "./js/PaginationSwitcher.js" },
         { .file_path = "./js/sidebarSwitcher.js" },
         { .file_path = "./js/themeSwitcher.js" },
     };
@@ -135,6 +140,31 @@ int build_bundle(const char *webc_build_time) {
     free(content.items);
     free(bundle.items);
     return 0;
+}
+
+// Append `pkg-config <option> <package>` output to `cmd`. -I paths become
+// -isystem so third-party headers (mysql.h) stay warning-free under our
+// -Wall/-Wextra/-pedantic flags. Tokens are copied into the temp arena:
+// cmd stores pointers and the buffer read from disk gets freed here.
+static bool append_pkg_config(Cmd *cmd, const char *package, const char *option) {
+    const char *flags_path = BUILD_FOLDER"pkgconfig.flags";
+    Cmd tmp = {0};
+    cmd_append(&tmp, "pkg-config", option, package);
+    if (!cmd_run(&tmp, .stdout_path = flags_path)) {
+        fprintf(stderr, "ERROR: `pkg-config %s %s` failed - required to build "
+                "the MySQL driver (install pkg-config and %s).\n",
+                option, package, package);
+        return false;
+    }
+    String_Builder sb = {0};
+    if (!read_entire_file(flags_path, &sb)) return false;
+    sb_append_null(&sb);
+    for (char *p = strtok(sb.items, " \t\r\n"); p; p = strtok(NULL, " \t\r\n")) {
+        if (strncmp(p, "-I", 2) == 0) cmd_append(cmd, temp_sprintf("-isystem%s", p + 2));
+        else cmd_append(cmd, temp_sprintf("%s", p));
+    }
+    sb_free(sb);
+    return true;
 }
 
 bool build_sqlite3(void) {
@@ -337,10 +367,16 @@ int main(int argc, char **argv) {
             "-I.",
             "-o", "./build/bin/webc");
 
+    if (!append_pkg_config(&cmd, "libmariadb", "--cflags")) return 1;
+    if (!append_pkg_config(&cmd, "openssl", "--cflags")) return 1;
+
     append_c_files_from_dir(&cmd, "core");
     append_c_files_from_dir(&cmd, "src");
 
     nob_cmd_append(&cmd, SQLITE3_OBJ_PATH, COROUTINE_OBJ_PATH);
+
+    if (!append_pkg_config(&cmd, "libmariadb", "--libs")) return 1;
+    if (!append_pkg_config(&cmd, "openssl", "--libs")) return 1;
 
     if (!nob_cmd_run_sync_and_reset(&cmd)) return 1;
     return 0;

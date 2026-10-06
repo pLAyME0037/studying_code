@@ -6,17 +6,17 @@
 #include "core/display/notes.h"
 #include "core/display/table.h"
 #include "core/display/version.h"
-#include "core/display/crud.h"
-#include "core/display/crud_modules.h"
+#include "core/display/people.h"
 #include "core/display/user.h"
 #include "serve.h"
 
-// Extract the id segment from "/<path>/<id>/<suffix>" as a slice of `uri`.
-// Ids are TEXT primary keys (legacy numeric strings or schema uuid defaults).
+// Extract + classify the id segment from "/<path>/<id>/<suffix>".
+// Ids are TEXT primary keys (legacy numeric strings or schema uuid defaults);
+// route_id_parse() tags all-digits segments as ID_INT for INTEGER tables.
 static bool parse_uri_id(String_View path,
                          String_View uri,
                          const char *suffix,
-                         String_View *id)
+                         Route_Id   *id)
 {
     char prefix_buf[128];
     snprintf(prefix_buf, sizeof(prefix_buf), "%.*s/", (int)path.count, path.data);
@@ -37,10 +37,7 @@ static bool parse_uri_id(String_View path,
         .data  = uri.data + prefix.count,
         .count = uri.count - prefix.count - suffix_sv.count,
     };
-    if (id_sv.count == 0 || id_sv.count >= 128) return false;
-
-    *id = id_sv;
-    return true;
+    return route_id_parse(id_sv, id);
 }
 
 // Reject ".." path segments anywhere in the URI (path traversal).
@@ -147,7 +144,8 @@ static bool route_init = false;
 void route_initialize(void) {
     route_new(&routes, "/", NULL, "GET", ROUTE_EXACT, serve_dashboard);
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);
-    route_new(&routes, "/table", NULL, "GET", ROUTE_EXACT, serve_table);
+    // users master + their notes, one master-detail page
+    route_new(&routes, "/people", NULL, "GET", ROUTE_EXACT, serve_people);
 
     // method NULL: serve_notes_api dispatches GET/POST/PUT/DELETE itself
     // and answers unsupported methods with 405.
@@ -195,7 +193,7 @@ void route_request(Serve_Context *sc) {
             }
         break;
         case ROUTE_ID_ACTION: {
-            String_View id = {0};
+            Route_Id id = {0};
             if (parse_uri_id(sv_from_cstr(r->prefix), sc->uri, r->suffix, &id)) {
                 sc->route_id = id;
                 r->handle(sc);

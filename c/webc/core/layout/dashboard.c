@@ -1,6 +1,5 @@
 #include "module/nob.h"
 #include "dashboard.h"
-#include "../../core/display/crud_modules.h"
 #include "../../core/layout/header.h"
 #include "../../core/layout/footer.h"
 #include "../../src/dashboard/dashboard.h"

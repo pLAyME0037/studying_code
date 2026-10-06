@@ -3,6 +3,7 @@
 #include <unistd.h>
 
 #include "module/nob.h"
+#include "id.h"
 #include "utils.h"
 
 static int hex_to_int(char c) {
@@ -253,34 +254,27 @@ Upload_Result save_uploaded_image(String_View *value) {
     return UPLOAD_OK;
 }
 
-bool parse_id_from_uri(String_View     uri,
-                       const char     *prefix,
-                       const char     *suffix,
-                       String_View    *id)
+bool route_id_parse(String_View seg, Route_Id *out)
 {
-    size_t plen = strlen(prefix);
-    size_t slen = strlen(suffix);
+    if (seg.count == 0 || seg.count >= 128) return false;
 
-    // Normalize prefix: ensure it ends with '/' (like parse_uri_id does)
-    bool prefix_has_slash = (plen > 0 && prefix[plen - 1] == '/');
-    size_t effective_plen = prefix_has_slash ? plen : plen + 1;
+    Route_Id id = { .kind = ID_STRING, .raw = seg };
 
-    if (uri.count < effective_plen + slen) return false;
-    if (memcmp(uri.data, prefix, plen) != 0) return false;
-    if (!prefix_has_slash) {
-        if (uri.data[plen] != '/') return false;
+    // All-digits (max 18 so it fits long long without overflow) -> ID_INT.
+    long long value = 0;
+    size_t digits = 0;
+    bool is_int = true;
+    for (size_t i = 0; i < seg.count; ++i) {
+        char ch = seg.data[i];
+        if (ch < '0' || ch > '9') { is_int = false; break; }
+        if (++digits > 18) { is_int = false; break; }
+        value = value * 10 + (ch - '0');
     }
-    if (!nob_sv_ends_with(uri, nob_sv_from_cstr(suffix))) return false;
+    if (is_int) {
+        id.kind = ID_INT;
+        id.value = value;
+    }
 
-    // The id is a plain slice of the URI: TEXT primary keys are either the
-    // legacy numeric strings or the uuid defaults of the new schema.
-    String_View id_sv = {
-        .data  = uri.data + effective_plen,
-        .count = uri.count - effective_plen - slen,
-    };
-
-    if (id_sv.count == 0 || id_sv.count >= 128) return false;
-
-    if (id) *id = id_sv;
+    if (out) *out = id;
     return true;
 }

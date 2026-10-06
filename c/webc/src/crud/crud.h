@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "sqlite3.h"
+#include "../db/sql.h"
 
 typedef enum {
     COL_TEXT,      // free text input (single line)
@@ -66,12 +66,12 @@ typedef struct {
     Crud_Options *items; // length = mod->column_count
 } Crud_Form_Options;
 
-bool crud_rows_load(sqlite3 *db, const Crud_Module *mod, int id, Crud_Rows *rows);
+bool crud_rows_load(db_t *db, const Crud_Module *mod, int id, Crud_Rows *rows);
 void crud_rows_free(Crud_Rows *rows);
-bool crud_form_options_load(sqlite3 *db, const Crud_Module *mod, Crud_Form_Options *fopts);
+bool crud_form_options_load(db_t *db, const Crud_Module *mod, Crud_Form_Options *fopts);
 void crud_form_options_free(Crud_Form_Options *fopts);
-bool crud_insert(sqlite3 *db, const Crud_Module *mod, const char *const *values);
-bool crud_update(sqlite3 *db, const Crud_Module *mod, int id, const char *const *values);
-bool crud_delete(sqlite3 *db, const Crud_Module *mod, int id);
+bool crud_insert(db_t *db, const Crud_Module *mod, const char *const *values);
+bool crud_update(db_t *db, const Crud_Module *mod, int id, const char *const *values);
+bool crud_delete(db_t *db, const Crud_Module *mod, int id);
 
 #endif // SRC_CRUD_H_

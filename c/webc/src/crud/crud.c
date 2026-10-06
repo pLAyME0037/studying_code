@@ -5,7 +5,6 @@
 #define NOB_STRIP_PREFIX
 #include "module/nob.h"
 
-#include "sqlite3.h"
 #include "crud.h"
 #include "../db/db.h"
 
@@ -13,6 +12,8 @@
 //   0: m.<pk>
 //   for each module column i: raw value at 1+2i, display label at 2+2i
 // (FK columns show the joined label; others repeat the raw value).
+// NOTE: the generated SQL uses `?` placeholders and is SQLite/MySQL text;
+// a Postgres slot would have to emit `$1..$n` from the builder instead.
 static void crud_build_select(String_Builder *sql, const Crud_Module *mod, int id) {
     const char *pk = mod->pk_name ? mod->pk_name : "id";
     sb_append_cstr(sql, temp_sprintf("SELECT m.%s, ", pk));
@@ -36,23 +37,25 @@ static void crud_build_select(String_Builder *sql, const Crud_Module *mod, int i
     }
     if (id >= 0) sb_append_cstr(sql, temp_sprintf(" WHERE m.%s = %d", pk, id));
     sb_append_cstr(sql, temp_sprintf(" ORDER BY m.%s ASC;", pk));
+    sb_append_null(sql);  // prepare reads the text up to '\0'
 }
 
-bool crud_rows_load(sqlite3 *db, const Crud_Module *mod, int id, Crud_Rows *rows) {
+bool crud_rows_load(db_t *db, const Crud_Module *mod, int id, Crud_Rows *rows) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
+    sql_stmt stmt = {0};
 
     String_Builder sql = {0};
     crud_build_select(&sql, mod, id);
-    if (sqlite3_prepare_v2(db, sql.items, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
+    if (!sql_prepare(db, sql.items, &stmt)) {
+        sb_free(sql);
         return_defer(false);
     }
+    sb_free(sql);
 
-    int ret = SQLITE_DONE;
-    for (ret = sqlite3_step(stmt); ret == SQLITE_ROW; ret = sqlite3_step(stmt)) {
+    Sql_Step ret = SQL_DONE;
+    for (ret = sql_step(&stmt); ret == SQL_ROW; ret = sql_step(&stmt)) {
         Crud_Row row = {0};
-        row.id = sqlite3_column_int64(stmt, 0);
+        row.id = sql_column_int64(&stmt, 0);
         row.values = malloc(sizeof(char *) * mod->column_count);
         row.labels = malloc(sizeof(char *) * mod->column_count);
         if (!row.values || !row.labels) {
@@ -61,21 +64,21 @@ bool crud_rows_load(sqlite3 *db, const Crud_Module *mod, int id, Crud_Rows *rows
             return_defer(false);
         }
         for (size_t i = 0; i < mod->column_count; ++i) {
-            const char *v = (const char *)sqlite3_column_text(stmt, 1 + 2 * i);
-            const char *l = (const char *)sqlite3_column_text(stmt, 2 + 2 * i);
+            const char *v = sql_column_text(&stmt, (int)(1 + 2 * i));
+            const char *l = sql_column_text(&stmt, (int)(2 + 2 * i));
             row.values[i] = v ? temp_strdup(v) : NULL;
             row.labels[i] = l ? temp_strdup(l) : NULL;
         }
         da_append(rows, row);
     }
 
-    if (ret != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
+    if (ret != SQL_DONE) {
+        nob_log(NOB_ERROR, "crud_rows_load: %s", db_errmsg(db));
         return_defer(false);
     }
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }
 
@@ -88,7 +91,7 @@ void crud_rows_free(Crud_Rows *rows) {
     memset(rows, 0, sizeof(*rows));
 }
 
-bool crud_form_options_load(sqlite3 *db, const Crud_Module *mod, Crud_Form_Options *fopts) {
+bool crud_form_options_load(db_t *db, const Crud_Module *mod, Crud_Form_Options *fopts) {
     bool result = true;
 
     fopts->items = calloc(mod->column_count, sizeof(Crud_Options));
@@ -98,29 +101,26 @@ bool crud_form_options_load(sqlite3 *db, const Crud_Module *mod, Crud_Form_Optio
         const Crud_Column *col = &mod->columns[i];
         if (col->type != COL_FK_SELECT) continue;
 
-        sqlite3_stmt *stmt = NULL;
-        String_View sql = sv_from_cstr(temp_sprintf(
+        sql_stmt stmt = {0};
+        const char *sql = temp_sprintf(
             "SELECT %s, %s FROM %s ORDER BY %s ASC;",
-            col->fk_value, col->fk_label, col->fk_table, col->fk_label));
-        if (sqlite3_prepare_v2(db, sql.data, -1, &stmt, NULL) != SQLITE_OK) {
-            LOG_SQLITE3_ERROR(db);
-            return_defer(false);
-        }
-        int ret = SQLITE_DONE;
-        for (ret = sqlite3_step(stmt); ret == SQLITE_ROW; ret = sqlite3_step(stmt)) {
-            long long opt_id = sqlite3_column_int64(stmt, 0);
-            const char *label = (const char *)sqlite3_column_text(stmt, 1);
+            col->fk_value, col->fk_label, col->fk_table, col->fk_label);
+        if (!sql_prepare(db, sql, &stmt)) return_defer(false);
+        Sql_Step ret = SQL_DONE;
+        for (ret = sql_step(&stmt); ret == SQL_ROW; ret = sql_step(&stmt)) {
+            long long opt_id = sql_column_int64(&stmt, 0);
+            const char *label = sql_column_text(&stmt, 1);
             da_append(&fopts->items[i], ((Crud_Option) {
                 .id    = opt_id,
                 .label = label ? temp_strdup(label) : NULL,
             }));
         }
-        if (ret != SQLITE_DONE) {
-            LOG_SQLITE3_ERROR(db);
-            sqlite3_finalize(stmt);
+        if (ret != SQL_DONE) {
+            nob_log(NOB_ERROR, "crud_form_options_load: %s", db_errmsg(db));
+            sql_finalize(&stmt);
             return_defer(false);
         }
-        sqlite3_finalize(stmt);
+        sql_finalize(&stmt);
     }
 
 defer:
@@ -135,21 +135,24 @@ void crud_form_options_free(Crud_Form_Options *fopts) {
 }
 
 // Bind one form value onto `idx` of a prepared statement, honoring column type.
-static bool crud_bind_value(sqlite3_stmt *stmt, const Crud_Column *col,
+static bool crud_bind_value(sql_stmt *stmt, const Crud_Column *col,
                             int idx, const char *value) {
     if (!value || value[0] == '\0') {
-        if (sqlite3_bind_null(stmt, idx) != SQLITE_OK) return false;
-    } else if (col->type == COL_NUM || col->type == COL_FK_SELECT) {
-        if (sqlite3_bind_double(stmt, idx, atof(value)) != SQLITE_OK) return false;
-    } else {
-        if (sqlite3_bind_text(stmt, idx, value, -1, SQLITE_TRANSIENT) != SQLITE_OK) return false;
+        return sql_bind(stmt, idx, SQL_NIL());
     }
-    return true;
+    if (col->type == COL_NUM || col->type == COL_FK_SELECT) {
+        // Keep the old atof() semantics (bad input -> 0) by round-tripping
+        // through text; REAL/NUMERIC column affinity converts the bound
+        // string back into a number.
+        return sql_bind(stmt, idx,
+                        SQL_SV(sv_from_cstr(temp_sprintf("%.17g", atof(value)))));
+    }
+    return sql_bind(stmt, idx, SQL_SV(sv_from_cstr(value)));
 }
 
-bool crud_insert(sqlite3 *db, const Crud_Module *mod, const char *const *values) {
+bool crud_insert(db_t *db, const Crud_Module *mod, const char *const *values) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
+    sql_stmt stmt = {0};
 
     String_Builder sql = {0};
     sb_append_cstr(&sql, temp_sprintf("INSERT INTO %s (", mod->table));
@@ -163,30 +166,29 @@ bool crud_insert(sqlite3 *db, const Crud_Module *mod, const char *const *values)
         if (i + 1 < mod->column_count) sb_append_cstr(&sql, ", ");
     }
     sb_append_cstr(&sql, ");");
+    sb_append_null(&sql);  // prepare reads the text up to '\0'
 
-    if (sqlite3_prepare_v2(db, sql.items, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
+    if (!sql_prepare(db, sql.items, &stmt)) {
+        sb_free(sql);
         return_defer(false);
     }
+    sb_free(sql);
+
     for (size_t i = 0; i < mod->column_count; ++i) {
-        if (!crud_bind_value(stmt, &mod->columns[i], (int)i + 1, values[i])) {
-            LOG_SQLITE3_ERROR(db);
+        if (!crud_bind_value(&stmt, &mod->columns[i], (int)i + 1, values[i])) {
             return_defer(false);
         }
     }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    if (!sql_final_step(&stmt)) return_defer(false);
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }
 
-bool crud_update(sqlite3 *db, const Crud_Module *mod, int id, const char *const *values) {
+bool crud_update(db_t *db, const Crud_Module *mod, int id, const char *const *values) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
+    sql_stmt stmt = {0};
 
     String_Builder sql = {0};
     sb_append_cstr(&sql, temp_sprintf("UPDATE %s SET ", mod->table));
@@ -195,51 +197,40 @@ bool crud_update(sqlite3 *db, const Crud_Module *mod, int id, const char *const 
         if (i + 1 < mod->column_count) sb_append_cstr(&sql, ", ");
     }
     sb_append_cstr(&sql, temp_sprintf(" WHERE %s = ?;", mod->pk_name ? mod->pk_name : "id"));
+    sb_append_null(&sql);  // prepare reads the text up to '\0'
 
-    if (sqlite3_prepare_v2(db, sql.items, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
+    if (!sql_prepare(db, sql.items, &stmt)) {
+        sb_free(sql);
         return_defer(false);
     }
+    sb_free(sql);
+
     for (size_t i = 0; i < mod->column_count; ++i) {
-        if (!crud_bind_value(stmt, &mod->columns[i], (int)i + 1, values[i])) {
-            LOG_SQLITE3_ERROR(db);
+        if (!crud_bind_value(&stmt, &mod->columns[i], (int)i + 1, values[i])) {
             return_defer(false);
         }
     }
-    if (sqlite3_bind_int(stmt, (int)mod->column_count + 1, id) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
+    if (!sql_bind(&stmt, (int)mod->column_count + 1, SQL_I(id))) {
         return_defer(false);
     }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    if (!sql_final_step(&stmt)) return_defer(false);
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }
 
-bool crud_delete(sqlite3 *db, const Crud_Module *mod, int id) {
+bool crud_delete(db_t *db, const Crud_Module *mod, int id) {
     bool result = true;
-    sqlite3_stmt *stmt = NULL;
+    sql_stmt stmt = {0};
 
-    String_View sql = sv_from_cstr(temp_sprintf(
-        "DELETE FROM %s WHERE %s = ?;", mod->table, mod->pk_name ? mod->pk_name : "id"));
-    if (sqlite3_prepare_v2(db, sql.data, -1, &stmt, NULL) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_bind_int(stmt, 1, id) != SQLITE_OK) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
-    if (sqlite3_step(stmt) != SQLITE_DONE) {
-        LOG_SQLITE3_ERROR(db);
-        return_defer(false);
-    }
+    const char *sql = temp_sprintf(
+        "DELETE FROM %s WHERE %s = ?;", mod->table, mod->pk_name ? mod->pk_name : "id");
+    if (!sql_prepare(db, sql, &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_I(id))) return_defer(false);
+    if (!sql_final_step(&stmt)) return_defer(false);
 
 defer:
-    if (stmt) sqlite3_finalize(stmt);
+    sql_finalize(&stmt);
     return result;
 }

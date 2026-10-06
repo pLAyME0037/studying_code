@@ -38,9 +38,4 @@ typedef enum {
 // and replaces *value with the URL it will be served from.
 Upload_Result save_uploaded_image(String_View *value);
 
-// Extract the id segment ("<prefix><id><suffix>") from a URI as a slice.
-bool parse_id_from_uri(String_View  uri,
-                       const char  *prefix,
-                       const char  *suffix,
-                       String_View *id);
 #endif // !HTTP_UTILS
