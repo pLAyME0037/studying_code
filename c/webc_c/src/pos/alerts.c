@@ -16,11 +16,17 @@
 
 static const char *alert_flag_parts[] = { "is_seen", "is_sent" };
 static const char *alert_flag_labels[] = { "Seen", "Sent" };
+// 0/1 choice per flag: the flags store integer CHECK (0,1) columns, so
+// free-text inputs would let a hand-rolled POST poison the column - the
+// form offers the two legal values (Phase 13 contract test caught this).
+static const char *alert_flag_opts[] = { "0", "1", NULL };
+static const char **alert_flag_choices[] = { alert_flag_opts, alert_flag_opts };
 static const MD_Cell alert_flag_cell = {
-    .parts       = alert_flag_parts,
-    .part_labels = alert_flag_labels,
-    .part_count  = 2,
-    .style       = "stack",
+    .parts        = alert_flag_parts,
+    .part_labels  = alert_flag_labels,
+    .part_choices = alert_flag_choices,
+    .part_count   = 2,
+    .style        = "stack",
 };
 
 MD_Column md_alerts_columns[] = {

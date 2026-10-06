@@ -7,6 +7,23 @@
 // cart, guest checkout, /login, demo pages and resources stay public.
 // auth_gate() runs once per request in route_request(), before routing.
 
+// Identity of whoever is signed in for the request being served (sidebar,
+// Phase 14 workspaces). auth_gate() rebinds the state once per request;
+// the first auth_current_user() call resolves the webc_sid cookie lazily,
+// so public pages that carry a live session show the user too. Returns
+// NULL when nobody is signed in (or the account was soft-deleted).
+typedef struct {
+    const char *id;
+    const char *name;
+    const char *email;
+    const char *profile_pic;
+    const char *user_type;   /* dictionary id: ADMIN / CUSTOMER / ... */
+    const char *status;      /* ACTIVE / INACTIVE / SUSPENDED */
+    const char *role;        /* first live role_name, "" when none */
+} Auth_User;
+
+const Auth_User *auth_current_user(void);
+
 // True when this URI needs a signed-in ADMIN session and the request had
 // none - the request has then been answered with 303 /login?next=...
 // and the caller must stop routing.

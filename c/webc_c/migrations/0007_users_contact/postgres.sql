@@ -1,0 +1,5 @@
+-- ============================================================================
+-- 0007_users_contact -- POSTGRES PORT: intentionally NOT ported (same
+-- precedent as 0004..0006 - the postgres driver exec is a stub and this
+-- file is a specification placeholder for a future real port).
+-- ============================================================================

@@ -18,15 +18,30 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             ({ for (size_t fi = 0; fi < form_cols.count; ++fi) { })
+                ({ if (!form_cols.items[fi].col->computed) { })
                 ({ if (form_cols.items[fi].col->cell) { })
                 <div>
                     ({ for (size_t pi = 0; pi < form_cols.items[fi].col->cell->part_count; ++pi) { })
                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
                             ({ ESCAPED(md_cell_part_label(form_cols.items[fi].col->cell, pi)); })
                         </label>
+                        ({ if (form_cols.items[fi].col->cell->part_choices
+                               && form_cols.items[fi].col->cell->part_choices[pi]) { })
+                        <select name="({ ESCAPED(form_cols.items[fi].col->cell->parts[pi]); })"
+                                class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                            ({ for (size_t o = 0;
+                                    form_cols.items[fi].col->cell->part_choices[pi][o];
+                                    ++o) { })
+                                <option value="({ STR(form_cols.items[fi].col->cell->part_choices[pi][o]); })">
+                                    ({ ESCAPED(form_cols.items[fi].col->cell->part_choices[pi][o]); })
+                                </option>
+                            ({ } })
+                        </select>
+                        ({ } else { })
                         <input name="({ ESCAPED(form_cols.items[fi].col->cell->parts[pi]); })"
                                type="text"
                                class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                        ({ } })
                     ({ } })
                 </div>
                 ({ } else { })
@@ -53,9 +68,12 @@
                         <input name="({ ESCAPED(form_cols.items[fi].col->name); })"
                                type="({ if (form_cols.items[fi].col->type == COL_TYPE_DATE) { })date({ } else if (form_cols.items[fi].col->type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
                                ({ if (form_cols.items[fi].col->type == COL_TYPE_NUM) { })step="any" ({ } })
+                               ({ if (!form_cols.items[fi].col->nullable
+                                      && form_cols.items[fi].col->type != COL_TYPE_DATE) { })required({ } })
                                class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                     ({ } })
                 </div>
+                ({ } })
                 ({ } })
             ({ } })
         </div>
@@ -180,17 +198,34 @@
                                       data-md-target="({ STR(rows->items[ri].id); })"
                                       class="flex flex-wrap gap-3 items-end">
                             ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
-                                ({ if (config->columns[ci].cell) { })
+                                ({ if (config->columns[ci].computed) { })
+                                ({ } else if (config->columns[ci].cell) { })
                                     <div class="flex flex-col gap-1 min-w-[140px]">
                                         ({ for (size_t pi = 0; pi < config->columns[ci].cell->part_count; ++pi) { })
                                             <label class="text-xs text-gray-500 dark:text-gray-400">
                                                 ({ ESCAPED(md_cell_part_label(config->columns[ci].cell, pi)); })
                                             </label>
+                                            ({ if (config->columns[ci].cell->part_choices
+                                                   && config->columns[ci].cell->part_choices[pi]) { })
+                                            <select form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
+                                                    name="({ ESCAPED(config->columns[ci].cell->parts[pi]); })"
+                                                    class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                                ({ for (size_t o = 0;
+                                                        config->columns[ci].cell->part_choices[pi][o];
+                                                        ++o) { })
+                                                    <option value="({ STR(config->columns[ci].cell->part_choices[pi][o]); })"
+                                                            ({ if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci) + pi], config->columns[ci].cell->part_choices[pi][o]) == 0) { })selected({ } })>
+                                                        ({ ESCAPED(config->columns[ci].cell->part_choices[pi][o]); })
+                                                    </option>
+                                                ({ } })
+                                            </select>
+                                            ({ } else { })
                                             <input form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
                                                    name="({ ESCAPED(config->columns[ci].cell->parts[pi]); })"
                                                    type="text"
                                                    value="({ ESCAPED(rows->items[ri].values[md_col_slot(config->columns, ci) + pi]); })"
                                                    class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                            ({ } })
                                         ({ } })
                                     </div>
                                 ({ } else { })
@@ -221,7 +256,11 @@
                                                name="({ ESCAPED(config->columns[ci].name); })"
                                                type="({ if (config->columns[ci].type == COL_TYPE_DATE) { })date({ } else if (config->columns[ci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
                                                ({ if (config->columns[ci].type == COL_TYPE_NUM) { })step="any" ({ } })
-                                               value="({ ESCAPED(rows->items[ri].values[md_col_slot(config->columns, ci)]); })"
+                                               ({ if (!config->columns[ci].nullable
+                                                      && config->columns[ci].type != COL_TYPE_DATE) { })required({ } })
+                                               value="({ ESCAPED(config->columns[ci].type == COL_TYPE_DATE
+                                                                ? md_date_input(rows->items[ri].values[md_col_slot(config->columns, ci)])
+                                                                : rows->items[ri].values[md_col_slot(config->columns, ci)]); })"
                                                class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                                 ({ } })
                                     </div>

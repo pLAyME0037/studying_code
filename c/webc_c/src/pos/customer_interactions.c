@@ -27,7 +27,7 @@ static bool create_interaction(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))   return_defer(false);
     if (!sql_bind(&stmt, 1, pos_sv(fields[2]))) return_defer(false);  // user
     if (!sql_bind(&stmt, 2, pos_sv(fields[3]))) return_defer(false);  // customer
     if (!sql_bind(&stmt, 3, SQL_SV(fields[0]))) return_defer(false);  // kind

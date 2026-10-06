@@ -87,15 +87,15 @@ def main():
     # ---- seed: legacy numeric id row ----------------------------------
     db_exec(
         DB,
-        "INSERT INTO users (id, name, username, email, profile_pic) "
-        "VALUES ('7', 'Legacy', 'legacy7', 'l7@t.com', NULL)",
+        "INSERT INTO users (id, name, username, email, phone, profile_pic) "
+        "VALUES ('7', 'Legacy', 'legacy7', 'l7@t.com', '0990000007', NULL)",
     )
 
     # ---- create: no file -> empty pic ---------------------------------
     st, _, _ = c.post_multipart(
         "/users/create",
         {"name": "No Pic", "username": "nopic_test", "email": "n@t.com",
-         "profile_pic": ""},
+         "phone": "0990000101", "profile_pic": ""},
     )
     t.chk("create no file", st, 302)
     t.chk(
@@ -108,7 +108,8 @@ def main():
     # ---- create: browser-style empty file part (filename="") ----------
     st, _, _ = c.post_multipart(
         "/users/create",
-        {"name": "Raw Empty", "username": "raw_empty", "email": "r@t.com"},
+        {"name": "Raw Empty", "username": "raw_empty", "email": "r@t.com",
+         "phone": "0990000102"},
         files={"profile_pic": ("", b"", "application/octet-stream")},
     )
     t.chk("create empty file part", st, 302)
@@ -121,7 +122,8 @@ def main():
     # ---- create: real file upload -------------------------------------
     st, _, _ = c.post_multipart(
         "/users/create",
-        {"name": "UUID Life", "username": "uuid_life", "email": "u@t.com"},
+        {"name": "UUID Life", "username": "uuid_life", "email": "u@t.com",
+         "phone": "0990000103"},
         files={"profile_pic": ("user1.png", png, "image/png")},
     )
     t.chk("create w/file", st, 302)
@@ -150,7 +152,8 @@ def main():
     # ---- update: with file replaces, without keeps --------------------
     st, _, _ = c.post_multipart(
         f"/users/{uid}/update",
-        {"name": "UUID Life", "username": "uuid_life", "email": "u@t.com"},
+        {"name": "UUID Life", "username": "uuid_life", "email": "u@t.com",
+         "phone": "0990000103"},
         files={"profile_pic": ("user1.png", png, "image/png")},
     )
     t.chk("update w/file", st, 302)
@@ -161,7 +164,7 @@ def main():
     st, _, _ = c.post_multipart(
         f"/users/{uid}/update",
         {"name": "UUID Renamed", "username": "uuid_life", "email": "u@t.com",
-         "profile_pic": ""},
+         "phone": "0990000103", "profile_pic": ""},
     )
     t.chk("update w/o file", st, 302)
     t.chk("update kept pic",
@@ -176,7 +179,7 @@ def main():
     st, _, _ = c.post_multipart(
         "/users/7/update",
         {"name": "Legacy Renamed", "username": "legacy7", "email": "l7@t.com",
-         "profile_pic": ""},
+         "phone": "0990000007", "profile_pic": ""},
     )
     t.chk("update legacy", st, 302)
     t.chk("legacy kept NULL pic",
@@ -196,7 +199,8 @@ def main():
     t.chk("missing field", st, 400)
     st, _, _ = c.post_multipart(
         "/users/create",
-        {"name": "Fake", "username": "fake_test", "email": "f@t.com"},
+        {"name": "Fake", "username": "fake_test", "email": "f@t.com",
+         "phone": "0990000105"},
         files={"profile_pic": ("fake.png", b"plain text not an image",
                                "image/png")},
     )
@@ -205,7 +209,8 @@ def main():
     big3 = b"\x89PNG\r\n\x1a\n" + b"\0" * (3 * 1024 * 1024)
     st, _, _ = c.post_multipart(
         "/users/create",
-        {"name": "Big", "username": "big_test", "email": "b@t.com"},
+        {"name": "Big", "username": "big_test", "email": "b@t.com",
+         "phone": "0990000106"},
         files={"profile_pic": ("big.png", big3, "image/png")},
     )
     t.chk("3MB image cap", st, 413)
@@ -213,7 +218,8 @@ def main():
     huge = b"\x89PNG\r\n\x1a\n" + b"\0" * (9 * 1024 * 1024)
     st, _, _ = c.post_multipart(
         "/users/create",
-        {"name": "Huge", "username": "huge_test", "email": "h@t.com"},
+        {"name": "Huge", "username": "huge_test", "email": "h@t.com",
+         "phone": "0990000107"},
         files={"profile_pic": ("huge.png", huge, "image/png")},
     )
     t.chk("9MB body cap", st, 413)
@@ -316,7 +322,7 @@ def main():
     st, hdr, _, _ = post_form(
         "/users/create?redirect=/people",
         {"name": "MD Person", "username": "md_person",
-         "email": "md@p.com"})
+         "email": "md@p.com", "phone": "0990000104"})
     t.chk("md user create", f"{st} {hdr.get('Location')}", "302 /people")
     t.chk("md user pic NULL",
           db_query(DB, "SELECT profile_pic FROM users "
@@ -376,7 +382,7 @@ def main():
         st, hdr, _, _ = post_form(
             "/users/create?redirect=/people",
             {"name": f"PG U{i}", "username": f"pg_u{i}",
-             "email": f"pg_u{i}@t.com"})
+             "email": f"pg_u{i}@t.com", "phone": f"099000020{i}"})
         stamps.append(st)
     t.chk("pg seed users", stamps, [302] * 5)
     # user ids are generated uuids: fetch pg_u1's real id for FK + markup

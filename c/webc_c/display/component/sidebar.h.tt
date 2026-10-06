@@ -68,21 +68,19 @@
     <div class="border-b border-surface0 bg-crust shrink-0">
         <div id="sidebar-pad"
              class="flex items-center p-3 user-card">
-            <img src="({ STR(u.profile_pic); })"
-                 alt="({ STR(u.name); })"
-                 class="h-10 w-10 rounded-full shrink-0" />
+            ({ STR(SIDEBAR_AVATAR_RAW); })
             <div class="ml-3 min-w-0 nav-label">
                 <p class="text-sm font-semibold text-text truncate">
-                    ({ STR(u.name); })
+                    ({ STR(SIDEBAR_NAME); })
                 </p>
                 <p class="text-xs text-subtext0 truncate">
-                    ({ STR(u.email); })
+                    ({ STR(SIDEBAR_SUB); })
                 </p>
             </div>
         </div>
 
         <div class="sidebar-tooltip">
-            ({ STR(u.name); })
+            ({ STR(SIDEBAR_NAME); })
         </div>
     </div>
 

@@ -172,21 +172,21 @@ static bool route_init = false;
 void route_initialize(void) {
     // Phase 11: / is the storefront, the admin dashboard moved to /dashboard
     // (auth_gate() keeps /pos, /dashboard and /reports behind staff login).
-    route_new(&routes, "/", NULL, "GET", ROUTE_EXACT, serve_shop_index);
-    route_new(&routes, "/dashboard", NULL, "GET", ROUTE_EXACT, serve_dashboard);
-    route_new(&routes, "/product", "", "GET", ROUTE_ID_ACTION, serve_shop_product);
-    route_new(&routes, "/cart", NULL, "GET", ROUTE_EXACT, serve_shop_cart);
-    route_new(&routes, "/cart/add", NULL, "POST", ROUTE_EXACT, serve_shop_cart_add);
+    route_new(&routes, "/",            NULL, "GET", ROUTE_EXACT, serve_shop_index);
+    route_new(&routes, "/dashboard",   NULL, "GET", ROUTE_EXACT, serve_dashboard);
+    route_new(&routes, "/product",     "",   "GET", ROUTE_ID_ACTION, serve_shop_product);
+    route_new(&routes, "/cart",        NULL, "GET", ROUTE_EXACT, serve_shop_cart);
+    route_new(&routes, "/cart/add",    NULL, "POST", ROUTE_EXACT, serve_shop_cart_add);
     route_new(&routes, "/cart/buynow", NULL, "POST", ROUTE_EXACT, serve_shop_cart_buynow);
     route_new(&routes, "/cart/update", NULL, "POST", ROUTE_EXACT, serve_shop_cart_update);
     route_new(&routes, "/cart/remove", NULL, "POST", ROUTE_EXACT, serve_shop_cart_remove);
-    route_new(&routes, "/checkout", NULL, "GET", ROUTE_EXACT, serve_shop_checkout);
-    route_new(&routes, "/checkout", NULL, "POST", ROUTE_EXACT, serve_shop_checkout_post);
-    route_new(&routes, "/order", "", "GET", ROUTE_ID_ACTION, serve_shop_order);
-    route_new(&routes, "/login", NULL, "GET", ROUTE_EXACT, serve_auth_login);
-    route_new(&routes, "/login", NULL, "POST", ROUTE_EXACT, serve_auth_login_post);
-    route_new(&routes, "/logout", NULL, "GET", ROUTE_EXACT, serve_auth_logout);
-    route_new(&routes, "/logout", NULL, "POST", ROUTE_EXACT, serve_auth_logout);
+    route_new(&routes, "/checkout",    NULL, "GET", ROUTE_EXACT, serve_shop_checkout);
+    route_new(&routes, "/checkout",    NULL, "POST", ROUTE_EXACT, serve_shop_checkout_post);
+    route_new(&routes, "/order",       "",   "GET", ROUTE_ID_ACTION, serve_shop_order);
+    route_new(&routes, "/login",       NULL, "GET", ROUTE_EXACT, serve_auth_login);
+    route_new(&routes, "/login",       NULL, "POST", ROUTE_EXACT, serve_auth_login_post);
+    route_new(&routes, "/logout",      NULL, "GET", ROUTE_EXACT, serve_auth_logout);
+    route_new(&routes, "/logout",      NULL, "POST", ROUTE_EXACT, serve_auth_logout);
     // Phase 12: language switch - validate the code, set webc_lang, 303 back.
     route_new(&routes, "/lang", NULL, "GET", ROUTE_EXACT, serve_lang_set);
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);

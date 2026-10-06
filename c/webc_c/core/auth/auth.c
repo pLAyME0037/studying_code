@@ -62,10 +62,10 @@ static bool session_user_id(Serve_Context *sc, char *out, size_t outsz) {
     if (!db) return false;
     bool got = false;
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE] = "SELECT user_id FROM user_sessions "
-                       "WHERE id = ? "
-                       "AND expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
-                       "LIMIT 1;",
+        [SQL_SQLITE]   = "SELECT user_id FROM user_sessions "
+                         "WHERE id = ? "
+                         "AND expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
+                         "LIMIT 1;",
         [SQL_MYSQL]    = "SELECT user_id FROM user_sessions "
                          "WHERE id = ? AND expires_at > NOW() LIMIT 1;",
         [SQL_POSTGRES] = "SELECT user_id FROM user_sessions "
@@ -84,6 +84,79 @@ static bool session_user_id(Serve_Context *sc, char *out, size_t outsz) {
     sql_finalize(&stmt);
     db_close(db);
     return got;
+}
+
+// ---------------------------------------------------------------------------
+// Current request identity (sidebar / workspaces)
+// ---------------------------------------------------------------------------
+
+// route_request() is atomic - coroutines only yield at socket I/O outside
+// it - so one request-scoped static is safe (same pattern as i18n_begin).
+static Serve_Context  *g_auth_sc;
+static Auth_User        g_auth_user;
+static bool             g_auth_resolved;
+
+static void auth_resolve(void) {
+    g_auth_resolved = true;
+    if (!g_auth_sc) return;
+    char uid[64];
+    if (!session_user_id(g_auth_sc, uid, sizeof(uid))) return;
+
+    // One join loads the profile + the first live role. LEFT JOIN keeps
+    // role-less users visible; a soft-deleted account resolves to NULL
+    // (the sidebar then shows the generic workspace identity).
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE] =
+            "SELECT u.id, u.name, u.email, u.profile_pic, "
+                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, '') "
+            "FROM users u "
+            "LEFT JOIN user_roles ur ON ur.user_id = u.id "
+                                   "AND ur.deleted_at IS NULL "
+            "LEFT JOIN roles r ON r.id = ur.role_id "
+                             "AND r.deleted_at IS NULL "
+            "WHERE u.id = ? AND u.deleted_at IS NULL LIMIT 1;",
+        [SQL_MYSQL] =
+            "SELECT u.id, u.name, u.email, u.profile_pic, "
+                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, '') "
+            "FROM users u "
+            "LEFT JOIN user_roles ur ON ur.user_id = u.id "
+                                   "AND ur.deleted_at IS NULL "
+            "LEFT JOIN roles r ON r.id = ur.role_id "
+                             "AND r.deleted_at IS NULL "
+            "WHERE u.id = ? AND u.deleted_at IS NULL LIMIT 1;",
+        [SQL_POSTGRES] =
+            "SELECT u.id, u.name, u.email, u.profile_pic, "
+                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, '') "
+            "FROM users u "
+            "LEFT JOIN user_roles ur ON ur.user_id = u.id "
+                                   "AND ur.deleted_at IS NULL "
+            "LEFT JOIN roles r ON r.id = ur.role_id "
+                             "AND r.deleted_at IS NULL "
+            "WHERE u.id = $1 AND u.deleted_at IS NULL LIMIT 1;",
+    };
+    db_t *db = open_webc_db();
+    if (!db) return;
+    sql_stmt stmt = {0};
+    if (sql_prepare(db, q[db->lang], &stmt)
+        && sql_bind(&stmt, 1, SQL_SV(sv_from_cstr(uid)))
+        && sql_step(&stmt) == SQL_ROW) {
+        const char *v;
+        g_auth_user.id          = temp_strdup(uid);
+        if ((v = sql_col_text(&stmt, 0)) != NULL && v[0]) g_auth_user.id = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 1)) != NULL && v[0]) g_auth_user.name = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 2)) != NULL && v[0]) g_auth_user.email = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 3)) != NULL && v[0]) g_auth_user.profile_pic = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 4)) != NULL && v[0]) g_auth_user.user_type = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 5)) != NULL && v[0]) g_auth_user.status = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 6)) != NULL)        g_auth_user.role = temp_strdup(v);
+    }
+    sql_finalize(&stmt);
+    db_close(db);
+}
+
+const Auth_User *auth_current_user(void) {
+    if (!g_auth_resolved) auth_resolve();
+    return g_auth_user.id ? &g_auth_user : NULL;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +202,13 @@ static void uri_encode(char *dst, size_t dstsz, const char *src) {
 }
 
 bool auth_gate(Serve_Context *sc) {
+    // Rebind the per-request identity state on every call (route_request
+    // invokes auth_gate exactly once, before routing); auth_current_user()
+    // fills it lazily on first use.
+    g_auth_sc = sc;
+    g_auth_user = (Auth_User) {0};
+    g_auth_resolved = false;
+
     if (!auth_guarded_uri(sc->uri)) return false;
     char uid[64];
     if (session_user_id(sc, uid, sizeof(uid))) return false;

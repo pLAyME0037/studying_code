@@ -17,6 +17,7 @@ MD_Column md_users_columns[] = {
     { .name = "name",        .label = "Name",     .type = COL_TYPE_TEXT, .nullable = false },
     { .name = "username",    .label = "Username", .type = COL_TYPE_TEXT, .nullable = false },
     { .name = "email",       .label = "Email",    .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "phone",       .label = "Phone",    .type = COL_TYPE_TEXT, .nullable = false },
     { .name = "profile_pic", .label = "Picture",  .type = COL_TYPE_BLOB, .nullable = true },
 };
 const size_t md_users_columns_count = ARRAY_LEN(md_users_columns);
@@ -47,7 +48,8 @@ void render_users_edit_page(Serve_Context *sc, User user) {
 }
 // profile_pic is optional: the /people master form has no file input, so a
 // missing key binds NULL (fresh pic); the real upload forms still carry it.
-static const char *fields[] = { "name", "username", "email" };
+// phone is required (0007) - every users form carries the input.
+static const char *fields[] = { "name", "username", "email", "phone" };
 static const char *opt_fields[] = { "profile_pic" };
 SERVE_CRUD(users, user, Users, User, fields, opt_fields)
 

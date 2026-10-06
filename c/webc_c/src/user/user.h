@@ -6,25 +6,19 @@
 #include "../db/sql.h"
 #include "core/display/paging.h"
 
+/* Demo /users + /people row shape. The sidebar no longer reads this -
+ * it shows the signed-in session user via auth_current_user() (Phase 13).
+ * phone is required (0007: the contact every account must carry). */
 typedef struct {
     const char *id;
     const char *name;
     const char *username;
     const char *email;
+    const char *phone;
     const char *profile_pic;
 } User;
 
 DA_NEW(User, Users)
-
-static inline User user_data(void) {
-    User u = {
-        .name = "hello world",
-        .username = "hello_world",
-        .email = "helloworld1@gmail.com",
-        .profile_pic = "/resource/image/know_me.png",
-    };
-    return u;
-}
 
 bool read_users(db_t *db, Users *rows, const Page_Info *slice);
 bool count_users(db_t *db, size_t *out);

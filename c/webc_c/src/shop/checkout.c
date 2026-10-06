@@ -331,9 +331,10 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                 sql_finalize(&stmt);
             } else if (!found_uid[0]) {
                 // Fresh guest: users row so /pos/users shows the buyer.
-                // username/email derive from the unique phone; the empty
-                // hash keeps the account out of any login (login also
-                // requires ADMIN).
+                // username derives from the unique phone (email stays NULL
+                // - 0007: only filled when the buyer deliberately creates
+                // an account); the empty hash keeps the account out of any
+                // login (login also requires ADMIN).
                 static const char *const uq[SQL_LANG_COUNT] = {
                     [SQL_SQLITE] = "INSERT INTO users "
                         "(id, name, username, email, phone, password_hash, "
@@ -356,8 +357,7 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     && sql_bind(&stmt, 1, SQL_SV(sv_from_cstr(uid)))
                     && sql_bind(&stmt, 2, SQL_SV(name))
                     && sql_bind(&stmt, 3, SQL_SV(sv_from_cstr(ph)))
-                    && sql_bind(&stmt, 4, SQL_SV(sv_from_cstr(
-                        temp_sprintf("%s@pos.kh", ph))))
+                    && sql_bind(&stmt, 4, SQL_NIL())   // email: NULL (optional)
                     && sql_bind(&stmt, 5, SQL_SV(phone))
                     && sql_bind(&stmt, 6, SQL_SV(sv_from_cstr(customer_id)))
                     && sql_final_step(&stmt)) {

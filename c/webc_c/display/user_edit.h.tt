@@ -21,6 +21,11 @@
                    class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
         </div>
         <div>
+            <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">Phone</label>
+            <input name="phone" type="text" required value="({ ESCAPED(user.phone); })"
+                   class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        </div>
+        <div>
             <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">User Profile Picture</label>
             ({ if (user.profile_pic != NULL && user.profile_pic[0] != '\0') { })
             <div class="flex items-center gap-2 mb-1">

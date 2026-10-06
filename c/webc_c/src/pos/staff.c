@@ -10,14 +10,12 @@
 #include "core/http/utils.h"
 
 // =========================================================================
-// /pos/staff: staff_code + {first,last} name cell + user/org/location FKs.
-// Shared create/update serve three form bodies:
-//   master /pos/staff      -> body: code, first, last, user, org, location
-//   child under /pos/users -> body: code, first, last, org, location; user in query
-//   child under /pos/org   -> body: code, first, last, user, location; org in query
-// fields = the 4 keys every body carries; user/org/type/hire/phone are opts.
-// staff_type/hire_date/phone have no column in any view -> never set by
-// the UI (stay NULL).
+// /pos/staff: staff_code + {first,last} name cell + user/org/location FKs
+// + phone/hire_date/staff_type (all settable now - Phase 13 audit). Staff
+// is a MASTER table: it renders only here, never as a child tab of
+// /pos/users or /pos/org. The single create/update serves the one form
+// body; user/org/type/hire/phone are still opt fields (body first, query
+// fallback) so a pre-0013 API body without them keeps working.
 // =========================================================================
 
 static const char *staff_name_parts[] = { "first_name", "last_name" };
@@ -41,41 +39,15 @@ MD_Column md_staff_columns[] = {
     { .name = "location_id", .label = "Location", .type = COL_TYPE_FK_SELECT,
       .nullable = false, .fk_table = "locations",
       .fk_label = "province" },
+    { .name = "phone", .label = "Phone", .type = COL_TYPE_TEXT,
+      .nullable = true },
+    { .name = "staff_type_dict_id", .label = "Role", .type = COL_TYPE_FK_SELECT,
+      .nullable = true, .fk_table = "dictionaries", .fk_label = "label",
+      .fk_where = "category = 'STAFF_TYPE'" },
+    { .name = "hire_date", .label = "Hired", .type = COL_TYPE_DATE,
+      .nullable = true },
 };
 const size_t md_staff_columns_count = ARRAY_LEN(md_staff_columns);
-
-// staff as a child tab under /pos/users (fk = user_id via query).
-MD_Column md_staff_child_columns[] = {
-    { .name = "staff_code", .label = "Code", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "first_name", .label = "First", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "last_name", .label = "Last", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "org_unit_id", .label = "Org", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "org_units", .fk_label = "ou_name" },
-    { .name = "location_id", .label = "Location", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "locations",
-      .fk_label = "province" },
-};
-const size_t md_staff_child_columns_count = ARRAY_LEN(md_staff_child_columns);
-
-// staff as a child tab under /pos/org (fk = org_unit_id via query).
-MD_Column md_staff_child_org_columns[] = {
-    { .name = "staff_code", .label = "Code", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "first_name", .label = "First", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "last_name", .label = "Last", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "user_id", .label = "User", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "users", .fk_label = "name" },
-    { .name = "location_id", .label = "Location", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "locations",
-      .fk_label = "province" },
-};
-const size_t md_staff_child_org_columns_count =
-    ARRAY_LEN(md_staff_child_org_columns);
 
 // DB mutations only -- list loading lives in the master_child engine.
 // Column order: (user_id, org_unit_id, staff_code, staff_type_dict_id,

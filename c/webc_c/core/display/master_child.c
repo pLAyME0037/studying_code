@@ -351,13 +351,17 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
         }
         // FK label substitution into display arrays (slot map: a composite
         // column spans part_count slots whose raw copies already stand in
-        // for disp -- its parts are plain fields, never FK labels).
+        // for disp -- its parts are plain fields, never FK labels). Flat
+        // date columns humanize here ("05 Oct 2026, 11:56" instead of the
+        // raw ISO stamp); values[] keep the raw form for edit prefills.
         for (size_t ri = 0; ri < rows->count; ++ri) {
             MD_MasterRow *r = &rows->items[ri];
             for (size_t ci = 0; ci < config->column_count; ++ci) {
                 if (config->columns[ci].cell) continue;
                 size_t slot = md_col_slot(config->columns, ci);
-                r->disp[slot] = (char *)md_fk_display(&config->columns[ci], r->values[slot]);
+                r->disp[slot] = config->columns[ci].type == COL_TYPE_DATE
+                    ? (char *)md_date_human(r->values[slot])
+                    : (char *)md_fk_display(&config->columns[ci], r->values[slot]);
             }
             for (size_t ti = 0; ti < config->children_count; ++ti) {
                 const MD_ChildTab *ct = &config->children[ti];
@@ -367,7 +371,10 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
                         if (ct->columns[cci].cell) continue;
                         size_t slot = md_col_slot(ct->columns, cci);
                         cr->items[cj].disp[slot] =
-                            (char *)md_fk_display(&ct->columns[cci], cr->items[cj].values[slot]);
+                            ct->columns[cci].type == COL_TYPE_DATE
+                                ? (char *)md_date_human(cr->items[cj].values[slot])
+                                : (char *)md_fk_display(&ct->columns[cci],
+                                                        cr->items[cj].values[slot]);
                     }
                 }
             }

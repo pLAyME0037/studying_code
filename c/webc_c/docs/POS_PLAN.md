@@ -298,6 +298,80 @@ buttons, /lang?code=en switches storefront+admin UI to English for a
 year, server bytes identical without JS (light theme, km, forms work).
 
 -----------------------------------------------------------------------
+PHASE 13 — Data truth + CRUD overhaul (shipped)
+-----------------------------------------------------------------------
+User complaints fixed: staff-as-child was wrong (master!), /pos/users said
+"Staff", timestamps unreadable, avatar ugly/uncolored, missing FK info,
+phone/email rules unclear, "trash data" on /pos routes, sidebar identity.
+Answers locked: phone a must + email required only on deliberate account
+creation; users+staff are MASTER types (FKs shown on the master, editable
+as children of their targets); research-driven enterprise dashboards next.
+
+- migrations/0007_users_contact: users.phone TEXT NOT NULL UNIQUE (0005
+  shape restored), email nullable (0007 differs: backfill phone = username
+  WHERE phone IS NULL). sqlite3.sql must drop trg_soft_del_org_units +
+  trg_restore_org_units + v_active_users + v_pos_sales_delivery_report
+  BEFORE the users_pos swap (ALTER ... RENAME re-validates every trigger/
+  view ref) and recreate all four verbatim after the 3 users triggers.
+  Verified on a copy of the real DB. Registered in db.c (history 6->7);
+  mysql pin 6->7.
+- /pos/users rebuilt as the User master page, title "Users": 9 columns =
+  avatar cell (parts profile_pic,name,username,status + part_choices
+  ACTIVE/INACTIVE/SUSPENDED) + phone + email + user_type FK (USER_TYPE)
+  + org FK + location FK + customer FK (label COALESCE name->id) +
+  activity cell (computed: Joined=created_at, Edited=updated_at, red
+  DELETED when soft-deleted, md_date_human humanize) + actions.
+  Handler usr_fields = {phone,name,username,email,profile_pic} phone-first
+  (values[0] empty -> 400), opt = {status,customer_id,org_unit_id,
+  location_id,user_type_dict_id} with SQL-level NULLIF/COALESCE defaults
+  ('ACTIVE'/'CUSTOMER'); UPDATE keeps-stored COALESCE except email may
+  clear. All users forms now carry a required phone input (0007).
+- Staff is master: child tabs removed from /pos/users AND /pos/org,
+  md_staff_child_* arrays deleted; /pos/staff keeps its cash_shifts child
+  and gained phone + staff_type (Role, STAFF_TYPE) + hire_date columns
+  (handlers already took them as opt fields). Staff created with
+  user_id/org/location via query still works (contract test proves it).
+- SERVE_EXTRACT_OPT_FIELDS (module/webc_template.h): body first, then
+  query string only when the query HAS the key, then as-extracted. A
+  present-but-empty body value (blanked FK input on child add-rows) no
+  longer shadows the query, and an empty input keeps "" (non-NULL
+  driver data) instead of degrading to NULL.
+- Demo stack (/users + /people): phone added to md_users_columns, the
+  create/edit templates, User struct, read/create/update SQL (count 5,
+  update COALESCE-keeps phone); checkout guest insert email -> NULL.
+- Engine: MD_Cell.part_choices (select in forms/display from a per-part
+  choice list); computed columns skipped in create/edit forms;
+  !nullable && type != DATE -> required attr; DATE inputs render
+  md_date_input() prefills; md_date_human() post-pass for flat dates;
+  cells.c avatar renderer (40px rounded-full, status ring blue/peach/
+  red, initials-circle placeholder) + activity renderer.
+- Auth/sidebar: Auth_User + auth_current_user() lazy request-scoped
+  resolve (rebound each auth_gate); header.c SIDEBAR_AVATAR_RAW/
+  SIDEBAR_NAME/SIDEBAR_SUB feed the card (name, role else email else
+  workspace label, status-ringed avatar).
+- alerts flags cell got part_choices {0,1}: free-text is_seen/is_sent
+  inputs could poison the CHECK (0,1) columns - the contract test caught
+  it, the form now offers the two legal values.
+- test/crud_contract_test.py (runs last in run.sh): sidebar = page
+  inventory; per page scrape data-md-op=create form, fill browser-style
+  (bare required selects take first non-empty option, optional selects
+  submit None, dates empty -> DB defaults, typed fakes for text/numbers,
+  page-unique marker in a plain text field only), POST expect 302 + row
+  persisted; walk the pager for the row's update form, submit exactly as
+  rendered expect 302; delete form expect 302; live count back to 0.
+  13 pages full round-trip, customers/stocks create-only (no text field
+  to mark), finance/dictionaries/audit read-only skips.
+- Pins updated: pos_test users th 4->9 (+status/activity/avatar-ring/
+  phone-prefill edits), staff th 6->9 (+phone/hire inputs, STAFF_TYPE
+  select), Roles-only + org users-only children, staff-not-a-user-child,
+  sidebar identity (Khmer signed-in name on a non-users page),
+  http/mysql posts + seeds carry phone, demo master row 5->6.
+Accept: ./test/run.sh green (749 PASS); /pos/users shows who the person is
+(status-ringed avatar, contact, type/org/location/customer FK labels,
+human Joined/Edited/DELETED) and every sidebar page's own create+edit+
+delete forms round-trip for real (302) - no page can trap its own UI.
+
+-----------------------------------------------------------------------
 RISKS / NOTES
 -----------------------------------------------------------------------
 - sqlite users DROP+RENAME inside migration tx: notes FK points at table

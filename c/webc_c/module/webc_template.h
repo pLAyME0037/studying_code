@@ -115,14 +115,23 @@
 // Optional fields (appended after the required ones): body first, then the
 // query string, then empty. This is how the master-detail forms pass the FK
 // (`POST /notes/create?user_id=<uuid>`) while the plain /notes and /users
-// forms keep working without those keys.
+// forms keep working without those keys. A PRESENT-but-empty body value
+// (a blanked form input for an FK column the child form does not own)
+// must not shadow the query string - child add-row forms post every
+// column of their shared config, so the FK otherwise arrives as "". The
+// query only overrides when it carries the key; without it the body value
+// is kept verbatim, so an empty input still reads "" (non-NULL driver
+// data) and an absent key still reads NULL.
 #define SERVE_EXTRACT_OPT_FIELDS(sc, body_sv, values, opt_fields, opt_count, base) \
     do {                                                                           \
         for (size_t i_ = 0; i_ < (opt_count); ++i_) {                              \
             SERVE_EXTRACT_ONE(sc, body_sv, values, (base) + i_, (opt_fields)[i_],  \
-                { if (!form_find((sc)->query_string, (opt_fields)[i_],             \
-                                 &(values)[(base) + i_]))                          \
-                      (values)[(base) + i_] = (Nob_String_View){0}; });            \
+                { (values)[(base) + i_] = (Nob_String_View){0}; });                \
+            if ((values)[(base) + i_].count == 0) {                                \
+                String_View qv_ = {0};                                             \
+                if (form_find((sc)->query_string, (opt_fields)[i_], &qv_))         \
+                    (values)[(base) + i_] = qv_;                                   \
+            }                                                                      \
         }                                                                          \
     } while (0)
 

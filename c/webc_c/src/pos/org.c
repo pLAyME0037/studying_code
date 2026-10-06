@@ -7,13 +7,14 @@
 #include "module/webc_template.h"
 #include "src/db/db.h"
 #include "src/pos/pos_util.h"
-#include "src/pos/staff.h"        // md_staff_child_org_columns (staff child)
 #include "core/http/utils.h"
 
 // =========================================================================
 // /pos/org: ou_code + ou_name + ORG_TYPE dict FK + self-FK parent.
 // metadata is not a form column (JSON, stays NULL).
-// Children: users (fk org_unit_id) + staff (fk org_unit_id).
+// Children: users (fk org_unit_id). Staff is a master table and renders
+// only on /pos/staff (Phase 13) - its org link shows on both sides via
+// the staff page's own Org column.
 // =========================================================================
 
 MD_Column md_org_columns[] = {
@@ -141,16 +142,6 @@ void serve_pos_org(Serve_Context *sc) {
             .crud_path    = "/pos/users",
             .columns      = md_pos_users_columns,
             .column_count = md_pos_users_columns_count,
-            .soft_delete  = 1,
-        },
-        {
-            .table        = "staff",
-            .title        = "Staff",
-            .fk_column    = "org_unit_id",
-            .id_column    = "id",
-            .crud_path    = "/pos/staff",
-            .columns      = md_staff_child_org_columns,
-            .column_count = md_staff_child_org_columns_count,
             .soft_delete  = 1,
         },
     };

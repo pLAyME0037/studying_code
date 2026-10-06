@@ -422,6 +422,49 @@ vanilla JS only.
 - Suite: 587 PASS (http_test 99 / pos_test 325 / shop_test 117 /
   mysql 40 / https 6).
 
+## Phase 13 — Data truth + CRUD overhaul DONE (suite 749 PASS)
+- Migration 0007_users_contact: users.phone NOT NULL UNIQUE (backfill
+  phone = username WHERE phone IS NULL), email nullable. sqlite dialect
+  drops trg_soft_del_org_units/trg_restore_org_units +
+  v_active_users/v_pos_sales_delivery_report BEFORE the users swap
+  (ALTER ... RENAME re-validates every trigger/view ref) and recreates
+  them verbatim after the 3 users triggers. db.c history 6->7 (real DB
+  picks it up on next server start).
+- /pos/users = the User master ("Users"): 9 cols = avatar cell (40px
+  rounded-full, status ring ACTIVE blue / INACTIVE peach / SUSPENDED red,
+  initials placeholder, parts profile_pic,name,username,status with
+  part_choices) + phone + email + user_type(USER_TYPE)/org/location/
+  customer FK labels + activity cell (computed: Joined/Edited human,
+  red DELETED in trash) + actions. usr_fields = {phone,name,username,
+  email,profile_pic} phone-first (values[0] guard), opt FKs COALESCE
+  defaults ('ACTIVE'/'CUSTOMER'); UPDATE keeps-stored except email may
+  clear. Every users form carries required phone (0007).
+- Staff/user are MASTER types: staff child tabs gone from /pos/users +
+  /pos/org (Roles-only / users-only children now); /pos/staff master
+  gained phone + staff_type(Role, STAFF_TYPE) + hire_date, keeps its
+  cash_shifts child. SERVE_EXTRACT_OPT_FIELDS: query overrides only when
+  it carries the key; body-found-empty keeps "" (driver non-NULL data).
+- Auth sidebar: auth_current_user() (lazy, request-scoped, rebound per
+  auth_gate) -> SIDEBAR_AVATAR_RAW/NAME/SUB (name, role|email|workspace
+  label, status-ringed avatar/initials). user_data() hello-world gone.
+- Engine: MD_Cell.part_choices (selects from per-part choices; alerts
+  flags {0,1} - the contract test proved free text could poison CHECK
+  columns), computed cols skipped in forms, !nullable && !DATE ->
+  required, DATE -> md_date_input() + md_date_human() display pass.
+- Demo /users + /people + User struct/SQL + all test seeds/posts carry
+  phone; checkout guest insert email -> NULL (0003 email NOT NULL for
+  notes still stands - demo only).
+- test/crud_contract_test.py runs LAST in run.sh: sidebar hrefs = page
+  inventory; per page scrape data-md-op create form -> fill browser-style
+  (bare `required` selects take first non-empty option, optional selects
+  submit None, dates empty so DB defaults win, typed fakes, marker only
+  into a plain text field) -> POST 302 + persisted; pager-walk to the
+  row, submit its update form exactly as rendered -> 302; delete form ->
+  302; live count 0. 13 full round-trips, customers/stocks create-only
+  (no text field), finance/dictionaries/audit read-only skips.
+- Suite: 749 PASS (http_test 99 / pos_test 331 / shop_test 117 /
+  crud_contract 156 / mysql 40 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

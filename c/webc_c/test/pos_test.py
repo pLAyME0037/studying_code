@@ -114,6 +114,13 @@ def main():
           "webc_sid" in hdr.get("Set-Cookie", ""), True)
     t.chk("staff /pos after login", c.get("/pos/locations")[0], 200)
     t.chk("staff /dashboard after login", c.get("/dashboard")[0], 200)
+    # Phase 13: the sidebar card is the signed-in session user, not the
+    # first users-table row - locations never lists users, so the staff
+    # name can only come from the sidebar identity.
+    st, body, _ = c.get("/pos/locations")
+    t.chk("sidebar card = signed-in staff (Khmer name + user-card)",
+          ("សុខ ដារា" in body.decode() and 'user-card' in body.decode()),
+          True)
 
     # ---- /pos/locations: 4-part stack cell -------------------------------
     st, body, _ = c.get("/pos/locations")
@@ -183,50 +190,63 @@ def main():
     st, body, _ = c.get("/pos/users")
     html = body.decode()
     t.chk("pos users page", st, 200)
-    t.chk("users th = avatar + email + joined + actions", th_count(html), 4)
+    # Phase 13: User + phone + email + type + org + location + customer +
+    # activity, plus the actions column.
+    t.chk("users th = user+phone+email+type+org+loc+customer+activity+actions",
+          th_count(html), 9)
 
     usr = {"name": "Sok Dara", "username": "pos_avatar_1",
-           "email": "dara@pos.kh", "profile_pic": PICK}
+           "email": "dara@pos.kh", "phone": "0990000121",
+           "profile_pic": PICK}
     st, _, _ = c.post_urlencoded("/pos/users/create?redirect=/pos/users", usr)
-    t.chk("staff create", st, 302)
+    t.chk("user create (phone required)", st, 302)
     uid = db_row("SELECT id FROM users WHERE username = ?",
                  ("pos_avatar_1",))[0]
 
     st, body, _ = c.get("/pos/users")
     html = body.decode()
     row, edit = row_and_edit(html, uid)
-    t.chk("staff row found by id", bool(row), "True")
-    t.chk("avatar column = ONE td (4 total in row)", row.count("<td"), 4)
+    t.chk("user row found by id", bool(row), "True")
+    t.chk("user column = ONE td (9 total in row)", row.count("<td"), 9)
     first_td = row.split("</td>")[0]
     t.chk("avatar cell image + primary + secondary",
           (f'<img src="{PICK}"' in first_td
            and "Sok Dara" in first_td
            and "pos_avatar_1" in first_td), "True")
     ei = edit_inputs(edit)
-    t.chk("avatar edit row prefills parts + email",
-          [ei.get(k) for k in ("profile_pic", "name", "username", "email")],
-          [PICK, "Sok Dara", "pos_avatar_1", "dara@pos.kh"])
+    t.chk("avatar edit row prefills parts + contact",
+          [ei.get(k) for k in
+           ("profile_pic", "name", "username", "email", "phone")],
+          [PICK, "Sok Dara", "pos_avatar_1", "dara@pos.kh", "0990000121"])
+    t.chk("status select in avatar edit row",
+          'name="status"' in edit, "True")
+    t.chk("avatar status line + ring (ACTIVE = blue)",
+          ("ACTIVE" in first_td and "ring-2 ring-blue" in first_td), "True")
+    t.chk("activity cell (human joined, no DELETED yet)",
+          ("Joined" in row and "DELETED" not in row), "True")
 
     # empty picture -> placeholder box; empty update keeps stored picture
     st, _, _ = c.post_urlencoded(
         "/pos/users/create?redirect=/pos/users",
         {"name": "No Pic", "username": "pos_avatar_2",
-         "email": "np@pos.kh", "profile_pic": ""},
+         "email": "np@pos.kh", "phone": "0990000122",
+         "profile_pic": ""},
     )
-    t.chk("staff create without picture", st, 302)
+    t.chk("user create without picture", st, 302)
     uid2 = db_row("SELECT id FROM users WHERE username = ?",
                   ("pos_avatar_2",))[0]
     st, body, _ = c.get("/pos/users")
     html = body.decode()
     row2, _ = row_and_edit(html, uid2)
-    t.chk("avatar placeholder for empty pic",
-          'bg-gray-200 dark:bg-gray-600' in row2, "True")
+    t.chk("avatar placeholder = initials circle (surface1 + initial)",
+          ('bg-surface1' in row2 and ">N</span>" in row2), "True")
     st, _, _ = c.post_urlencoded(
         f"/pos/users/{uid}/update?redirect=/pos/users",
         {"name": "Sok Dara Renamed", "username": "pos_avatar_1",
-         "email": "dara@pos.kh", "profile_pic": ""},
+         "email": "dara@pos.kh", "phone": "0990000121",
+         "profile_pic": ""},
     )
-    t.chk("staff update", st, 302)
+    t.chk("user update", st, 302)
     t.chk("empty pic keeps stored pic (COALESCE)",
           db_row("SELECT profile_pic FROM users WHERE id = ?", (uid,)),
           (PICK,))
@@ -287,7 +307,9 @@ def main():
     t.chk("live view hides deleted staff",
           (st, "pos_avatar_1" not in body.decode()), (200, True))
     st, body, _ = c.get("/pos/users?deleted=1")
-    t.chk("trash shows deleted staff", "pos_avatar_1" in body.decode(), True)
+    html = body.decode()
+    t.chk("trash shows deleted staff (activity = DELETED stamp)",
+          ("pos_avatar_1" in html and "DELETED" in html), True)
     st, hdrs, _, _ = c.req_full(
         "POST", f"/pos/users/{uid}/restore?redirect=/pos/users?deleted=1"
     )
@@ -919,14 +941,14 @@ def main():
     st, _, _ = c.post_urlencoded(
         f"/pos/users/create?customer_id={cid}&redirect=/pos/customers",
         {"name": "Chanthou", "username": "chanthou1",
-         "email": "chanthou1@example.com", "profile_pic": "",
-         "created_at": ""})
+         "email": "chanthou1@example.com", "phone": "0990000123",
+         "profile_pic": "", "created_at": ""})
     t.chk("user child create under customer", st, 302)
     uid5d = db_row("SELECT id FROM users WHERE username = 'chanthou1'")[0]
-    t.chk("user child db (customer_id set, phone/org null)",
+    t.chk("user child db (customer from query, phone from body, org null)",
           db_row("SELECT customer_id, phone, org_unit_id FROM users "
                  "WHERE id = ?", (uid5d,)),
-          (cid, None, None))
+          (cid, "0990000123", None))
     st, body, _ = c.get("/pos/customers")
     html = body.decode()
     t.chk("user child row under customer",
@@ -953,11 +975,11 @@ def main():
     t.chk("interaction child thead = user+event cells + actions",
           child_thead(html, "customer_interactions"), 3)
 
-    # ---- /pos/users: new Roles + Staff child tabs -------------------------
+    # ---- /pos/users: Roles child only (staff is master-only, Phase 13) --
     st, body, _ = c.get("/pos/users")
     html = body.decode()
-    t.chk("users page children (Roles + Staff)",
-          ('data-tab="user_roles"' in html and 'data-tab="staff"' in html),
+    t.chk("users page children (Roles only - staff is a master table)",
+          ('data-tab="user_roles"' in html and 'data-tab="staff"' not in html),
           True)
 
     db_exec("INSERT INTO roles (id, org_unit_id, role_code, role_name) "
@@ -980,28 +1002,33 @@ def main():
     t.chk("user_roles child thead = role+linked + actions",
           child_thead(html, "user_roles"), 3)
 
-    # staff child under the user (user_id via query; org/location in body)
+    # staff no longer appears as a child of a user (master-only Phase 13);
+    # the create still works as a standalone /pos/staff POST with user in
+    # the query - the row shows on /pos/staff only.
     st, _, _ = c.post_urlencoded(
-        f"/pos/staff/create?user_id={uid5d}&redirect=/pos/users",
+        f"/pos/staff/create?user_id={uid5d}&redirect=/pos/staff",
         {"staff_code": "POS-STF-5D", "first_name": "Vanny",
          "last_name": "Ly", "org_unit_id": "pos-ou-1",
          "location_id": loc_id, "created_at": ""})
-    t.chk("staff child create under user", st, 302)
+    t.chk("staff create with user fk via query", st, 302)
     stf5d = db_row("SELECT id FROM staff WHERE staff_code = 'POS-STF-5D'")[0]
-    t.chk("staff child db (user/org/location, type/hire/phone null)",
+    t.chk("staff db (user/org/location, type/hire/phone null)",
           db_row("SELECT user_id, org_unit_id, location_id, "
                  "staff_type_dict_id, hire_date, phone FROM staff "
                  "WHERE id = ?", (stf5d,)),
           (uid5d, "pos-ou-1", loc_id, None, None, None))
     st, body, _ = c.get("/pos/users")
-    t.chk("staff child row under user",
-          f'data-row-id="{stf5d}"' in body.decode(), True)
+    t.chk("staff NOT a child row of the user (master-only)",
+          (f'data-row-id="{stf5d}"' not in body.decode()
+           and 'data-tab="staff"' not in body.decode()), True)
 
     # ---- /pos/staff master + cash_shifts child ----------------------------
     st, body, _ = c.get("/pos/staff")
     html = body.decode()
     t.chk("staff page", st, 200)
-    t.chk("staff th = code+name+user+org+location+actions", th_count(html), 6)
+    # Phase 13: + phone + role (STAFF_TYPE) + hired columns.
+    t.chk("staff th = code+name+user+org+loc+phone+role+hired+actions",
+          th_count(html), 9)
     row, edit = row_and_edit(html, stf5d)
     t.chk("staff row found", bool(row), True)
     t.chk("staff row labels (name cell / user / org)",
@@ -1009,6 +1036,11 @@ def main():
           True)
     t.chk("staff name cell = 2 parts",
           len(re.findall(r'<span class="text-xs', row.split("</td>")[1])), 2)
+    sei = edit_inputs(edit)
+    t.chk("staff edit row carries phone + hire date",
+          ("phone" in sei and 'name="hire_date"' in edit), True)
+    t.chk("staff edit row has STAFF_TYPE select",
+          'name="staff_type_dict_id"' in edit, True)
     t.chk("staff child tab (shifts)", 'data-tab="cash_shifts"' in html, True)
 
     # shift child under the staff member (staff_id via query)
@@ -1050,8 +1082,9 @@ def main():
                             "WHERE id = 'BRANCH'")[0]
     t.chk("org row labels (parent name + type label)",
           (bool(row) and "Main Depot" in row and org_type_label in row), True)
-    t.chk("org child tabs (users/staff)",
-          ('data-tab="users"' in html and 'data-tab="staff"' in html), True)
+    t.chk("org child tabs (users only - staff is master, Phase 13)",
+          ('data-tab="users"' in html and 'data-tab="staff"' not in html),
+          True)
 
     # org soft delete + restore (branch has no children -> cascade no-op)
     st, _, _ = c.post_urlencoded(
@@ -1429,10 +1462,10 @@ def main():
     html = body.decode()
     m = re.search(r'<tr class="hover:[^>]*data-row-id="([^"]+)">(.*?)</tr>',
                   html, re.S)
-    t.chk("demo master row still 4 columns + actions",
-          m.group(2).count("<td") if m else -1, 5)
+    t.chk("demo master row = name+user+email+phone+picture + actions",
+          m.group(2).count("<td") if m else -1, 6)
 
-    # ---- Phase 10/11: schema completeness (0001..0006 + history) ---------
+    # ---- Phase 10/11/13: schema completeness (0001..0007 + history) ------
     want = sorted((
         "audit_logs", "cash_shifts", "categories", "customer_interactions",
         "customers", "deliveries", "dictionaries", "financial_ledgers",

@@ -30,15 +30,20 @@ typedef enum {
 /* Composite column: ONE <td> (and one edit cell) holding N same-table
  * fields. parts[0] is the leading field (first SELECTed, avatar image
  * slot for "avatar"); style picks the renderer in src/helper/cells.c:
- *   "stack"  - flex-col lines, color-ranked (parts[0] strongest)
- *   "avatar" - image (parts[0]) + primary (parts[1]) + secondary (parts[2])
+ *   "stack"   - flex-col lines, color-ranked (parts[0] strongest)
+ *   "avatar"  - image (parts[0]) + primary (parts[1]) + secondary
+ *               (parts[2]) + status (parts[3], rings the picture)
+ *   "activity"- created/updated/deleted human dates + DELETED marker
  * part_labels feeds the per-part edit/create input labels (NULL -> parts).
- * Parts are plain fields: not combined with hidden/computed/FK flags. */
+ * part_choices[p] (NULL-terminated list, NULL entry = free text) turns
+ * part p's form input into a <select>; create defaults to its first
+ * option and edit marks the stored value. */
 typedef struct {
     const char **parts;
     const char **part_labels;
     size_t       part_count;
     const char  *style;
+    const char ***part_choices;
 } MD_Cell;
 
 typedef struct {

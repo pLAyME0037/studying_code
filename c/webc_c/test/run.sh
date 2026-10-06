@@ -53,6 +53,10 @@ python3 test/pos_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 # Phase 11: storefront + checkout + auth suite runs LAST - the guest users
 # and web orders it creates must not disturb earlier suites' counts.
 python3 test/shop_test.py "$HOST" "$PORT" "$TMP" || rc=$?
+# Phase 13: form/handler contract - scrape every sidebar master page's own
+# create/edit/delete forms and submit them (its soft-deleted rows must not
+# disturb the suites above, so it runs after them).
+python3 test/crud_contract_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 
 if ! wait "$MYSQL_PID"; then
     rc=1
