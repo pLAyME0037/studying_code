@@ -50,7 +50,7 @@
 
                     <div class="hidden md:flex items-center gap-2">
                         <span class="font-bold text-xl text-text tracking-tight">
-                            Clinic
+                            POS Admin
                         </span>
                     </div>
 

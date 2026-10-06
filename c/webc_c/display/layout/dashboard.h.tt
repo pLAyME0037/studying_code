@@ -1,27 +1,200 @@
-<div>
-    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-1">
-        Clinic Management System
-    </h2>
-    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        Select a module to manage.
-    </p>
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        ({ for (size_t i = 0; i < custom->count; ++i) { })
-            <a href="({ STR(custom->items[i].path); })"
-               class="group flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md transition-all duration-200">
-                <svg class="w-8 h-8 mb-3 text-indigo-600 dark:text-indigo-400"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24">
-                        <path stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="({ STR(custom->items[i].icon); })" />
-                </svg>
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
-                    ({ ESCAPED(custom->items[i].title); })
-                </span>
-            </a>
+<div class="px-3 py-3 flex flex-col gap-3">
+
+    <!-- workspace header: greeting + date + role chip + quick actions -->
+    <div class="flex flex-wrap items-end justify-between gap-2">
+        <div>
+            <h2 class="text-xl font-bold text-text">({ STR(ws->greeting); })</h2>
+            <p class="text-xs text-subtext0 mt-0.5">
+                ({ STR(ws->date_human); }) · ({ STR(ws->workspace); })
+            </p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+            <span class="px-2 py-0.5 text-xs font-semibold border ({ STR(ws->role_cls); })">
+                ({ STR(ws->role_label); })
+            </span>
+            ({ if (ws->kind == 0) { })
+            <a href="/pos/orders"
+               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">New sale</a>
+            <a href="/reports"
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Reports</a>
+            <a href="/pos/alerts"
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Alerts</a>
+            ({ } })
+            ({ if (ws->kind == 1) { })
+            <a href="/pos/orders"
+               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">New sale</a>
+            <a href="/pos/shifts"
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Shifts</a>
+            <a href="/reports"
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Reports</a>
+            ({ } })
+            ({ if (ws->kind == 3) { })
+            <span class="text-xs text-subtext0">No workspace assigned - ask a manager for a role.</span>
+            ({ } })
+        </div>
+    </div>
+
+    <!-- KPI strip -->
+    ({ if (ws->kpi_count > 0) { })
+    <div class="grid grid-cols-2 gap-2 ({ STR(ws->kpi_count >= 6 ? "md:grid-cols-3 xl:grid-cols-6" : (ws->kpi_count == 4 ? "md:grid-cols-4" : "md:grid-cols-3")) })">
+        ({ for (int ki = 0; ki < ws->kpi_count; ++ki) { })
+        <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-0.5">
+            <span class="text-xs text-overlay0 uppercase tracking-wide">({ STR(ws->kpis[ki].label); })</span>
+            <span class="text-xl font-bold text-text">({ STR(ws->kpis[ki].value); })</span>
+            ({ if (ws->kpis[ki].delta_show) { })
+            <span class="text-xs ({ STR(ws->kpis[ki].delta_tone == 1 ? "text-green" : (ws->kpis[ki].delta_tone == 0 ? "text-red" : "text-subtext0")) })">({ STR(ws->kpis[ki].delta); })</span>
+            ({ } })
+        </div>
         ({ } })
     </div>
+    ({ } })
+
+    <!-- attention line: one priority signal, straight to the fixing page -->
+    ({ if (ws->kind != 3) { })
+    ({ if (ws->attention_href[0]) { })
+    <a href="({ STR(ws->attention_href); })"
+       class="flex items-center justify-between gap-2 border-l-2 px-2.5 py-2 text-sm font-medium hover:brightness-95 ({ STR(ws->attention_cls); })">
+        <span>({ STR(ws->attention); })</span>
+        <span class="text-xs opacity-70">Open page</span>
+    </a>
+    ({ } })
+    ({ if (!ws->attention_href[0]) { })
+    <div class="flex items-center gap-2 border-l-2 px-2.5 py-2 text-sm font-medium ({ STR(ws->attention_cls); })">
+        <span>({ STR(ws->attention); })</span>
+    </div>
+    ({ } })
+    ({ } })
+
+    <!-- manager: 7-day bars + recent orders | counter: my shift + my orders -->
+    ({ if (ws->kind == 0 || ws->kind == 1) { })
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-2">
+        ({ if (ws->kind == 0) { })
+        <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-overlay0 uppercase tracking-wide">Net sales - last 7 days</span>
+                <span class="text-xs font-semibold text-text">({ STR(ws->bars_sum); })</span>
+            </div>
+            <div class="flex items-end gap-1.5" style="height: 72px">
+                ({ for (int bi = 0; bi < 7; ++bi) { })
+                <div class="flex-1 bg-blue" style="height: ({ INT(ws->bars[bi].pct); })px"
+                     title="({ STR(ws->bars[bi].value); })"></div>
+                ({ } })
+            </div>
+            <div class="flex gap-1.5">
+                ({ for (int bi = 0; bi < 7; ++bi) { })
+                <span class="flex-1 text-center text-xs text-overlay0">({ STR(ws->bars[bi].day); })</span>
+                ({ } })
+            </div>
+        </div>
+        ({ } })
+        ({ if (ws->kind == 1) { })
+        <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-2">
+            <span class="text-xs text-overlay0 uppercase tracking-wide">My shift</span>
+            ({ if (ws->has_shift) { })
+            <div class="border-l-2 border-green bg-green/10 px-2 py-1.5 flex flex-col gap-0.5">
+                <span class="text-sm font-semibold text-green">Open since ({ STR(ws->shift_since); })</span>
+                <span class="text-xs text-subtext0">Opening cash ({ STR(ws->shift_cash); }) · ({ STR(ws->shift_org); })</span>
+            </div>
+            <a href="/pos/shifts"
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0 text-center">Manage shift</a>
+            ({ } })
+            ({ if (!ws->has_shift) { })
+            <div class="border-l-2 border-yellow bg-yellow/10 px-2 py-1.5 flex flex-col gap-0.5">
+                <span class="text-sm font-semibold text-yellow">No open shift</span>
+                <span class="text-xs text-subtext0">Open one before the first sale.</span>
+            </div>
+            <a href="/pos/shifts"
+               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90 text-center">Open shift</a>
+            ({ } })
+        </div>
+        ({ } })
+        <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-1.5 xl:col-span-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs text-overlay0 uppercase tracking-wide">({ STR(ws->kind == 0 ? "Recent orders" : "My recent orders"); })</span>
+                <a href="/pos/orders" class="text-xs text-blue hover:underline">View all</a>
+            </div>
+            ({ if (ws->recent_count > 0) { })
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs text-overlay0 border-b border-surface0">
+                        <th class="py-1 pr-2 font-medium">Order</th>
+                        <th class="py-1 pr-2 font-medium">Time</th>
+                        <th class="py-1 pr-2 font-medium">Cashier</th>
+                        <th class="py-1 pr-2 font-medium text-right">Total</th>
+                        <th class="py-1 font-medium">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ({ for (int ri = 0; ri < ws->recent_count; ++ri) { })
+                    <tr class="border-b border-surface0/50" data-order-row>
+                        <td class="py-1 pr-2 text-text font-medium">({ STR(ws->recent[ri].number); })</td>
+                        <td class="py-1 pr-2 text-subtext0">({ STR(ws->recent[ri].time); })</td>
+                        <td class="py-1 pr-2 text-subtext0">({ STR(ws->recent[ri].who); })</td>
+                        <td class="py-1 pr-2 text-right text-text">({ STR(ws->recent[ri].total); })</td>
+                        <td class="py-1">
+                            <span class="px-1.5 py-0.5 text-xs font-medium ({ STR(ws->recent[ri].tone_cls); })">({ STR(ws->recent[ri].status); })</span>
+                        </td>
+                    </tr>
+                    ({ } })
+                </tbody>
+            </table>
+            ({ } })
+            ({ if (ws->recent_count == 0) { })
+            <span class="text-xs text-subtext0">No orders yet.</span>
+            ({ } })
+        </div>
+    </div>
+    ({ } })
+
+    <!-- driver: the assigned-deliveries run -->
+    ({ if (ws->kind == 2) { })
+    <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-1.5">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="text-xs text-overlay0 uppercase tracking-wide">Assigned deliveries</span>
+            <div class="flex items-center gap-1.5 text-xs">
+                <span class="px-1.5 py-0.5 font-medium bg-yellow/15 text-yellow">({ INT(ws->del_pending); }) pending</span>
+                <span class="px-1.5 py-0.5 font-medium bg-blue/15 text-blue">({ INT(ws->del_transit); }) in transit</span>
+                <span class="px-1.5 py-0.5 font-medium bg-green/15 text-green">({ INT(ws->del_done); }) delivered</span>
+            </div>
+        </div>
+        ({ if (ws->deliv_count > 0) { })
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-xs text-overlay0 border-b border-surface0">
+                    <th class="py-1 pr-2 font-medium">Order</th>
+                    <th class="py-1 pr-2 font-medium">Recipient</th>
+                    <th class="py-1 pr-2 font-medium">Phone</th>
+                    <th class="py-1 pr-2 font-medium">Destination</th>
+                    <th class="py-1 font-medium">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                ({ for (int di = 0; di < ws->deliv_count; ++di) { })
+                <tr class="border-b border-surface0/50" data-deliv-row>
+                    <td class="py-1 pr-2 text-text font-medium">({ STR(ws->delivs[di].number); })</td>
+                    <td class="py-1 pr-2 text-subtext0">({ STR(ws->delivs[di].recipient); })</td>
+                    <td class="py-1 pr-2 text-subtext0">({ STR(ws->delivs[di].phone); })</td>
+                    <td class="py-1 pr-2 text-subtext0">({ STR(ws->delivs[di].note); })</td>
+                    <td class="py-1">
+                        <span class="px-1.5 py-0.5 text-xs font-medium ({ STR(ws->delivs[di].tone_cls); })">({ STR(ws->delivs[di].status); })</span>
+                    </td>
+                </tr>
+                ({ } })
+            </tbody>
+        </table>
+        ({ } })
+        ({ if (ws->deliv_count == 0) { })
+        <span class="text-xs text-subtext0">No deliveries assigned right now.</span>
+        ({ } })
+    </div>
+    ({ } })
+
+    <!-- generic: no role yet -->
+    ({ if (ws->kind == 3) { })
+    <div class="border border-surface0 bg-mantle px-2.5 py-3 text-sm text-subtext0">
+        This account has no workspace yet. A manager can grant one on the Roles page.
+        <a href="/" class="text-blue hover:underline">Open the storefront</a>.
+    </div>
+    ({ } })
+
 </div>

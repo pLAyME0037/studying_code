@@ -53,6 +53,10 @@ python3 test/pos_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 # Phase 11: storefront + checkout + auth suite runs LAST - the guest users
 # and web orders it creates must not disturb earlier suites' counts.
 python3 test/shop_test.py "$HOST" "$PORT" "$TMP" || rc=$?
+# Phase 14: role workspaces - cashier/driver nav filtering, the page gate
+# (403s) and the role-dispatched dashboards; signs the other two demo staff
+# in, so it runs after shop and before the contract suite.
+python3 test/role_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 # Phase 13: form/handler contract - scrape every sidebar master page's own
 # create/edit/delete forms and submit them (its soft-deleted rows must not
 # disturb the suites above, so it runs after them).

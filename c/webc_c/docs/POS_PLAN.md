@@ -372,6 +372,54 @@ human Joined/Edited/DELETED) and every sidebar page's own create+edit+
 delete forms round-trip for real (302) - no page can trap its own UI.
 
 -----------------------------------------------------------------------
+## Phase 14 — Enterprise role workspaces (RBAC + role dashboards) DONE (suite 804 PASS)
+-----------------------------------------------------------------------
+Goal: "research a wonderful flow for staff + admin staff, dashboard as an
+enterprise environment" - one identity, three surfaces. Manager sees the
+business, cashier runs a till, driver runs deliveries, and every /pos
+page enforces the grant.
+- Migration 0008_role_workspace (sqlite real; mysql/postgres comment-only
+  skip, suite Migrations 7->8): permissions +SD.FINANCE +SD.AUDIT, both
+  granted to the manager role; staff1-style password hash seeded onto
+  sd-user-2/3 so the other two demo staff can sign in.
+- Auth: Auth_User + role_code/staff_id/perms (",CODE," join from
+  role_permissions via user_roles; roles LEFT JOIN for the code);
+  auth_has_perm() = strstr on the joined string.
+- perm_gate(sc) runs after auth_gate in route.c: 19 prefix rules map
+  every /pos page + /reports to its required grant (PRODUCT.MGMT, SELL,
+  FINANCE, USER.MGMT, STOCK.ADJUST, SETTINGS, AUDIT, REPORT.VIEW) ->
+  styled 403 (render_page_shell, "403 - Access restricted", names the
+  role + the missing code). /dashboard is deliberately NOT perm-gated:
+  it dispatches on role_code instead. Guests still 303 (auth_gate first).
+- Sidebar: nav_perms[25] positional array mirroring nav_items[],
+  _Static_assert-locked. Anonymous renders the FULL nav (http_test anon
+  pins hold); signed-in gets per-row filtering; group headers hide when
+  every row under them is filtered. "Main Form" label -> "Overview".
+- Dashboard: src/dashboard/ loader + one template dispatching on role:
+  - SD-MANAGER: 6 KPIs (Net sales 7d +/- delta, Transactions 7d, Avg
+    basket, Sales today, Low stock, Open shifts), priority attention
+    line (low stock > stale shift > pending orders > clear) with
+    drill-down href, 7-day CSS bars over a 14-day rollup, recent orders.
+  - SD-CASHIER: 4 KPIs (My sales / My avg / Team today / Out of stock),
+    My shift card (open since / no open shift), my recent orders.
+  - SD-DRIVER: 3 run KPIs (Pending / In transit / Delivered) + assigned
+    deliveries queue (11 seeded, pending first, capped 12) + pending-run
+    attention. else generic welcome (zero queries).
+  - header row: workspace name + Khmer role chip + per-kind quick actions.
+- header.h.tt brand "Clinic" -> "POS Admin".
+- Tests: role_test.py (new; after shop_test, before contract): cashier =
+  Counter workspace + nav 5 groups/11 links + SELL/report pages 200 vs
+  finance/users/products/stocks/alerts 403 (body names SD.FINANCE);
+  driver = Delivery workspace + nav 2 groups/7 links + orders/shifts/
+  users/reports 403; logouts 303. pos_test +8 manager dashboard pins
+  (workspace, KPI labels, attention line, 7+ bar heights, recent rows,
+  quick actions, Khmer chip).
+Accept: ./test/run.sh green (804 PASS); cashier lands on Counter (my till,
+my shift, my orders) with manager-only nav/pages closed by 403, driver on
+Delivery (assigned queue), manager on Manager workspace (KPIs, attention,
+7-day bars) - one /dashboard URL, three rooms.
+
+-----------------------------------------------------------------------
 RISKS / NOTES
 -----------------------------------------------------------------------
 - sqlite users DROP+RENAME inside migration tx: notes FK points at table

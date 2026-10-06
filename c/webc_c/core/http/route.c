@@ -392,6 +392,11 @@ void route_request(Serve_Context *sc) {
     // validated ?next= when no live session cookie is present.
     if (auth_gate(sc)) return;
 
+    // Phase 14: page-level RBAC - a signed-in role missing the required
+    // permission gets the styled 403 instead of the page (/dashboard skips
+    // this gate and role-dispatches its own workspace).
+    if (perm_gate(sc)) return;
+
     for (size_t i = 0; i < routes.count; ++i) {
         const route_t *r = &routes.items[i];
 

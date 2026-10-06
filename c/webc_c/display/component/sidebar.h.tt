@@ -9,7 +9,7 @@
         const char *icon;
     } Nav_Item;
     static const Nav_Item nav_items[] = {
-        { "Dashboard", "/dashboard", "Main Form",
+        { "Dashboard", "/dashboard", "Overview",
           "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
         { "Catalog",  "/pos/products",  "Products",
           "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
@@ -61,6 +61,53 @@
           "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" },
     };
     static const size_t nav_items_count = sizeof(nav_items) / sizeof(nav_items[0]);
+
+    // Phase 14: one required permission per nav row (NULL = public entry,
+    // kept by every signed-in role - Dashboard and the legacy Demo links).
+    // Anonymous visitors on public pages see the full link set: those hrefs
+    // gate server-side anyway. A group header hides when filtering left it
+    // without a single visible row.
+    static const char *const nav_perms[] = {
+        NULL,                  /* Dashboard / Overview */
+        "SD.PRODUCT.MGMT",     /* Products */
+        "SD.PRODUCT.MGMT",     /* Categories */
+        "SD.SELL",             /* Orders */
+        "SD.SELL",             /* Shifts */
+        "SD.FINANCE",          /* Finance */
+        "SD.SELL",             /* Customers */
+        "SD.USER.MGMT",        /* Users */
+        "SD.USER.MGMT",        /* Staff */
+        "SD.USER.MGMT",        /* Org Units */
+        "SD.STOCK.ADJUST",     /* Stocks */
+        "SD.USER.MGMT",        /* Roles */
+        "SD.USER.MGMT",        /* Permissions */
+        "SD.SETTINGS",         /* Locations */
+        "SD.SETTINGS",         /* Dictionaries */
+        "SD.SETTINGS",         /* Languages */
+        "SD.SETTINGS",         /* Configs */
+        "SD.AUDIT",            /* Alerts */
+        "SD.AUDIT",            /* Audit */
+        "SD.REPORT.VIEW",      /* Reports */
+        NULL, NULL, NULL, NULL, NULL, /* Demo Users / Notes / People / ... */
+    };
+    _Static_assert(sizeof(nav_perms) / sizeof(nav_perms[0])
+                       == sizeof(nav_items) / sizeof(nav_items[0]),
+                   "nav_perms must mirror nav_items");
+    bool nav_vis[sizeof(nav_items) / sizeof(nav_items[0])];
+    bool nav_grp[sizeof(nav_items) / sizeof(nav_items[0])];
+    const Auth_User *nav_au = auth_current_user();
+    for (size_t nv = 0; nv < nav_items_count; ++nv) {
+        nav_vis[nv] = nav_au == NULL || nav_perms[nv] == NULL
+            || auth_has_perm(nav_perms[nv]);
+    }
+    for (size_t nv = 0; nv < nav_items_count; ++nv) {
+        nav_grp[nv] = false;
+        if (nav_items[nv].group == NULL) continue;
+        for (size_t j = nv; j < nav_items_count; ++j) {
+            if (j > nv && nav_items[j].group != NULL) break;
+            if (nav_vis[j]) { nav_grp[nv] = true; break; }
+        }
+    }
 })
 <aside id="sidebar"
        class="shrink-0 flex flex-col border-r border-surface0 bg-mantle transition-all duration-300 h-full">
@@ -86,11 +133,12 @@
 
     <nav class="flex-1 py-0 px-3 space-y-1 overflow-y-auto no-scrollbar">
         ({ for (size_t ni = 0; ni < nav_items_count; ++ni) { })
-        ({ if (nav_items[ni].group != NULL) { })
+        ({ if (nav_items[ni].group != NULL && nav_grp[ni]) { })
         <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-overlay0 bg-surface0/60 nav-label">
             ({ STR(nav_items[ni].group); })
         </div>
         ({ } })
+        ({ if (nav_vis[ni]) { })
         <div class="relative group/item mb-1">
             <a href="({ STR(nav_items[ni].path); })"
                class="nav-link flex items-center transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE(nav_items[ni].path) &&
@@ -109,6 +157,7 @@
                 ({ STR(nav_items[ni].label); })
             </div>
         </div>
+        ({ } })
         ({ } })
     </nav>
 

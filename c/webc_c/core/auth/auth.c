@@ -102,46 +102,63 @@ static void auth_resolve(void) {
     char uid[64];
     if (!session_user_id(g_auth_sc, uid, sizeof(uid))) return;
 
-    // One join loads the profile + the first live role. LEFT JOIN keeps
-    // role-less users visible; a soft-deleted account resolves to NULL
-    // (the sidebar then shows the generic workspace identity).
+    // One join loads the profile + the first live role (+ the linked staff
+    // row the dashboards workspaces key off). LEFT JOIN keeps role-less
+    // users visible; a soft-deleted account resolves to NULL (the sidebar
+    // then shows the generic workspace identity).
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE] =
             "SELECT u.id, u.name, u.email, u.profile_pic, "
-                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, '') "
+                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
+                   "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
+                   "COALESCE(s.id, '') "
             "FROM users u "
             "LEFT JOIN user_roles ur ON ur.user_id = u.id "
                                    "AND ur.deleted_at IS NULL "
             "LEFT JOIN roles r ON r.id = ur.role_id "
                              "AND r.deleted_at IS NULL "
+            "LEFT JOIN staff s ON s.user_id = u.id "
+                             "AND s.deleted_at IS NULL "
             "WHERE u.id = ? AND u.deleted_at IS NULL LIMIT 1;",
         [SQL_MYSQL] =
             "SELECT u.id, u.name, u.email, u.profile_pic, "
-                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, '') "
+                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
+                   "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
+                   "COALESCE(s.id, '') "
             "FROM users u "
             "LEFT JOIN user_roles ur ON ur.user_id = u.id "
                                    "AND ur.deleted_at IS NULL "
             "LEFT JOIN roles r ON r.id = ur.role_id "
                              "AND r.deleted_at IS NULL "
+            "LEFT JOIN staff s ON s.user_id = u.id "
+                             "AND s.deleted_at IS NULL "
             "WHERE u.id = ? AND u.deleted_at IS NULL LIMIT 1;",
         [SQL_POSTGRES] =
             "SELECT u.id, u.name, u.email, u.profile_pic, "
-                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, '') "
+                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
+                   "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
+                   "COALESCE(s.id, '') "
             "FROM users u "
             "LEFT JOIN user_roles ur ON ur.user_id = u.id "
                                    "AND ur.deleted_at IS NULL "
             "LEFT JOIN roles r ON r.id = ur.role_id "
                              "AND r.deleted_at IS NULL "
+            "LEFT JOIN staff s ON s.user_id = u.id "
+                             "AND s.deleted_at IS NULL "
             "WHERE u.id = $1 AND u.deleted_at IS NULL LIMIT 1;",
     };
     db_t *db = open_webc_db();
     if (!db) return;
+    char rid[64] = {0};
     sql_stmt stmt = {0};
     if (sql_prepare(db, q[db->lang], &stmt)
         && sql_bind(&stmt, 1, SQL_SV(sv_from_cstr(uid)))
         && sql_step(&stmt) == SQL_ROW) {
         const char *v;
         g_auth_user.id          = temp_strdup(uid);
+        g_auth_user.role_code   = "";
+        g_auth_user.staff_id    = "";
+        g_auth_user.perms       = "";
         if ((v = sql_col_text(&stmt, 0)) != NULL && v[0]) g_auth_user.id = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 1)) != NULL && v[0]) g_auth_user.name = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 2)) != NULL && v[0]) g_auth_user.email = temp_strdup(v);
@@ -149,8 +166,50 @@ static void auth_resolve(void) {
         if ((v = sql_col_text(&stmt, 4)) != NULL && v[0]) g_auth_user.user_type = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 5)) != NULL && v[0]) g_auth_user.status = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 6)) != NULL)        g_auth_user.role = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 7)) != NULL && v[0]) g_auth_user.role_code = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 8)) != NULL && v[0])
+            snprintf(rid, sizeof(rid), "%s", v);
+        if ((v = sql_col_text(&stmt, 9)) != NULL && v[0]) g_auth_user.staff_id = temp_strdup(v);
     }
     sql_finalize(&stmt);
+
+    // Phase 14: the role's permission codes, joined ",CODE," so
+    // auth_has_perm() can needle-match without splitting. Runs once per
+    // request (auth_gate rebinds and the resolved flag re-arms it).
+    if (rid[0]) {
+        static const char *const pq[SQL_LANG_COUNT] = {
+            [SQL_SQLITE] =
+                "SELECT p.perm_code FROM role_permissions rp "
+                "JOIN permissions p ON p.id = rp.permission_id "
+                "WHERE rp.role_id = ? AND rp.deleted_at IS NULL "
+                  "AND p.deleted_at IS NULL;",
+            [SQL_MYSQL] =
+                "SELECT p.perm_code FROM role_permissions rp "
+                "JOIN permissions p ON p.id = rp.permission_id "
+                "WHERE rp.role_id = ? AND rp.deleted_at IS NULL "
+                  "AND p.deleted_at IS NULL;",
+            [SQL_POSTGRES] =
+                "SELECT p.perm_code FROM role_permissions rp "
+                "JOIN permissions p ON p.id = rp.permission_id "
+                "WHERE rp.role_id = $1 AND rp.deleted_at IS NULL "
+                  "AND p.deleted_at IS NULL;",
+        };
+        sql_stmt p2 = {0};
+        if (sql_prepare(db, pq[db->lang], &p2)
+            && sql_bind(&p2, 1, SQL_SV(sv_from_cstr(rid)))) {
+            char perms[640] = ",";
+            while (sql_step(&p2) == SQL_ROW) {
+                const char *pc = sql_col_text(&p2, 0);
+                if (pc && pc[0]
+                    && strlen(perms) + strlen(pc) + 2 < sizeof(perms)) {
+                    strcat(perms, pc);
+                    strcat(perms, ",");
+                }
+            }
+            g_auth_user.perms = temp_strdup(perms);
+        }
+        sql_finalize(&p2);
+    }
     db_close(db);
 }
 
@@ -226,6 +285,101 @@ bool auth_gate(Serve_Context *sc) {
     char enc[3 * sizeof(raw) + 4];
     uri_encode(enc, sizeof(enc), raw);
     http_render_redirect(sc, 303, temp_sprintf("/login?next=%s", enc));
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 14: page-level RBAC
+// ---------------------------------------------------------------------------
+
+bool auth_has_perm(const char *code) {
+    if (!code || !code[0]) return false;
+    const Auth_User *au = auth_current_user();
+    if (!au || !au->perms || !au->perms[0]) return false;
+    char needle[96];
+    snprintf(needle, sizeof(needle), ",%s,", code);
+    return strstr(au->perms, needle) != NULL;
+}
+
+// One required permission per guarded route prefix (page level: the whole
+// /pos/<area> including its child CRUD POSTs). /dashboard is deliberately
+// absent - every signed-in role reaches it and it role-dispatches its own
+// workspace instead; /pos itself has no route.
+typedef struct {
+    const char *prefix;
+    const char *perm;
+} Perm_Rule;
+
+static const Perm_Rule perm_rules[] = {
+    { "/pos/products",     "SD.PRODUCT.MGMT" },
+    { "/pos/categories",   "SD.PRODUCT.MGMT" },
+    { "/pos/orders",       "SD.SELL" },
+    { "/pos/shifts",       "SD.SELL" },
+    { "/pos/customers",    "SD.SELL" },
+    { "/pos/finance",      "SD.FINANCE" },
+    { "/pos/users",        "SD.USER.MGMT" },
+    { "/pos/staff",        "SD.USER.MGMT" },
+    { "/pos/org",          "SD.USER.MGMT" },
+    { "/pos/roles",        "SD.USER.MGMT" },
+    { "/pos/permissions",  "SD.USER.MGMT" },
+    { "/pos/stocks",       "SD.STOCK.ADJUST" },
+    { "/pos/locations",    "SD.SETTINGS" },
+    { "/pos/dictionaries", "SD.SETTINGS" },
+    { "/pos/i18n",         "SD.SETTINGS" },
+    { "/pos/config",       "SD.SETTINGS" },
+    { "/pos/alerts",       "SD.AUDIT" },
+    { "/pos/audit",        "SD.AUDIT" },
+    { "/reports",          "SD.REPORT.VIEW" },
+};
+
+static const char *uri_required_perm(String_View uri) {
+    for (size_t i = 0; i < sizeof(perm_rules) / sizeof(perm_rules[0]); ++i) {
+        size_t n = strlen(perm_rules[i].prefix);
+        if (uri.count >= n && memcmp(uri.data, perm_rules[i].prefix, n) == 0
+            && (uri.count == n || uri.data[n] == '/'))
+            return perm_rules[i].perm;
+    }
+    return NULL;
+}
+
+bool perm_gate(Serve_Context *sc) {
+    const char *need = uri_required_perm(sc->uri);
+    if (!need) return false;
+    const Auth_User *au = auth_current_user();
+    if (au && auth_has_perm(need)) return false;
+
+    const char *role = (au && au->role && au->role[0]) ? au->role : "—";
+    String_Builder content = {0};
+    sb_append_cstr(&content,
+        "<div class=\"min-h-screen flex items-center justify-center"
+        " bg-base\">"
+        "<div class=\"w-full max-w-sm bg-mantle border border-surface0\">"
+        "<div class=\"bg-red text-onbase px-3 py-2 flex items-center"
+        " justify-between\">"
+        "<span class=\"text-sm font-semibold\">403 · Access restricted</span>"
+        "<span class=\"text-xs opacity-80\">POS Admin</span></div>"
+        "<div class=\"px-3 py-3 flex flex-col gap-2\">"
+        "<p class=\"text-sm text-text\">Your role does not include this"
+        " area.</p>"
+        "<p class=\"text-xs text-subtext0\">Role: <span class=\"text-text"
+        " font-medium\">");
+    sb_append_html_escaped(&content, role);
+    sb_append_cstr(&content, "</span> · Required: <code class=\"text-peach\">");
+    sb_append_html_escaped(&content, need);
+    sb_append_cstr(&content,
+        "</code></p>"
+        "<div class=\"flex gap-2 pt-1\">"
+        "<a href=\"/dashboard\" class=\"bg-blue text-onbase"
+        " hover:brightness-90 px-2 py-1.5 text-xs\">Back to workspace</a>"
+        "<a href=\"/\" class=\"border border-surface0 text-subtext0"
+        " hover:bg-surface0 px-2 py-1.5 text-xs\">Storefront</a>"
+        "</div></div></div></div>");
+
+    sc->body.count = 0;
+    render_page_shell(sc, sv_from_cstr("403 · Access restricted"),
+                      sb_to_sv(content));
+    http_render_response(sc, 403, "text/html", sb_to_sv(sc->body));
+    sb_free(content);
     return true;
 }
 

@@ -1,0 +1,7 @@
+-- ============================================================================
+-- 0008_role_workspace -- INTENTIONALLY SKIPPED for MySQL (documented in
+-- docs/POS_PLAN.md Phase 14): the permissions/role_permissions grants and
+-- the demo staff password backfill live on the sqlite demo-seed path, same
+-- as 0004.  A comment-only file is valid: sql_exec_script() skips
+-- statements that contain no query text.
+-- ============================================================================

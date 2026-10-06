@@ -465,6 +465,35 @@ vanilla JS only.
 - Suite: 749 PASS (http_test 99 / pos_test 331 / shop_test 117 /
   crud_contract 156 / mysql 40 / https 6).
 
+## Phase 14 — Enterprise role workspaces (suite 804 PASS)
+- Migration 0008_role_workspace: permissions SD.FINANCE + SD.AUDIT
+  (both granted to the manager role), demo staff2/staff3 passwords
+  seeded (same posadmin1 hash as staff1). mysql/postgres = comment-only
+  skip (mysql_test Migrations 7->8).
+- RBAC: Auth_User.role_code/staff_id/perms (",CODE," join);
+  auth_has_perm() = strstr. perm_gate() runs after auth_gate in route.c:
+  19 prefix rules -> styled 403 ("403 - Access restricted", names the
+  role + missing code). /dashboard is never perm-gated - it dispatches.
+  Order matters: guest 303 login first, then 403 for signed-in but
+  under-privileged users.
+- Sidebar nav_perms[25] (positional, _Static_assert vs nav_items[25]):
+  anon = full nav (public-page pins unchanged); signed-in = per-row
+  perm filter (NULL = everyone); group headers hide when all their rows
+  are filtered out. "Main Form" -> "Overview" label.
+- Dashboard: one template, role_code dispatch from src/dashboard/ -
+  manager: 6-KPI strip + priority attention (low stock > stale shift >
+  pending > clear, drill-down href) + 7-day CSS bars from a 14-day
+  rollup + recent orders; cashier: 4 personal KPIs + My shift card +
+  my orders; driver: 3 run KPIs + assigned deliveries queue; generic
+  welcome otherwise. Workspace name + Khmer role chip + per-kind quick
+  actions in the header row. Data tables free'd after render (loader is
+  caller-owned).
+- header.h.tt brand "Clinic" -> "POS Admin".
+- Tests: role_test.py (47 checks, between shop_test and the contract
+  suite) + pos_test manager dashboard pins (+8). Suite: 804 PASS
+  (http 99 / pos 339 / shop 117 / role 47 / crud_contract 156 /
+  mysql 40 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

@@ -122,6 +122,23 @@ def main():
           ("សុខ ដារា" in body.decode() and 'user-card' in body.decode()),
           True)
 
+    # ---- Phase 14: manager role center (enterprise dashboard) -----------
+    st, body, _ = c.get("/dashboard")
+    dash = body.decode()
+    t.chk("dashboard = manager workspace", "Manager workspace" in dash, True)
+    t.chk("dashboard KPI strip",
+          all(s in dash for s in ("Net sales (7d)", "Transactions (7d)",
+                                  "Low stock", "Open shifts")), True)
+    t.chk("dashboard attention line drills to stocks",
+          "at or below minimum stock" in dash, True)
+    t.chk("dashboard 7-day bars", dash.count('style="height:') >= 7, True)
+    t.chk("dashboard recent orders rows",
+          dash.count("data-order-row") >= 1, True)
+    t.chk("dashboard quick actions", "New sale" in dash, True)
+    t.chk("dashboard role chip (Khmer)", "អ្នកគ្រប់គ្រងហាង" in dash, True)
+    t.chk("cashier content absent for manager",
+          "My sales (7d)" not in dash, True)
+
     # ---- /pos/locations: 4-part stack cell -------------------------------
     st, body, _ = c.get("/pos/locations")
     html = body.decode()
@@ -1465,7 +1482,7 @@ def main():
     t.chk("demo master row = name+user+email+phone+picture + actions",
           m.group(2).count("<td") if m else -1, 6)
 
-    # ---- Phase 10/11/13: schema completeness (0001..0007 + history) ------
+    # ---- Phase 10/11/13/14: schema completeness (0001..0008 + history) ---
     want = sorted((
         "audit_logs", "cash_shifts", "categories", "customer_interactions",
         "customers", "deliveries", "dictionaries", "financial_ledgers",
