@@ -84,7 +84,7 @@ static bool soft_delete_pos_variant(db_t *db, String_View id) {
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
         [SQL_MYSQL]    = "UPDATE product_variants "
-                         "SET deleted_at = NOW() WHERE id = ?;",
+                         "SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE product_variants "
                          "SET deleted_at = now() WHERE id = $1;",
     };

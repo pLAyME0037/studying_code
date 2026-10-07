@@ -20,3 +20,4 @@ CREATE INDEX idx_user_sessions_expires ON user_sessions(expires_at);
 -- Seeded staff users live in the sqlite-only 0004 file, so this UPDATE is a
 -- no-op on MySQL (0 rows). Kept for file parity - mysql_test never logs in.
 UPDATE users SET password_hash = 'webc2026$21a55faf92fddf66cd1d6c1f160c8c39535fdeb5fd1a0858332fb304814ca7ea' WHERE id = 'sd-user-1';
+UPDATE users SET password_hash = 'webc2026$21a55faf92fddf66cd1d6c1f160c8c39535fdeb5fd1a0858332fb304814ca7ea' WHERE id = 'sd-user-2';

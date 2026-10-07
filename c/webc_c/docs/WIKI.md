@@ -494,6 +494,33 @@ vanilla JS only.
   (http 99 / pos 339 / shop 117 / role 47 / crud_contract 156 /
   mysql 40 / https 6).
 
+## Phase 15 — Workflow timestamps: input-proof + local wall clock (suite 816 PASS)
+- created_at/updated_at/deleted_at are never inputtable: every
+  created_at MD_Column carries .computed = 1 (10 sites: locations,
+  users/roles children, categories, customers, permissions, config,
+  audit, notes) - skips the input in create/edit/child-add/child-edit
+  templates, list cells unchanged. Writes were already workflow-only
+  (column defaults, update triggers, soft-delete stamps; extraction is
+  field-name whitelisted and no handler binds the created_at slot).
+- Root cause of "time off by hours": system/shop TZ = Asia/Phnom_Penh
+  (+07) but stamps are UTC (SQL 'now' / strftime Z). Fix is display-side
+  (storage format immutable, no migration): md_date_human() converts
+  time-bearing values timegm -> localtime_r before formatting;
+  date-only values (hire_date, delivery date) untouched. Also converted:
+  report row cells, dashboard recent-order time / Open since / header
+  date (iso_day KPI windows STAY UTC - they pair with SQL substr), and
+  checkout WEB-YYMMDD now uses the local day (00:00-07:00 local no
+  longer stamps yesterday).
+- MySQL: code-side soft-delete stamps NOW() -> UTC_TIMESTAMP() (24
+  sites); migration-frozen 0003 DATETIME DEFAULT CURRENT_TIMESTAMP stays
+  server-local (cosmetic skew, mysql is the test dialect; sqlite
+  canonical).
+- Tests: pos_test +11 (no timestamp input on 9 pages, customers Since
+  cell = stored UTC +07 minute-exact, dashboard header local day),
+  shop_test +1 (order number = local yymmdd). Suite: 816 PASS
+  (http 99 / pos 350 / shop 118 / role 47 / crud_contract 156 /
+  mysql 40 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

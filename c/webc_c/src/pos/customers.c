@@ -45,7 +45,7 @@ MD_Column md_customers_columns[] = {
     { .name = "loyalty_points", .label = "Points", .type = COL_TYPE_NUM,
       .nullable = false },
     { .name = "created_at", .label = "Since", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 const size_t md_customers_columns_count = ARRAY_LEN(md_customers_columns);
 
@@ -114,7 +114,7 @@ static bool soft_delete_customer(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE customers "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE customers SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE customers SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE customers SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

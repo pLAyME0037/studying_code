@@ -27,6 +27,29 @@ static void iso_day(char *out /* 11 */, time_t t) {
     strftime(out, 11, "%Y-%m-%d", &tmv);
 }
 
+// "YYYY-MM-DDTHH:MM..." (stored UTC) -> shop-local "HH:MM" for the two
+// clock displays (recent orders time, open-since). Bad/short input -> "-".
+static void local_hm(const char *iso, char *out, size_t n) {
+    int y, mo, d, h, mi;
+    if (iso && strlen(iso) >= 16
+        && sscanf(iso, "%d-%d-%dT%d:%d", &y, &mo, &d, &h, &mi) == 5) {
+        struct tm utc = {0};
+        utc.tm_year = y - 1900;
+        utc.tm_mon  = mo - 1;
+        utc.tm_mday = d;
+        utc.tm_hour = h;
+        utc.tm_min  = mi;
+        utc.tm_isdst = -1;
+        time_t ep = timegm(&utc);
+        struct tm loc = {0};
+        if (ep != (time_t)-1 && localtime_r(&ep, &loc) != NULL) {
+            snprintf(out, n, "%02d:%02d", loc.tm_hour, loc.tm_min);
+            return;
+        }
+    }
+    snprintf(out, n, "-");
+}
+
 static void money(char *buf, size_t n, double v) {
     snprintf(buf, n, "%.2f $", v);
 }
@@ -244,9 +267,10 @@ void dashboard_load(Dashboard_Data *ws, const Auth_User *au) {
 
     time_t now = time(NULL);
     char today[11];
-    iso_day(today, now);
+    iso_day(today, now);   // UTC day keys - matches SQL substr(created_at)
     struct tm tmv;
-    gmtime_r(&now, &tmv);
+    // Header date is what the staff reads on the wall: local day.
+    localtime_r(&now, &tmv);
     strftime(ws->date_human, sizeof(ws->date_human), "%a %d %b %Y", &tmv);
     snprintf(ws->greeting, sizeof(ws->greeting), "Good day, %s",
              (au && au->name && au->name[0]) ? au->name : "staff");
@@ -565,8 +589,7 @@ void dashboard_load(Dashboard_Data *ws, const Auth_User *au) {
                 snprintf(o->number, sizeof(o->number), "%s",
                          (v && v[0]) ? v : "-");
                 v = sql_col_text(&stmt, 1);
-                if (v && strlen(v) >= 16) snprintf(o->time, sizeof(o->time), "%.5s", v + 11);
-                else snprintf(o->time, sizeof(o->time), "-");
+                local_hm(v, o->time, sizeof(o->time));
                 money(o->total, sizeof(o->total), col_double(&stmt, 2));
                 const char *sid = sql_col_text(&stmt, 3);
                 v = sql_col_text(&stmt, 4);
@@ -594,10 +617,7 @@ void dashboard_load(Dashboard_Data *ws, const Auth_User *au) {
             const char *v;
             ws->has_shift = 1;
             v = sql_col_text(&stmt, 0);
-            if (v && strlen(v) >= 16)
-                snprintf(ws->shift_since, sizeof(ws->shift_since), "%.5s", v + 11);
-            else
-                snprintf(ws->shift_since, sizeof(ws->shift_since), "-");
+            local_hm(v, ws->shift_since, sizeof(ws->shift_since));
             money(ws->shift_cash, sizeof(ws->shift_cash),
                   col_double(&stmt, 1));
             v = sql_col_text(&stmt, 2);

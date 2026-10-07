@@ -9,6 +9,7 @@
 #include "core/layout/footer.h"
 #include "core/layout/header.h"
 #include "src/db/db.h"
+#include "src/helper/cells.h"
 
 // =========================================================================
 // Registry: MVP reports (Phase 8). SQL is sqlite-canonical; the MVP
@@ -155,7 +156,14 @@ bool report_build_html(const Report_Def *rep, String_Builder *out) {
         for (int ci = 0; ci < ncols; ++ci) {
             const char *v = sql_col_text(&stmt, ci);
             sb_append_cstr(&rows, "<td>");
-            sb_append_html_escaped(&rows, v ? v : "");
+            // Time-bearing stamps (created_at) show local wall-clock time
+            // like every other page; date-only values stay verbatim.
+            if (v && strlen(v) > 10 && (v[10] == 'T' || v[10] == ' ')
+                && strchr(v, ':')) {
+                sb_append_html_escaped(&rows, md_date_human(v));
+            } else {
+                sb_append_html_escaped(&rows, v ? v : "");
+            }
             sb_append_cstr(&rows, "</td>");
         }
         sb_append_cstr(&rows, "</tr>\n");

@@ -32,7 +32,7 @@ static MD_Column md_audit_columns[] = {
     { .name = "old_values", .label = "Diff", .type = COL_TYPE_TEXT,
       .nullable = true, .cell = &audit_diff_cell },
     { .name = "created_at", .label = "When", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 static const size_t md_audit_columns_count = ARRAY_LEN(md_audit_columns);
 

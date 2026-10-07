@@ -9,10 +9,12 @@ plus CRUD that saves each part, col/th/colspan counts, edit-row prefills,
 pagination markup, and that the demo pages did not move.
 Rows are located by their own id (http_test.py leaves demo users behind).
 """
+import datetime
 import os
 import re
 import sqlite3
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from testlib import Client, Checker  # noqa: E402
@@ -138,6 +140,16 @@ def main():
     t.chk("dashboard role chip (Khmer)", "អ្នកគ្រប់គ្រងហាង" in dash, True)
     t.chk("cashier content absent for manager",
           "My sales (7d)" not in dash, True)
+    # locale-proof "Wed 07 Oct 2026" built the way the C strftime does it
+    _now = time.localtime()
+    _want_date = "%s %02d %s %04d" % (
+        ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")[_now.tm_wday],
+        _now.tm_mday,
+        ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+         "Oct", "Nov", "Dec")[_now.tm_mon - 1],
+        _now.tm_year)
+    t.chk("dashboard header date = local wall clock",
+          _want_date in dash, True)
 
     # ---- /pos/locations: 4-part stack cell -------------------------------
     st, body, _ = c.get("/pos/locations")
@@ -1481,6 +1493,33 @@ def main():
                   html, re.S)
     t.chk("demo master row = name+user+email+phone+picture + actions",
           m.group(2).count("<td") if m else -1, 6)
+
+    # ---- Phase 15: timestamps are workflow-only + local wall clock ------
+    # created_at/updated_at/deleted_at never render as inputs: no create,
+    # edit or child row can take them (only the DB workflow stamps them).
+    for path in ("/pos/categories", "/pos/customers", "/pos/permissions",
+                 "/pos/config", "/pos/locations", "/pos/roles",
+                 "/pos/users", "/pos/audit", "/notes"):
+        st, body, _ = c.get(path)
+        t.chk(f"{path}: timestamps not inputtable",
+              (b'name="created_at"' not in body
+               and b'name="updated_at"' not in body
+               and b'name="deleted_at"' not in body), True)
+
+    # Stored UTC -> cells print the shop's local clock (+07), minute-exact.
+    st, body, _ = c.get("/pos/customers")
+    raw = db_row("SELECT created_at FROM customers "
+                 "WHERE deleted_at IS NULL "
+                 "ORDER BY created_at DESC LIMIT 1")[0]
+    loc = datetime.datetime.fromisoformat(
+        raw.replace("Z", "+00:00")).astimezone()
+    want = "%02d %s %04d, %02d:%02d" % (
+        loc.day,
+        ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+         "Oct", "Nov", "Dec")[loc.month - 1],
+        loc.year, loc.hour, loc.minute)
+    t.chk("created_at cell = local wall-clock time (UTC +7)",
+          want in body.decode(), True)
 
     # ---- Phase 10/11/13/14: schema completeness (0001..0008 + history) ---
     want = sorted((

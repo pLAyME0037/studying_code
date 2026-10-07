@@ -1,6 +1,8 @@
 #define NOB_STRIP_PREFIX
 #include "module/nob.h"
 
+#include <time.h>
+
 #include "cells.h"
 #include "core/http/serve.h"
 
@@ -22,11 +24,37 @@
 // "2026-10-05T11:56:45.245Z", "2026-10-05 11:56:45" or "2026-10-05" ->
 // "05 Oct 2026, 11:56" (time only when present, seconds dropped). Anything
 // that is not an ISO stamp passes through untouched.
+//
+// created_at/updated_at/deleted_at are stamped in UTC (SQL 'now', column
+// defaults, update triggers - the workflow owns them end to end), while
+// the shop lives on local wall-clock time (Asia/Phnom_Penh, +07): a value
+// WITH a time is a moment and is converted to local before formatting so
+// every cell, activity card and report reads the clock the staff does.
+// Date-only values (hire date, delivery date) are calendar dates, not
+// moments - they pass through unchanged.
 const char *md_date_human(const char *iso) {
     if (!iso || !iso[0]) return "";
     int y, mo, d, h = 0, mi = 0;
     int got = sscanf(iso, "%d-%d-%d%*c%d:%d", &y, &mo, &d, &h, &mi);
     if (got < 3 || mo < 1 || mo > 12 || d < 1 || d > 31) return iso;
+    if (got >= 5) {
+        struct tm utc = {0};
+        utc.tm_year = y - 1900;
+        utc.tm_mon  = mo - 1;
+        utc.tm_mday = d;
+        utc.tm_hour = h;
+        utc.tm_min  = mi;
+        utc.tm_isdst = -1;
+        time_t ep = timegm(&utc);
+        struct tm loc = {0};
+        if (ep != (time_t)-1 && localtime_r(&ep, &loc) != NULL) {
+            y  = loc.tm_year + 1900;
+            mo = loc.tm_mon + 1;
+            d  = loc.tm_mday;
+            h  = loc.tm_hour;
+            mi = loc.tm_min;
+        }
+    }
     static const char *const mon[] = {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",

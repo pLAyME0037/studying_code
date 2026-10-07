@@ -420,6 +420,41 @@ Delivery (assigned queue), manager on Manager workspace (KPIs, attention,
 7-day bars) - one /dashboard URL, three rooms.
 
 -----------------------------------------------------------------------
+## Phase 15 — Workflow timestamps: input-proof + local wall clock DONE (suite 816 PASS)
+-----------------------------------------------------------------------
+Two user reports: (1) created_at/updated_at/deleted_at must never be
+inputtable by any mean - the workflow owns them; (2) dates read right but
+the TIME was off by whole hours (+07 shop vs UTC storage).
+- Not inputtable: every created_at MD_Column now carries .computed = 1
+  (locations Created, users+roles+user-role children Linked/Granted,
+  categories/customers/permissions/config Since, audit When, notes
+  Created) - the flag skips the input in all four form templates (create,
+  edit, child add-row, child edit) while the list cells keep rendering.
+  Writes were already workflow-only (DB defaults, update triggers,
+  soft-delete SQL; SERVE_EXTRACT_* extracts by field-name whitelist and
+  no handler binds the created_at opt slot) - the UI was the last door.
+- Local clock: md_date_human() is the single display chokepoint (list
+  cells, activity card) and now timegm -> localtime_r converts any
+  time-bearing stamp before formatting; date-only values (hire date,
+  delivery date) are calendar dates and pass through unchanged. Same
+  conversion for: report row cells (daily_orders created_at), dashboard
+  recent-orders time + Open since + header date (localtime_r), and
+  checkout order numbers WEB-YYMMDD now stamp the shop's local day
+  (00:00-07:00 local used to read yesterday). Dashboard KPI day windows
+  stay UTC-keyed on purpose: they must match SQL substr(created_at).
+- MySQL dialect: code-side soft-delete stamps NOW() -> UTC_TIMESTAMP()
+  (24 sites) so mysql matches sqlite's UTC storage; the 0003 mysql
+  DATETIME DEFAULT CURRENT_TIMESTAMP is migration-frozen (server-local)
+  - cosmetic skew possible there, sqlite is canonical.
+- Tests: pos_test +11 (9 pages assert no created_at/updated_at/
+  deleted_at input, customers Since cell = DB UTC +07 rendered exact,
+  dashboard header = local day), shop_test +1 (order number carries the
+  local yymmdd). Storage format untouched - no migration.
+Accept: ./test/run.sh green (816 PASS); create/edit forms carry no
+timestamp input anywhere, and every visible stamp (cells, activity,
+report, shift card, order number) reads the shop's wall clock.
+
+-----------------------------------------------------------------------
 RISKS / NOTES
 -----------------------------------------------------------------------
 - sqlite users DROP+RENAME inside migration tx: notes FK points at table

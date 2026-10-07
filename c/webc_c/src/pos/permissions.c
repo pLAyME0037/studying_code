@@ -22,7 +22,7 @@ MD_Column md_permissions_columns[] = {
     { .name = "module_name", .label = "Module", .type = COL_TYPE_TEXT,
       .nullable = false },
     { .name = "created_at", .label = "Since", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 const size_t md_permissions_columns_count = ARRAY_LEN(md_permissions_columns);
 
@@ -88,7 +88,7 @@ static bool soft_delete_permission(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE permissions "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE permissions SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE permissions SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE permissions SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

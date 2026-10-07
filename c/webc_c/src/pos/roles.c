@@ -34,7 +34,7 @@ static MD_Column md_role_permission_columns[] = {
       .type = COL_TYPE_FK_SELECT, .nullable = false,
       .fk_table = "permissions", .fk_label = "perm_name" },
     { .name = "created_at", .label = "Granted", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 static const size_t md_role_permission_columns_count =
     ARRAY_LEN(md_role_permission_columns);
@@ -43,7 +43,7 @@ static MD_Column md_role_user_columns[] = {
     { .name = "user_id", .label = "User", .type = COL_TYPE_FK_SELECT,
       .nullable = false, .fk_table = "users", .fk_label = "name" },
     { .name = "created_at", .label = "Linked", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 static const size_t md_role_user_columns_count = ARRAY_LEN(md_role_user_columns);
 
@@ -116,7 +116,7 @@ static bool soft_delete_role(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE roles "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE roles SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE roles SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE roles SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

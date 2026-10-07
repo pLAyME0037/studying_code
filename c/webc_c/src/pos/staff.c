@@ -155,7 +155,7 @@ static bool soft_delete_staff_member(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE staff "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE staff SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE staff SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE staff SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

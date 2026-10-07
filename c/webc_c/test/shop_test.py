@@ -18,6 +18,7 @@ import os
 import re
 import sqlite3
 import sys
+import time
 import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -217,6 +218,10 @@ def main():
     t.chk("order count +1", db_row("SELECT COUNT(*) FROM orders")[0],
           orders_before + 1)
     t.chk("order number WEB-", row[0].startswith("WEB-"), True)
+    # WEB-YYMMDD is stamped from the shop's local day (00:00-07:00 local
+    # is still "yesterday" in UTC).
+    t.chk("order number carries the local shop day",
+          row[0].startswith(time.strftime("WEB-%y%m%d-")), True)
     t.chk("order status PENDING", row[1], "PENDING")
     t.chk("order money = DB total (forged 0.01/999 ignored)",
           (row[2], row[3]), (cprod[2], cprod[2]))

@@ -19,7 +19,7 @@ MD_Column md_categories_columns[] = {
     { .name = "parent_id",  .label = "Parent", .type = COL_TYPE_FK_SELECT,
       .nullable = true, .fk_table = "categories", .fk_label = "name" },
     { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 const size_t md_categories_columns_count = ARRAY_LEN(md_categories_columns);
 
@@ -89,7 +89,7 @@ static bool soft_delete_category(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE categories "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE categories SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE categories SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE categories SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

@@ -379,7 +379,9 @@ void serve_shop_checkout_post(Serve_Context *sc) {
         char onum[40], uuid_tail[40];
         time_t now = time(NULL);
         struct tm tmv;
-        gmtime_r(&now, &tmv);
+        // WEB-YYMMDD is the shop's day, not UTC's: between 00:00 and 07:00
+        // local (+07) the UTC date is still yesterday.
+        localtime_r(&now, &tmv);
         webc_uuid(uuid_tail);
         // Strip dashes: "WEB-YYMMDD-" + first 8 hex chars = 19 chars.
         {

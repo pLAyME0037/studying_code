@@ -31,7 +31,7 @@ MD_Column md_locations_columns[] = {
     { .name = "province", .label = "Location", .type = COL_TYPE_TEXT,
       .nullable = false, .cell = &loc_cell },
     { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 const size_t md_locations_columns_count = ARRAY_LEN(md_locations_columns);
 
@@ -94,7 +94,7 @@ static bool soft_delete_location(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE locations "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE locations SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE locations SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE locations SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};
@@ -305,7 +305,7 @@ static bool soft_delete_pos_user(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE users "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE users SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE users SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE users SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};
@@ -339,7 +339,7 @@ static MD_Column md_pos_user_role_columns[] = {
     { .name = "role_id", .label = "Role", .type = COL_TYPE_FK_SELECT,
       .nullable = false, .fk_table = "roles", .fk_label = "role_name" },
     { .name = "created_at", .label = "Linked", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 static const size_t md_pos_user_role_columns_count =
     ARRAY_LEN(md_pos_user_role_columns);

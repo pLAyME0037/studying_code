@@ -24,7 +24,7 @@ MD_Column md_configs_columns[] = {
     { .name = "is_encrypted", .label = "Encrypted", .type = COL_TYPE_NUM,
       .nullable = false },
     { .name = "created_at", .label = "Since", .type = COL_TYPE_DATE,
-      .nullable = false },
+      .nullable = false, .computed = 1 },
 };
 const size_t md_configs_columns_count = ARRAY_LEN(md_configs_columns);
 
@@ -97,7 +97,7 @@ static bool soft_delete_system_config(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE system_configs "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE system_configs SET deleted_at = NOW() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE system_configs SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE system_configs SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

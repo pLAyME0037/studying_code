@@ -18,7 +18,7 @@
 MD_Column md_notes_columns[] = {
     { .name = "title",      .label = "Title",   .type = COL_TYPE_TEXT,     .nullable = false },
     { .name = "body",       .label = "Body",    .type = COL_TYPE_TEXTAREA, .nullable = true  },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,     .nullable = false },
+    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,     .nullable = false, .computed = 1 },
 };
 const size_t md_notes_columns_count = ARRAY_LEN(md_notes_columns);
 
