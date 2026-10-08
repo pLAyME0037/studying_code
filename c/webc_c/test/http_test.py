@@ -62,6 +62,10 @@ def main():
     with open(PNG_PATH, "rb") as f:
         png = f.read()
 
+    # First boot applies 0009_geo_admin (16k seed rows), so the listener
+    # may come up a moment later - pos_test already waited, we must too.
+    c.wait_ready()
+
     # ---- baseline pages ------------------------------------------------
     t.chk("home", c.get("/")[0], 200)
     st, _, ct = c.get("/resource/image/user1.png")
@@ -298,17 +302,18 @@ def main():
     t.chk("people sidebar link", 'href="/people"' in html, "True")
 
     # grouped POS sidebar: 10 color-step group headers, one nav-link per
-    # entry (25) + the logout button, exactly one active highlight here
+    # entry (28) + the logout button, exactly one active highlight here
     header_cls = ('class="px-2 py-1 text-xs font-semibold uppercase '
                   'tracking-wide text-overlay0 bg-surface0/60 nav-label"')
     t.chk("sidebar group headers (color-step)", html.count(header_cls), 10)
-    t.chk("sidebar nav links (25 entries + logout)",
-          html.count('class="nav-link'), 26)
+    t.chk("sidebar nav links (28 entries + logout)",
+          html.count('class="nav-link'), 29)
     t.chk("sidebar pos links present",
           all(p in html for p in
               ('href="/pos/products"', 'href="/pos/orders"',
                'href="/pos/customers"', 'href="/pos/stocks"',
-               'href="/pos/roles"', 'href="/pos/locations"',
+               'href="/pos/roles"', 'href="/pos/provinces"',
+               'href="/pos/villages"',
                'href="/pos/alerts"', 'href="/reports"')), True)
     # Phase 12: the active row carries one nav-active class, styled by the
     # unlayered .nav-link.nav-active rule (Catppuccin blue in both themes).
@@ -488,6 +493,106 @@ def main():
     t.chk("people fragment child store + master pagers",
           (f'data-pg-rows="mc-tbody-notes-{target_mid}"' in hpf,
            '<template data-pg-pager="mc-tbody"' in hpf), (True, True))
+
+    # ---- Phase 16 signup: public customer accounts ------------------------
+    st, body, _ = c.get("/signup")
+    hs = body.decode()
+    t.chk("signup form renders", st, 200)
+    t.chk("signup form fields",
+          ('action="/signup"' in hs, 'name="name"' in hs,
+           'name="username"' in hs, 'name="phone"' in hs,
+           'name="email"' in hs, 'name="password"' in hs),
+          (True, True, True, True, True, True))
+    st, body, _ = c.get("/login")
+    t.chk("login page links to signup", b'href="/signup"' in body, True)
+    st, body, _ = c.get("/")
+    hg = body.decode()
+    t.chk("anon storefront offers sign in + sign up + dashboard",
+          (st, 'href="/login"' in hg, 'href="/signup"' in hg,
+           'href="/dashboard"' in hg), (200, True, True, True))
+
+    su = {"name": "Signup Buyer", "username": "phase16_user",
+          "phone": "0887766554", "email": "phase16@signup.test",
+          "password": "secret123"}
+    st, body, _ = c.post_urlencoded("/signup", {**su, "phone": ""})
+    t.chk("signup: missing phone rejected",
+          (st, b"data-signup-error" in body), (200, True))
+    st, body, _ = c.post_urlencoded("/signup", {**su, "password": "abc"})
+    t.chk("signup: short password rejected",
+          (st, b"data-signup-error" in body), (200, True))
+
+    # fresh account: 303 home + session cookie, CUSTOMER row + salted hash
+    st, hdr, _, _ = post_form("/signup", su)
+    t.chk("signup ok redirects home", (st, hdr.get("Location")), (303, "/"))
+    t.chk("signup sets webc_sid",
+          "webc_sid" in hdr.get("Set-Cookie", ""), True)
+    t.chk("signup row is CUSTOMER with a salted hash",
+          db_query(DB, "SELECT user_type_dict_id || '|' || "
+                       "(instr(password_hash, '$') > 0) "
+                       "FROM users WHERE username = 'phase16_user'"),
+          "CUSTOMER|1")
+
+    # the customer session never enters the staff areas
+    st, hdr, _, _ = c.req_full("GET", "/dashboard")
+    t.chk("customer /dashboard bounces home",
+          (st, hdr.get("Location")), (303, "/"))
+    st, hdr, _, _ = c.req_full("GET", "/pos/products")
+    t.chk("customer /pos bounces home",
+          (st, hdr.get("Location")), (303, "/"))
+    st, body, _ = c.get("/")
+    hw = body.decode()
+    t.chk("storefront greets the customer (name + logout)",
+          (st, "Signup Buyer" in hw, 'href="/logout"' in hw),
+          (200, True, True))
+    t.chk("storefront hides staff dashboard from customer",
+          'href="/dashboard"' in hw, False)
+
+    st, hdr, _, _ = c.req_full("GET", "/logout")
+    t.chk("logout clears the session", st, 303)
+    st, hdr, _, _ = c.req_full("GET", "/dashboard")
+    t.chk("after logout: gated to login with next=",
+          (st, hdr.get("Location", "").startswith("/login?next=")),
+          (303, True))
+    # customers sign in through the same form but land on the storefront
+    st, hdr = c.login_as("phase16_user", "secret123")
+    t.chk("customer login lands on /", (st, hdr.get("Location")), (303, "/"))
+
+    st, body, _ = c.post_urlencoded(
+        "/signup", {**su, "phone": "0887766555"})
+    t.chk("signup: duplicate username rejected",
+          (st, b"data-signup-error" in body), (200, True))
+    st, body, _ = c.post_urlencoded(
+        "/signup", {**su, "username": "phase16_other",
+                    "phone": "0887766556",
+                    "email": "taken16@signup.test"})
+    t.chk("signup: duplicate email rejected",
+          (st, b"data-signup-error" in body), (200, True))
+    st, body, _ = c.post_urlencoded(
+        "/signup", {**su, "username": "phase16_other",
+                    "email": "other16@signup.test"})
+    t.chk("signup: registered phone rejected",
+          (st, b"data-signup-error" in body), (200, True))
+
+    # a guest checkout account (0007 leaves password_hash empty until the
+    # buyer deliberately claims it) gets claimed by signup
+    db_exec("INSERT OR REPLACE INTO users "
+            "(id, name, username, phone, password_hash, user_type_dict_id, "
+            " customer_id) VALUES (?, ?, ?, ?, '', 'CUSTOMER', ?)",
+            ("su-guest-1", "Guest Buyer", "0885544332", "0885544332",
+             "sd-cus-1"))
+    st, hdr, _, _ = post_form(
+        "/signup", {"name": "Claimed Buyer", "username": "phase16_claimed",
+                    "phone": "0885544332", "email": "claimed16@signup.test",
+                    "password": "secret123"})
+    t.chk("signup claims the guest account",
+          (st, hdr.get("Location")), (303, "/"))
+    t.chk("claim fills credentials, keeps phone + customer link",
+          db_query(DB, "SELECT username || '|' || email || '|' || phone "
+                       "|| '|' || user_type_dict_id || '|' || "
+                       "(instr(password_hash, '$') > 0) || '|' || "
+                       "(customer_id IS NULL) "
+                       "FROM users WHERE id = 'su-guest-1'"),
+          "phase16_claimed|claimed16@signup.test|0885544332|CUSTOMER|1|0")
 
     ok = t.summary()
     sys.exit(0 if ok else 1)

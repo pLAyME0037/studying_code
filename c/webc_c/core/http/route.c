@@ -9,6 +9,7 @@
 #include "core/display/user.h"
 #include "core/display/pos.h"
 #include "src/pos/categories.h"
+#include "src/pos/geo.h"
 #include "src/pos/products.h"
 #include "src/pos/variants.h"
 #include "src/pos/stocks.h"
@@ -185,6 +186,10 @@ void route_initialize(void) {
     route_new(&routes, "/order",       "",   "GET", ROUTE_ID_ACTION, serve_shop_order);
     route_new(&routes, "/login",       NULL, "GET", ROUTE_EXACT, serve_auth_login);
     route_new(&routes, "/login",       NULL, "POST", ROUTE_EXACT, serve_auth_login_post);
+    // Phase 16: public signup (outside every auth prefix, so the form is
+    // reachable anonymously; POST mints the same session login does).
+    route_new(&routes, "/signup",      NULL, "GET", ROUTE_EXACT, serve_auth_signup);
+    route_new(&routes, "/signup",      NULL, "POST", ROUTE_EXACT, serve_auth_signup_post);
     route_new(&routes, "/logout",      NULL, "GET", ROUTE_EXACT, serve_auth_logout);
     route_new(&routes, "/logout",      NULL, "POST", ROUTE_EXACT, serve_auth_logout);
     // Phase 12: language switch - validate the code, set webc_lang, 303 back.
@@ -209,11 +214,27 @@ void route_initialize(void) {
     route_new(&routes, "/users", "/delete", "POST", ROUTE_ID_ACTION, serve_users_delete);
 
     // POS showcase pages (composite multi-field columns), same route shape
-    route_new(&routes, "/pos/locations", NULL,       "GET",  ROUTE_EXACT,     serve_pos_locations);
-    route_new(&routes, "/pos/locations/create", NULL, "POST", ROUTE_EXACT,    serve_pos_locations_create);
-    route_new(&routes, "/pos/locations", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_locations_update);
-    route_new(&routes, "/pos/locations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_locations_delete);
-    route_new(&routes, "/pos/locations", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_locations_restore);
+    // Phase 16: the geo redo - four admin-area masters replace the old
+    // /pos/locations stack (villages is read_only: GET route only).
+    route_new(&routes, "/pos/provinces", NULL,       "GET",  ROUTE_EXACT,     serve_pos_provinces);
+    route_new(&routes, "/pos/provinces/create", NULL, "POST", ROUTE_EXACT,    serve_pos_provinces_create);
+    route_new(&routes, "/pos/provinces", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_provinces_update);
+    route_new(&routes, "/pos/provinces", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_provinces_delete);
+    route_new(&routes, "/pos/provinces", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_provinces_restore);
+
+    route_new(&routes, "/pos/districts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_districts);
+    route_new(&routes, "/pos/districts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_districts_create);
+    route_new(&routes, "/pos/districts", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_districts_update);
+    route_new(&routes, "/pos/districts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_districts_delete);
+    route_new(&routes, "/pos/districts", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_districts_restore);
+
+    route_new(&routes, "/pos/communes", NULL,       "GET",  ROUTE_EXACT,     serve_pos_communes);
+    route_new(&routes, "/pos/communes/create", NULL, "POST", ROUTE_EXACT,    serve_pos_communes_create);
+    route_new(&routes, "/pos/communes", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_communes_update);
+    route_new(&routes, "/pos/communes", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_communes_delete);
+    route_new(&routes, "/pos/communes", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_communes_restore);
+
+    route_new(&routes, "/pos/villages", NULL, "GET", ROUTE_EXACT, serve_pos_villages);
 
     route_new(&routes, "/pos/users", NULL,       "GET",  ROUTE_EXACT,     serve_pos_users);
     route_new(&routes, "/pos/users/create", NULL, "POST", ROUTE_EXACT,    serve_pos_users_create);

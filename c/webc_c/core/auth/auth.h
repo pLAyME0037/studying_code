@@ -47,4 +47,10 @@ void serve_auth_login(Serve_Context *sc);       // GET  /login
 void serve_auth_login_post(Serve_Context *sc);  // POST /login
 void serve_auth_logout(Serve_Context *sc);      // GET/POST /logout
 
+// Phase 16 signup: public permanent CUSTOMER accounts (guest checkout
+// rows with an empty hash get claimed here). The minted session is the
+// login one, so the storefront keeps the identity across visits.
+void serve_auth_signup(Serve_Context *sc);       // GET  /signup
+void serve_auth_signup_post(Serve_Context *sc);  // POST /signup
+
 #endif  // CORE_AUTH_H_

@@ -3,7 +3,7 @@
 
 Spawned by test/run.sh against the same throwaway HOME/DB as http_test.py.
 Covers the master_child engine's composite (multi-field) columns:
-  /pos/locations - one <td> renders a 4-part stack cell
+  /pos/provinces - Phase 16 geo master CRUD + trash-tab strip showcase
   /pos/users     - one <td> renders an avatar cell (pic + name + username)
 plus CRUD that saves each part, col/th/colspan counts, edit-row prefills,
 pagination markup, and that the demo pages did not move.
@@ -99,10 +99,10 @@ def main():
     c.wait_ready()
 
     # ---- Phase 11: /pos requires staff login -----------------------------
-    st, hdr, _, _ = c.req_full("GET", "/pos/locations")
+    st, hdr, _, _ = c.req_full("GET", "/pos/provinces")
     t.chk("guest /pos redirects to login", st, 303)
     t.chk("guest /pos next= carries the path",
-          "next=/pos/locations" in hdr.get("Location", ""), True)
+          "next=/pos/provinces" in hdr.get("Location", ""), True)
 
     st, body, _ = c.post_urlencoded(
         "/login", {"username": "sd.staff1", "password": "wrong"}
@@ -114,12 +114,12 @@ def main():
     t.chk("staff login redirects", st, 303)
     t.chk("login sets webc_sid cookie",
           "webc_sid" in hdr.get("Set-Cookie", ""), True)
-    t.chk("staff /pos after login", c.get("/pos/locations")[0], 200)
+    t.chk("staff /pos after login", c.get("/pos/provinces")[0], 200)
     t.chk("staff /dashboard after login", c.get("/dashboard")[0], 200)
     # Phase 13: the sidebar card is the signed-in session user, not the
-    # first users-table row - locations never lists users, so the staff
+    # first users-table row - provinces never lists users, so the staff
     # name can only come from the sidebar identity.
-    st, body, _ = c.get("/pos/locations")
+    st, body, _ = c.get("/pos/provinces")
     t.chk("sidebar card = signed-in staff (Khmer name + user-card)",
           ("សុខ ដារា" in body.decode() and 'user-card' in body.decode()),
           True)
@@ -151,69 +151,65 @@ def main():
     t.chk("dashboard header date = local wall clock",
           _want_date in dash, True)
 
-    # ---- /pos/locations: 4-part stack cell -------------------------------
-    st, body, _ = c.get("/pos/locations")
+    # ---- /pos/provinces: Phase 16 geo master + CRUD ----------------------
+    st, body, _ = c.get("/pos/provinces")
     html = body.decode()
-    t.chk("locations page", st, 200)
-    t.chk("locations th = cell + created + actions", th_count(html), 3)
-    t.chk("locations empty state colspan 3", 'colspan="3"' in html, "True")
-    t.chk("locations pager nav", 'data-pg-container="mc-tbody"' in html, "True")
-    t.chk("locations ?page=1", c.get("/pos/locations?page=1")[0], 200)
+    t.chk("provinces page", st, 200)
+    t.chk("provinces th = code + kh + en + created + actions",
+          th_count(html), 5)
+    t.chk("provinces seed rows fill page 1 (44 rows, 20/page)",
+          html.count('<tr class="hover:'), 20)
+    t.chk("provinces pager nav", 'data-pg-container="mc-tbody"' in html, "True")
+    t.chk("provinces ?page=1", c.get("/pos/provinces?page=1")[0], 200)
 
     loc1 = {
-        "province": "Phnom Penh",
-        "district": "Chamkarmon",
-        "commune": "Tonle Bassac",
-        "village": "Svay Pak",
+        "prov_id": "T16-PROV",
+        "name_kh": "ខេត្តសាកល្បង",
+        "name_en": "Svay Pak",
     }
     st, _, _ = c.post_urlencoded(
-        "/pos/locations/create?redirect=/pos/locations", loc1
+        "/pos/provinces/create?redirect=/pos/provinces", loc1
     )
-    t.chk("location create", st, 302)
-    rid = db_row("SELECT id FROM locations WHERE village = ?", ("Svay Pak",))[0]
+    t.chk("province create", st, 302)
+    rid = db_row("SELECT id FROM provinces WHERE prov_id = ?",
+                 ("T16-PROV",))[0]
+    created0 = db_row("SELECT created_at FROM provinces WHERE id = ?",
+                      (rid,))[0]
 
-    st, body, _ = c.get("/pos/locations")
+    st, body, _ = c.get("/pos/provinces")
     html = body.decode()
     row, edit = row_and_edit(html, rid)
-    t.chk("location row found by id", bool(row), "True")
-    t.chk("stack column = ONE td (3 total in row)", row.count("<td"), 3)
-    first_td = row.split("</td>")[0]
-    spans = re.findall(r'<span class="text-xs[^"]*">([^<]*)</span>', first_td)
-    t.chk("stack cell renders 4 parts in order",
-          spans, list(loc1.values()))
-    t.chk("stack color ranks strongest first",
-          (first_td.find("text-gray-900") < first_td.find("text-gray-400")),
-          "True")
+    t.chk("province row found by id", bool(row), "True")
+    t.chk("province row = 4 columns + actions", row.count("<td"), 5)
     ei = edit_inputs(edit)
     t.chk("edit row prefills every part",
           [ei.get(k) for k in loc1], list(loc1.values()))
-    t.chk("edit + detail rows keep colspan 3", html.count('colspan="3"') >= 2,
+    t.chk("edit + detail rows keep colspan 5", html.count('colspan="5"') >= 2,
           "True")
 
     loc2 = {
-        "province": "Phnom Penh",
-        "district": "Prampi Makara",
-        "commune": "Phnom Penh Thmey",
-        "village": "Kilometer 6",
+        "prov_id": "T16-PROV",
+        "name_kh": "ខេត្តផ្សេង",
+        "name_en": "Prampi Makara",
     }
     st, _, _ = c.post_urlencoded(
-        f"/pos/locations/{rid}/update?redirect=/pos/locations", loc2
+        f"/pos/provinces/{rid}/update?redirect=/pos/provinces", loc2
     )
-    t.chk("location update", st, 302)
-    st, body, _ = c.get("/pos/locations")
+    t.chk("province update", st, 302)
+    st, body, _ = c.get("/pos/provinces")
     html = body.decode()
     row, _ = row_and_edit(html, rid)
-    t.chk("update reflects in cell (old part gone)",
-          ("Prampi Makara" in row and "Chamkarmon" not in row), "True")
-    t.chk("update saved each part in db",
+    t.chk("update reflects in row (old value gone)",
+          ("Prampi Makara" in row and "Svay Pak" not in row), "True")
+    t.chk("update saved each column in db",
           db_row(
-              "SELECT province, district, commune, village "
-              "FROM locations WHERE id = ?", (rid,)
+              "SELECT prov_id, name_kh, name_en "
+              "FROM provinces WHERE id = ?", (rid,)
           ),
           tuple(loc2.values()))
     t.chk("created_at untouched by update",
-          db_row("SELECT created_at FROM locations WHERE id = ?", (rid,))
-          is not None, "True")
+          db_row("SELECT created_at FROM provinces WHERE id = ?", (rid,)),
+          (created0,))
 
     # ---- /pos/users: avatar cell -----------------------------------------
     st, body, _ = c.get("/pos/users")
@@ -283,37 +279,77 @@ def main():
           db_row("SELECT name FROM users WHERE id = ?", (uid,)),
           ("Sok Dara Renamed",))
 
-    # ---- soft delete + restore (Phase 4) ---------------------------------
+    # ---- soft delete + restore (Phase 4) + trash tabs (Phase 16) ---------
     st, _, _ = c.post_urlencoded(
-        f"/pos/locations/{rid}/delete?redirect=/pos/locations", {}
+        f"/pos/provinces/{rid}/delete?redirect=/pos/provinces", {}
     )
-    t.chk("location soft delete", st, 302)
-    t.chk("location deleted_at stamped",
-          db_row("SELECT deleted_at FROM locations WHERE id = ?", (rid,))
+    t.chk("province soft delete", st, 302)
+    t.chk("province deleted_at stamped",
+          db_row("SELECT deleted_at FROM provinces WHERE id = ?", (rid,))
           [0] is not None, True)
-    st, body, _ = c.get("/pos/locations")
-    t.chk("live view hides deleted location",
-          (st, f'data-row-id="{rid}"' not in body.decode()), (200, True))
-    st, body, _ = c.get("/pos/locations?deleted=1")
+    st, body, _ = c.get("/pos/provinces")
+    html = body.decode()
+    t.chk("live view hides deleted province",
+          (st, f'data-row-id="{rid}"' not in html), (200, True))
+    # Phase 16 task 1: the Live/Trash tab strip sits above the add card on
+    # every soft-delete page - Live is active here and Trash carries the
+    # same count the database has.
+    n_del = db_row(
+        "SELECT COUNT(*) FROM provinces WHERE deleted_at IS NOT NULL")[0]
+    t.chk("tab strip: Live active + Trash count = db",
+          ('bg-blue text-onbase">Live' in html
+           and f"data-trash-total>{n_del}<" in html
+           and "?deleted=1" in html), True)
+    st, body, _ = c.get("/pos/provinces?deleted=1")
     html = body.decode()
     row, _ = row_and_edit(html, rid)
-    t.chk("trash view shows deleted location", bool(row), True)
+    t.chk("trash view shows deleted province", bool(row), True)
     t.chk("trash rows tinted", "hover:bg-red-100" in html, True)
     t.chk("trash row has restore button", 'data-md-op="restore"' in row, True)
+    t.chk("trash tab active on the trash view",
+          'bg-red text-onbase">Trash' in html, True)
     t.chk("trash banner + no add form",
           ("Deleted rows" in html, 'data-md-op="create"' not in html),
           (True, True))
     st, hdrs, _, _ = c.req_full(
-        "POST", f"/pos/locations/{rid}/restore?redirect=/pos/locations?deleted=1"
+        "POST", f"/pos/provinces/{rid}/restore?redirect=/pos/provinces?deleted=1"
     )
-    t.chk("location restore redirects to trash view",
-          (st, hdrs.get("Location")), (302, "/pos/locations?deleted=1"))
+    t.chk("province restore redirects to trash view",
+          (st, hdrs.get("Location")), (302, "/pos/provinces?deleted=1"))
     t.chk("restore cleared deleted_at",
-          db_row("SELECT deleted_at FROM locations WHERE id = ?", (rid,)),
+          db_row("SELECT deleted_at FROM provinces WHERE id = ?", (rid,)),
           (None,))
-    st, body, _ = c.get("/pos/locations")
+    st, body, _ = c.get("/pos/provinces")
     t.chk("restored row visible in live view",
           (st, "Prampi Makara" in body.decode()), (200, True))
+
+    # ---- Phase 16: the other three geo masters ---------------------------
+    st, body, _ = c.get("/pos/districts")
+    html = body.decode()
+    t.chk("districts page + province FK select",
+          (st, 'name="province_id"' in html), (200, True))
+    t.chk("districts seed rows fill page 1 (227 rows, 20/page)",
+          html.count('<tr class="hover:'), 20)
+    st, body, _ = c.get("/pos/communes")
+    html = body.decode()
+    t.chk("communes page + district FK select",
+          (st, 'name="district_id"' in html), (200, True))
+    t.chk("communes seed rows fill page 1 (1712 rows, 20/page)",
+          html.count('<tr class="hover:'), 20)
+    st, body, _ = c.get("/pos/villages")
+    html = body.decode()
+    t.chk("villages page (read_only: no create/edit/delete, no trash)",
+          (st, 'data-md-op="create"' in html, 'master-edit-btn' in html,
+           'data-md-op="delete"' in html, 'data-trash-total' in html),
+          (200, False, False, False, False))
+    t.chk("villages seed rows + pager",
+          (html.count('<tr class="hover:'),
+           'data-pg-container="mc-tbody"' in html), (20, True))
+    st, _, _ = c.post_urlencoded(
+        "/pos/villages/create?redirect=/pos/villages",
+        {"vill_id": "T16-V", "name_kh": "x", "name_en": "y",
+         "commune_id": "1"})
+    t.chk("villages create route not registered (GET only)", st, 404)
 
     # ---- users: soft delete + cascade trigger ----------------------------
     # user_roles row exercises trg_soft_del_users / trg_restore_users.
@@ -359,19 +395,21 @@ def main():
     )
     t.chk("staff delete (no-pic)", st, 302)
     st, _, _ = c.post_urlencoded(
-        f"/pos/locations/{rid}/delete?redirect=/pos/locations", {}
+        f"/pos/provinces/{rid}/delete?redirect=/pos/provinces", {}
     )
-    t.chk("location re-delete", st, 302)
+    t.chk("province re-delete", st, 302)
     t.chk("showcase rows soft-deleted in db",
-          (db_row("SELECT deleted_at FROM locations WHERE id = ?", (rid,))
+          (db_row("SELECT deleted_at FROM provinces WHERE id = ?", (rid,))
            [0] is not None,
            db_row("SELECT deleted_at FROM users WHERE id IN (?, ?)",
                   (uid, uid2))[0] is not None),
           (True, True))
-    st, body, _ = c.get("/pos/locations")
-    t.chk("locations after delete: test row gone, seed rows remain",
-          (st, f'data-row-id="{rid}"' not in body.decode()
-           and 'data-row-id="sd-loc-' in body.decode()), (200, True))
+    st, body, _ = c.get("/pos/provinces")
+    t.chk("provinces after delete: test row gone, 44 seeds intact",
+          (st, f'data-row-id="{rid}"' not in body.decode(),
+           db_row("SELECT COUNT(*) FROM provinces "
+                  "WHERE deleted_at IS NULL")[0]),
+          (200, True, 44))
     st, body, _ = c.get("/pos/users")
     t.chk("pos users page after deletes (showcase rows gone)",
           (st, "pos_avatar_1" not in body.decode()
@@ -1498,7 +1536,7 @@ def main():
     # created_at/updated_at/deleted_at never render as inputs: no create,
     # edit or child row can take them (only the DB workflow stamps them).
     for path in ("/pos/categories", "/pos/customers", "/pos/permissions",
-                 "/pos/config", "/pos/locations", "/pos/roles",
+                 "/pos/config", "/pos/provinces", "/pos/roles",
                  "/pos/users", "/pos/audit", "/notes"):
         st, body, _ = c.get(path)
         t.chk(f"{path}: timestamps not inputtable",
@@ -1521,20 +1559,21 @@ def main():
     t.chk("created_at cell = local wall-clock time (UTC +7)",
           want in body.decode(), True)
 
-    # ---- Phase 10/11/13/14: schema completeness (0001..0008 + history) ---
+    # ---- Phase 10/11/13/14/16: schema completeness (0001..0009 + history) --
     want = sorted((
-        "audit_logs", "cash_shifts", "categories", "customer_interactions",
-        "customers", "deliveries", "dictionaries", "financial_ledgers",
-        "inventory_stocks", "languages", "locations", "notes", "order_items",
+        "audit_logs", "cash_shifts", "categories", "communes",
+        "customer_interactions", "customers", "deliveries", "dictionaries",
+        "districts", "financial_ledgers", "inventory_stocks", "languages",
+        "locations", "notes", "order_items",
         "orders", "org_units", "payments", "permissions", "product_variants",
-        "products", "role_permissions", "roles", "staff", "stock_ledger",
-        "system_alerts", "system_configs", "translations", "user_roles",
-        "users", "user_sessions", "Migrations",
+        "products", "provinces", "role_permissions", "roles", "staff",
+        "stock_ledger", "system_alerts", "system_configs", "translations",
+        "user_roles", "users", "user_sessions", "villages", "Migrations",
     ))
     got = sorted(db_row(
         "SELECT GROUP_CONCAT(name) FROM sqlite_master "
         "WHERE type = 'table' AND name NOT LIKE 'sqlite_%'")[0].split(","))
-    t.chk("all 30 tables exist after migrations 0001-0005", got, want)
+    t.chk("all 34 tables exist after migrations 0001-0009", got, want)
 
     ok = t.summary()
     sys.exit(0 if ok else 1)

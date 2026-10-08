@@ -93,6 +93,11 @@ static const Migration migrations[] = {
         [SQL_MYSQL]    = "migrations/0008_role_workspace/mysql.sql",
         [SQL_POSTGRES] = "migrations/0008_role_workspace/postgres.sql",
     }},
+    { "0009_geo_admin", {
+        [SQL_SQLITE]   = "migrations/0009_geo_admin/sqlite3.sql",
+        [SQL_MYSQL]    = "migrations/0009_geo_admin/mysql.sql",
+        [SQL_POSTGRES] = "migrations/0009_geo_admin/postgres.sql",
+    }},
 };
 
 /* Bootstrap table recording which migrations are already applied. It must

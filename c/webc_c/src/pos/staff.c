@@ -38,7 +38,9 @@ MD_Column md_staff_columns[] = {
       .nullable = false, .fk_table = "org_units", .fk_label = "ou_name" },
     { .name = "location_id", .label = "Location", .type = COL_TYPE_FK_SELECT,
       .nullable = false, .fk_table = "locations",
-      .fk_label = "province" },
+      .fk_label = "province",
+      // Phase 16 geo: provinces mirror rows only (see /pos/users).
+      .fk_where = "locations.id IN (SELECT id FROM provinces)" },
     { .name = "phone", .label = "Phone", .type = COL_TYPE_TEXT,
       .nullable = true },
     { .name = "staff_type_dict_id", .label = "Role", .type = COL_TYPE_FK_SELECT,

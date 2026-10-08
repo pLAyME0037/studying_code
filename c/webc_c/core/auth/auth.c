@@ -270,7 +270,18 @@ bool auth_gate(Serve_Context *sc) {
 
     if (!auth_guarded_uri(sc->uri)) return false;
     char uid[64];
-    if (session_user_id(sc, uid, sizeof(uid))) return false;
+    if (session_user_id(sc, uid, sizeof(uid))) {
+        // Phase 16 signup: a live CUSTOMER session never enters the staff
+        // areas - it goes back to the storefront instead of the login
+        // form (a live ADMIN session sails through to the page itself).
+        const Auth_User *au = auth_current_user();
+        if (au && au->user_type && au->user_type[0]
+            && strcmp(au->user_type, "ADMIN") != 0) {
+            http_render_redirect(sc, 303, "/");
+            return true;
+        }
+        return false;
+    }
 
     char raw[700];
     size_t n = 0;
@@ -323,7 +334,10 @@ static const Perm_Rule perm_rules[] = {
     { "/pos/roles",        "SD.USER.MGMT" },
     { "/pos/permissions",  "SD.USER.MGMT" },
     { "/pos/stocks",       "SD.STOCK.ADJUST" },
-    { "/pos/locations",    "SD.SETTINGS" },
+    { "/pos/provinces",    "SD.SETTINGS" },
+    { "/pos/districts",    "SD.SETTINGS" },
+    { "/pos/communes",     "SD.SETTINGS" },
+    { "/pos/villages",     "SD.SETTINGS" },
     { "/pos/dictionaries", "SD.SETTINGS" },
     { "/pos/i18n",         "SD.SETTINGS" },
     { "/pos/config",       "SD.SETTINGS" },
@@ -445,6 +459,11 @@ static void render_login(Serve_Context *sc, String_View next, const char *err) {
     sb_append_html_escaped(&content,
                            tr("auth.back", "ត្រឡប់ទៅហាង"));
     sb_append_cstr(&content, "</a>"
+        "<a href=\"/signup\" class=\"text-xs text-blue hover:underline"
+        " text-center\">");
+    sb_append_html_escaped(&content,
+                           tr("auth.signup_link", "បង្កើតគណនីថ្មី"));
+    sb_append_cstr(&content, "</a>"
         "</div></form></div>");
 
     sc->body.count = 0;
@@ -461,73 +480,10 @@ void serve_auth_login(Serve_Context *sc) {
     render_login(sc, next, NULL);
 }
 
-void serve_auth_login_post(Serve_Context *sc) {
-    String_View req  = sb_to_sv(sc->request);
-    String_View body = sb_to_sv(sc->body);
-    String_View username = form_text(req, body, "username");
-    String_View password = form_text(req, body, "password");
-    String_View next = form_text(req, body, "next");
-    if (!next_safe(next)) next = sv_from_cstr("/dashboard");
-
-    if (username.count == 0 || password.count == 0) {
-        render_login(sc, next,
-                     tr("auth.err_fill",
-                        "សូមបំពេញឈ្មោះនិងពាក្យសម្ងាត់"));
-        return;
-    }
-
-    db_t *db = open_webc_db();
-    if (!db) { serve_error(sc, 500); return; }
-
-    char user_id[64] = {0};
-    char stored[HASH_SALT_MAX + 80] = {0};
-    {
-        static const char *const q[SQL_LANG_COUNT] = {
-            [SQL_SQLITE]   = "SELECT id, password_hash FROM users "
-                             "WHERE (username = ? OR email = ?) "
-                             "AND user_type_dict_id = 'ADMIN' "
-                             "AND status = 'ACTIVE' AND deleted_at IS NULL "
-                             "LIMIT 1;",
-            [SQL_MYSQL]    = "SELECT id, password_hash FROM users "
-                             "WHERE (username = ? OR email = ?) "
-                             "AND user_type_dict_id = 'ADMIN' "
-                             "AND status = 'ACTIVE' AND deleted_at IS NULL "
-                             "LIMIT 1;",
-            [SQL_POSTGRES] = "SELECT id, password_hash FROM users "
-                             "WHERE (username = $1 OR email = $2) "
-                             "AND user_type_dict_id = 'ADMIN' "
-                             "AND status = 'ACTIVE' AND deleted_at IS NULL "
-                             "LIMIT 1;",
-        };
-        sql_stmt stmt = {0};
-        if (sql_prepare(db, q[db->lang], &stmt)
-            && sql_bind(&stmt, 1, SQL_SV(username))
-            && sql_bind(&stmt, 2, SQL_SV(username))
-            && sql_step(&stmt) == SQL_ROW) {
-            const char *uid  = sql_col_text(&stmt, 0);
-            const char *hash = sql_col_text(&stmt, 1);
-            if (uid && uid[0] && hash && hash[0]) {
-                snprintf(user_id, sizeof(user_id), "%s", uid);
-                snprintf(stored, sizeof(stored), "%s", hash);
-            }
-        }
-        sql_finalize(&stmt);
-    }
-
-    bool ok = user_id[0] && stored[0]
-        && auth_verify(temp_sprintf("%.*s", (int) password.count, password.data),
-                       stored);
-    if (!ok) {
-        db_close(db);
-        render_login(sc, next,
-                     tr("auth.err_bad",
-                        "ឈ្មោះឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ"));
-        return;
-    }
-
-    // Housekeeping: drop expired sessions, then mint this one. The session id
-    // is generated in C so the cookie value is known without a RETURNING
-    // clause (not portable across the dialects).
+// Housekeeping + session mint shared by the login and signup flows: drop
+// expired rows, insert the new one, hand the C-generated id back so the
+// caller can set the cookie (no RETURNING clause across the dialects).
+static bool auth_mint_session(db_t *db, const char *user_id, char *sid /* 40 */) {
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE] = "DELETE FROM user_sessions "
                        "WHERE expires_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now');",
@@ -549,9 +505,6 @@ void serve_auth_login_post(Serve_Context *sc) {
         if (sql_prepare(db, q[db->lang], &hs)) sql_final_step(&hs);
         sql_finalize(&hs);
     }
-    // Mint this session. The id is generated in C so the cookie value is
-    // known without a RETURNING clause (not portable across the dialects).
-    char sid[40];
     bool created = webc_uuid(sid);
     sql_stmt stmt = {0};
     if (created && sql_prepare(db, ins[db->lang], &stmt)) {
@@ -562,14 +515,362 @@ void serve_auth_login_post(Serve_Context *sc) {
         created = false;
     }
     sql_finalize(&stmt);
-    db_close(db);
+    return created;
+}
 
-    if (!created) { serve_error(sc, 500); return; }
+static void auth_send_session(Serve_Context *sc, const char *sid) {
     http_set_cookie(sc, temp_sprintf(
         SID_COOKIE "=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d",
         sid, SESSION_DAYS * 24 * 60 * 60));
+}
+
+void serve_auth_login_post(Serve_Context *sc) {
+    String_View req  = sb_to_sv(sc->request);
+    String_View body = sb_to_sv(sc->body);
+    String_View username = form_text(req, body, "username");
+    String_View password = form_text(req, body, "password");
+    String_View next = form_text(req, body, "next");
+    if (!next_safe(next)) next = sv_from_cstr("/dashboard");
+
+    if (username.count == 0 || password.count == 0) {
+        render_login(sc, next,
+                     tr("auth.err_fill",
+                        "សូមបំពេញឈ្មោះនិងពាក្យសម្ងាត់"));
+        return;
+    }
+
+    db_t *db = open_webc_db();
+    if (!db) { serve_error(sc, 500); return; }
+
+    char user_id[64] = {0};
+    char user_type[32] = {0};
+    char stored[HASH_SALT_MAX + 80] = {0};
+    {
+        // Phase 16 signup: any ACTIVE account with a password may sign in
+        // (the old gate was ADMIN-only); the non-ADMIN landing target is
+        // decided after the verify below.
+        static const char *const q[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "SELECT id, password_hash, user_type_dict_id "
+                             "FROM users "
+                             "WHERE (username = ? OR email = ?) "
+                             "AND status = 'ACTIVE' AND deleted_at IS NULL "
+                             "LIMIT 1;",
+            [SQL_MYSQL]    = "SELECT id, password_hash, user_type_dict_id "
+                             "FROM users "
+                             "WHERE (username = ? OR email = ?) "
+                             "AND status = 'ACTIVE' AND deleted_at IS NULL "
+                             "LIMIT 1;",
+            [SQL_POSTGRES] = "SELECT id, password_hash, user_type_dict_id "
+                             "FROM users "
+                             "WHERE (username = $1 OR email = $2) "
+                             "AND status = 'ACTIVE' AND deleted_at IS NULL "
+                             "LIMIT 1;",
+        };
+        sql_stmt stmt = {0};
+        if (sql_prepare(db, q[db->lang], &stmt)
+            && sql_bind(&stmt, 1, SQL_SV(username))
+            && sql_bind(&stmt, 2, SQL_SV(username))
+            && sql_step(&stmt) == SQL_ROW) {
+            const char *uid  = sql_col_text(&stmt, 0);
+            const char *hash = sql_col_text(&stmt, 1);
+            const char *type = sql_col_text(&stmt, 2);
+            if (uid && uid[0] && hash && hash[0]) {
+                snprintf(user_id, sizeof(user_id), "%s", uid);
+                snprintf(stored, sizeof(stored), "%s", hash);
+            }
+            if (type && type[0]) snprintf(user_type, sizeof(user_type), "%s", type);
+        }
+        sql_finalize(&stmt);
+    }
+
+    bool ok = user_id[0] && stored[0]
+        && auth_verify(temp_sprintf("%.*s", (int) password.count, password.data),
+                       stored);
+    if (!ok) {
+        db_close(db);
+        render_login(sc, next,
+                     tr("auth.err_bad",
+                        "ឈ្មោះឬពាក្យសម្ងាត់មិនត្រឹមត្រូវ"));
+        return;
+    }
+    // ADMIN follows the (validated) staff next= target; CUSTOMER sessions
+    // belong on the storefront, so a crafted ?next=/dashboard bounces.
+    if (user_type[0] && strcmp(user_type, "ADMIN") != 0)
+        next = sv_from_cstr("/");
+
+    char sid[40];
+    bool created = auth_mint_session(db, user_id, sid);
+    db_close(db);
+
+    if (!created) { serve_error(sc, 500); return; }
+    auth_send_session(sc, sid);
     http_render_redirect(sc, 303,
                          temp_sprintf("%.*s", (int) next.count, next.data));
+}
+
+// ---------------------------------------------------------------------------
+// Phase 16 signup: public permanent accounts. A fresh buyer inserts a
+// CUSTOMER row; a phone that already matches a guest checkout account
+// (0007 keeps password_hash empty until the buyer deliberately claims it)
+// is claimed by filling name/username/email/password. The minted session
+// is the same one login produces, so the storefront keeps the identity.
+// ---------------------------------------------------------------------------
+
+typedef struct {
+    const char *input;   // form field name
+    const char *trk;     // i18n key for the label
+    const char *def;     // Khmer fallback label
+    const char *type;    // input type
+    const char *ac;      // autocomplete token
+    int min_len;         // minlength (password), 0 = none
+} Signup_Field;
+
+static const Signup_Field signup_fields[] = {
+    { "name",     "auth.su_name",        "ឈ្មោះពេញ",
+      "text",     "name", 0 },
+    { "username", "auth.label_username", "ឈ្មោះអ្នកប្រើ",
+      "text",     "username", 0 },
+    { "phone",    "auth.su_phone",       "លេខទូរស័ព្ទ",
+      "tel",      "tel", 0 },
+    { "email",    "auth.su_email",       "អ៊ីមែល",
+      "email",    "email", 0 },
+    { "password", "auth.label_password", "ពាក្យសម្ងាត់",
+      "password", "new-password", 6 },
+};
+
+static void render_signup(Serve_Context *sc, const char *err) {
+    String_Builder content = {0};
+    sb_append_cstr(&content,
+        "<div class=\"min-h-screen flex items-center justify-center"
+        " bg-base\">"
+        "<form method=\"POST\" action=\"/signup\" data-signup-form"
+        " class=\"w-full max-w-sm bg-mantle border border-surface0\">"
+        "<div class=\"bg-text text-onbase px-3 py-2\">"
+        "<div class=\"text-sm font-semibold\">");
+    sb_append_html_escaped(&content, tr("auth.signup_title", "បង្កើតគណនីថ្មី"));
+    sb_append_cstr(&content, "</div>"
+        "<div class=\"text-xs text-onbase/70\">POS Admin</div></div>"
+        "<div class=\"px-3 py-3 flex flex-col gap-3\">");
+    if (err && err[0]) {
+        sb_append_cstr(&content,
+            "<div data-signup-error class=\"bg-red/10 border-l-2"
+            " border-red text-red px-2 py-1.5 text-xs\">");
+        sb_append_html_escaped(&content, err);
+        sb_append_cstr(&content, "</div>");
+    }
+    for (size_t i = 0; i < ARRAY_LEN(signup_fields); ++i) {
+        const Signup_Field *f = &signup_fields[i];
+        sb_append_cstr(&content, "<label class=\"text-xs text-subtext0\">");
+        sb_append_html_escaped(&content, tr(f->trk, f->def));
+        sb_append_cstr(&content, "</label>"
+            "<input name=\"");
+        sb_append_cstr(&content, f->input);
+        sb_append_cstr(&content, "\" type=\"");
+        sb_append_cstr(&content, f->type);
+        sb_append_cstr(&content, "\" autocomplete=\"");
+        sb_append_cstr(&content, f->ac);
+        sb_append_cstr(&content, "\" required");
+        if (f->min_len > 0) {
+            sb_appendf(&content, " minlength=\"%d\"", f->min_len);
+        }
+        sb_append_cstr(&content,
+            " class=\"border border-surface0 bg-base text-text px-2"
+            " py-1.5 text-sm w-full\">");
+    }
+    sb_append_cstr(&content,
+        "<button type=\"submit\" class=\"bg-blue text-onbase"
+        " hover:brightness-90 px-2 py-1.5 text-sm w-full\">");
+    sb_append_html_escaped(&content, tr("auth.su_submit", "បង្កើតគណនី"));
+    sb_append_cstr(&content, "</button>"
+        "<a href=\"/login\" class=\"text-xs text-blue hover:underline"
+        " text-center\">");
+    sb_append_html_escaped(&content,
+                           tr("auth.su_have", "មានគណនីហើយ? ចូល"));
+    sb_append_cstr(&content, "</a>"
+        "<a href=\"/\" class=\"text-xs text-blue hover:underline"
+        " text-center\">");
+    sb_append_html_escaped(&content, tr("auth.back", "ត្រឡប់ទៅហាង"));
+    sb_append_cstr(&content, "</a>"
+        "</div></form></div>");
+
+    sc->body.count = 0;
+    String_View title = sv_from_cstr(tr("auth.signup_title", "បង្កើតគណនីថ្មី"));
+    render_page_shell(sc, title, sb_to_sv(content));
+    http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));
+    sb_free(content);
+}
+
+void serve_auth_signup(Serve_Context *sc) {
+    render_signup(sc, NULL);
+}
+
+void serve_auth_signup_post(Serve_Context *sc) {
+    String_View req  = sb_to_sv(sc->request);
+    String_View body = sb_to_sv(sc->body);
+    String_View name     = form_text(req, body, "name");
+    String_View username = form_text(req, body, "username");
+    String_View phone    = form_text(req, body, "phone");
+    String_View email    = form_text(req, body, "email");
+    String_View password = form_text(req, body, "password");
+
+    const char *err = NULL;
+    if (name.count == 0 || username.count == 0 || phone.count == 0
+        || email.count == 0 || password.count == 0) {
+        err = tr("auth.su_err_fill", "សូមបំពេញព័ត៌មានទាំងអស់");
+    } else if (password.count < 6) {
+        err = tr("auth.su_err_short",
+                 "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច៦អក្ខរា");
+    }
+    if (err) { render_signup(sc, err); return; }
+
+    db_t *db = open_webc_db();
+    if (!db) { serve_error(sc, 500); return; }
+
+    char uid[64] = {0};
+    bool claim = false;
+    char sid[40] = {0};
+
+    // The phone decides insert-vs-claim-vs-reject: an existing row with an
+    // empty password_hash is the guest checkout account (0007) and gets
+    // claimed; a hashed row means the phone is already registered.
+    {
+        static const char *const q[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "SELECT id, COALESCE(password_hash, '') "
+                             "FROM users WHERE phone = ? LIMIT 1;",
+            [SQL_MYSQL]    = "SELECT id, COALESCE(password_hash, '') "
+                             "FROM users WHERE phone = ? LIMIT 1;",
+            [SQL_POSTGRES] = "SELECT id, COALESCE(password_hash, '') "
+                             "FROM users WHERE phone = $1 LIMIT 1;",
+        };
+        sql_stmt stmt = {0};
+        if (sql_prepare(db, q[db->lang], &stmt)
+            && sql_bind(&stmt, 1, SQL_SV(phone))
+            && sql_step(&stmt) == SQL_ROW) {
+            const char *id  = sql_col_text(&stmt, 0);
+            const char *hsh = sql_col_text(&stmt, 1);
+            if (hsh && hsh[0]) {
+                err = tr("auth.su_err_phone",
+                         "លេខទូរស័ព្ទនេះបានចុះឈ្មោះរួមហើយ");
+            } else if (id && id[0]) {
+                snprintf(uid, sizeof(uid), "%s", id);
+                claim = true;
+            }
+        }
+        sql_finalize(&stmt);
+    }
+
+    // Username and email must be free (the claimed row may keep its own).
+    if (!err) {
+        static const char *const q_user[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "SELECT id FROM users WHERE username = ? LIMIT 1;",
+            [SQL_MYSQL]    = "SELECT id FROM users WHERE username = ? LIMIT 1;",
+            [SQL_POSTGRES] = "SELECT id FROM users WHERE username = $1 LIMIT 1;",
+        };
+        static const char *const q_mail[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "SELECT id FROM users WHERE email = ? LIMIT 1;",
+            [SQL_MYSQL]    = "SELECT id FROM users WHERE email = ? LIMIT 1;",
+            [SQL_POSTGRES] = "SELECT id FROM users WHERE email = $1 LIMIT 1;",
+        };
+        for (int which = 0; !err && which < 2; ++which) {
+            String_View sv = which == 0 ? username : email;
+            sql_stmt stmt = {0};
+            if (sql_prepare(db, which == 0 ? q_user[db->lang] : q_mail[db->lang],
+                            &stmt)
+                && sql_bind(&stmt, 1, SQL_SV(sv))
+                && sql_step(&stmt) == SQL_ROW) {
+                const char *id = sql_col_text(&stmt, 0);
+                if (!claim || !id || strcmp(id, uid) != 0)
+                    err = tr("auth.su_err_taken",
+                             "ឈ្មោះ អ៊ីមែល ឬលេខទូរស័ព្ទនេះបានប្រើរួមហើយ");
+            }
+            sql_finalize(&stmt);
+        }
+    }
+
+    // Per-account salt: stored as "<salt>$<hex>" exactly like 0005_auth,
+    // auth_verify reads the salt back out of the stored string.
+    char stored[HASH_SALT_MAX + 80] = {0};
+    if (!err) {
+        char salt[40] = {0};
+        char hex[65] = {0};
+        const char *pw = temp_sprintf("%.*s", (int) password.count, password.data);
+        if (!webc_uuid(salt)) {
+            err = tr("auth.su_err_sys", "មិនអាចបង្កើតគណនីបានទេ");
+        } else {
+            salt[16] = '\0';   // 16 uuid chars is plenty of salt
+            if (!hash_hex(pw, salt, hex)) {
+                err = tr("auth.su_err_sys", "មិនអាចបង្កើតគណនីបានទេ");
+            } else {
+                snprintf(stored, sizeof(stored), "%s$%s", salt, hex);
+            }
+        }
+    }
+
+    // Insert the fresh CUSTOMER row (DDL default) or claim the guest one
+    // by filling the credentials - guest rows keep their customer link.
+    if (!err) {
+        bool wrote = false;
+        if (claim) {
+            static const char *const q[SQL_LANG_COUNT] = {
+                [SQL_SQLITE]   = "UPDATE users SET name = ?, username = ?, "
+                                 "email = ?, password_hash = ? WHERE id = ?;",
+                [SQL_MYSQL]    = "UPDATE users SET name = ?, username = ?, "
+                                 "email = ?, password_hash = ? WHERE id = ?;",
+                [SQL_POSTGRES] = "UPDATE users SET name = $1, username = $2, "
+                                 "email = $3, password_hash = $4 WHERE id = $5;",
+            };
+            sql_stmt stmt = {0};
+            if (sql_prepare(db, q[db->lang], &stmt)
+                && sql_bind(&stmt, 1, SQL_SV(name))
+                && sql_bind(&stmt, 2, SQL_SV(username))
+                && sql_bind(&stmt, 3, SQL_SV(email))
+                && sql_bind(&stmt, 4, SQL_SV(sv_from_cstr(stored)))
+                && sql_bind(&stmt, 5, SQL_SV(sv_from_cstr(uid)))
+                && sql_final_step(&stmt)) {
+                wrote = true;
+            }
+            sql_finalize(&stmt);
+        } else {
+            static const char *const q[SQL_LANG_COUNT] = {
+                [SQL_SQLITE]   = "INSERT INTO users "
+                                 "(id, name, username, email, phone, "
+                                 "password_hash) VALUES (?, ?, ?, ?, ?, ?);",
+                [SQL_MYSQL]    = "INSERT INTO users "
+                                 "(id, name, username, email, phone, "
+                                 "password_hash) VALUES (?, ?, ?, ?, ?, ?);",
+                [SQL_POSTGRES] = "INSERT INTO users "
+                                 "(id, name, username, email, phone, "
+                                 "password_hash) VALUES ($1, $2, $3, $4, $5, $6);",
+            };
+            if (webc_uuid(uid)) {
+                sql_stmt stmt = {0};
+                if (sql_prepare(db, q[db->lang], &stmt)
+                    && sql_bind(&stmt, 1, SQL_SV(sv_from_cstr(uid)))
+                    && sql_bind(&stmt, 2, SQL_SV(name))
+                    && sql_bind(&stmt, 3, SQL_SV(username))
+                    && sql_bind(&stmt, 4, SQL_SV(email))
+                    && sql_bind(&stmt, 5, SQL_SV(phone))
+                    && sql_bind(&stmt, 6, SQL_SV(sv_from_cstr(stored)))
+                    && sql_final_step(&stmt)) {
+                    wrote = true;
+                }
+                sql_finalize(&stmt);
+            }
+        }
+        // A race lost against the UNIQUE indexes reads as "already taken".
+        if (!wrote)
+            err = tr("auth.su_err_taken",
+                     "ឈ្មោះ អ៊ីមែល ឬលេខទូរស័ព្ទនេះបានប្រើរួមហើយ");
+    }
+
+    bool minted = false;
+    if (!err) minted = auth_mint_session(db, uid, sid);
+    db_close(db);
+
+    if (err) { render_signup(sc, err); return; }
+    if (!minted) { serve_error(sc, 500); return; }
+    auth_send_session(sc, sid);
+    http_render_redirect(sc, 303, "/");
 }
 
 void serve_auth_logout(Serve_Context *sc) {

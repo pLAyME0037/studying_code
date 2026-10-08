@@ -1,5 +1,14 @@
 ({ if (!fragment) { })
 <div id="mc-root" class="max-w-full mx-auto">
+({ if (config->soft_delete) { })
+    <div class="mb-2 inline-flex text-sm border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700">
+        <a href="({ STR(md_path); })"
+           class="px-2 py-1.5 font-medium ({ if (!show_deleted) { })bg-blue text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Live</a>
+        <a href="({ STR(md_path); })?deleted=1"
+           title="Soft-deleted rows - restore or leave them here"
+           class="px-2 py-1.5 font-medium ({ if (show_deleted) { })bg-red text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Trash (<span data-trash-total>({ INT(trash_total); })</span>)</a>
+    </div>
+({ } })
 ({ if (show_deleted) { })
     <div class="mb-3 px-2 py-1 flex justify-between items-center text-sm bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
         <span>Deleted rows &mdash; restore to bring them back, or leave them here.</span>

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "core/auth/auth.h"
 #include "core/http/utils.h"
 #include "core/i18n/i18n.h"
 #include "src/db/db.h"
@@ -101,12 +102,42 @@ void shop_chrome_start(String_Builder *sb, Serve_Context *sc,
     sb_append_html_escaped(sb, tr("shop.cart_link", "រទេះ"));
     sb_append_cstr(sb, " (");
     sb_appendf(sb, "%zu", cart_entry_count(sc));
+    sb_append_cstr(sb, ")</a>");
+    // Phase 16 signup: anonymous = admin entry + sign in + sign up;
+    // signed-in = identity + logout, and only ADMIN keeps the staff
+    // dashboard link (CUSTOMER sessions belong on the storefront).
+    const Auth_User *au = auth_current_user();
+    bool signed_in = au && au->id;
+    bool is_admin = signed_in && au->user_type
+        && strcmp(au->user_type, "ADMIN") == 0;
+    if (!signed_in || is_admin) {
+        sb_append_cstr(sb,
+            "<a href=\"/dashboard\" class=\"text-sm text-blue"
+            " whitespace-nowrap\">");
+        sb_append_html_escaped(sb, tr("shop.admin_link", "ផ្ទៃគ្រប់គ្រង"));
+        sb_append_cstr(sb, "</a>");
+    }
+    if (signed_in) {
+        sb_append_cstr(sb,
+            "<span class=\"text-sm text-text px-1 whitespace-nowrap\">");
+        sb_append_html_escaped(sb, au->name && au->name[0] ? au->name : au->id);
+        sb_append_cstr(sb, "</span>"
+            "<a href=\"/logout\" class=\"text-sm text-text border"
+            " border-surface0 px-2 py-1.5 whitespace-nowrap\">");
+        sb_append_html_escaped(sb, tr("shop.logout_link", "ចេញ"));
+        sb_append_cstr(sb, "</a>");
+    } else {
+        sb_append_cstr(sb,
+            "<a href=\"/login\" class=\"text-sm text-text border"
+            " border-surface0 px-2 py-1.5 whitespace-nowrap\">");
+        sb_append_html_escaped(sb, tr("shop.signin_link", "ចូល"));
+        sb_append_cstr(sb, "</a>"
+            "<a href=\"/signup\" class=\"text-sm bg-blue text-onbase"
+            " px-2 py-1.5 whitespace-nowrap\">");
+        sb_append_html_escaped(sb, tr("shop.signup_link", "ចុះឈ្មោះ"));
+        sb_append_cstr(sb, "</a>");
+    }
     sb_append_cstr(sb,
-        ")</a>"
-        "<a href=\"/dashboard\" class=\"text-sm text-blue"
-        " whitespace-nowrap\">");
-    sb_append_html_escaped(sb, tr("shop.admin_link", "ផ្ទៃគ្រប់គ្រង"));
-    sb_append_cstr(sb, "</a>"
         // Phase 12 theme: three buttons driving js/themeSwitcher.js
         // (no JS -> they stay inert, the default light theme holds).
         "<div class=\"flex items-center gap-0.5 text-xs\" data-theme-switch>"

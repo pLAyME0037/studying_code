@@ -4,16 +4,10 @@
 #include "master_child.h"
 
 // =========================================================================
-// POS showcase pages (composite columns): /pos/locations (4-part stack
-// cell) and /pos/users (avatar cell). Master-child engine renders the
-// lists; SERVE_* macros below generate the create/update/delete handlers.
+// POS showcase pages (composite columns): /pos/users (avatar cell).
+// Master-child engine renders the lists; SERVE_* macros below generate the
+// create/update/delete handlers. The geo masters live in src/pos/geo.c.
 // =========================================================================
-
-void serve_pos_locations(Serve_Context *sc);
-void serve_pos_locations_create(Serve_Context *sc);
-void serve_pos_locations_update(Serve_Context *sc);
-void serve_pos_locations_delete(Serve_Context *sc);
-void serve_pos_locations_restore(Serve_Context *sc);
 
 void serve_pos_users(Serve_Context *sc);
 void serve_pos_users_create(Serve_Context *sc);

@@ -35,7 +35,13 @@
           "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" },
         { NULL,       "/pos/permissions","Permissions",
           "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" },
-        { "Config",   "/pos/locations", "Locations",
+        { "Config",   "/pos/provinces",  "Provinces",
+          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
+        { NULL,       "/pos/districts",  "Districts",
+          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
+        { NULL,       "/pos/communes",   "Communes",
+          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
+        { NULL,       "/pos/villages",   "Villages",
           "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
         { NULL,       "/pos/dictionaries","Dictionaries",
           "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
@@ -81,7 +87,10 @@
         "SD.STOCK.ADJUST",     /* Stocks */
         "SD.USER.MGMT",        /* Roles */
         "SD.USER.MGMT",        /* Permissions */
-        "SD.SETTINGS",         /* Locations */
+        "SD.SETTINGS",         /* Provinces */
+        "SD.SETTINGS",         /* Districts */
+        "SD.SETTINGS",         /* Communes */
+        "SD.SETTINGS",         /* Villages */
         "SD.SETTINGS",         /* Dictionaries */
         "SD.SETTINGS",         /* Languages */
         "SD.SETTINGS",         /* Configs */

@@ -325,6 +325,10 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
         return;
     }
     if (windowed) page_info_finish(&page_info, page_info.total);
+    // Live/Trash tab strip (soft_delete pages): the badge counts the rows
+    // sitting in the trash (?deleted=1), so deleted data stays findable.
+    size_t trash_total = 0;
+    if (config->soft_delete) md_count_masters(db, config, true, &trash_total);
     // Child tabs share one page key per table (?notes_page=N for every
     // master); totals are per master and computed in the template.
     size_t child_slot_count = config->children_count ? config->children_count : 1;

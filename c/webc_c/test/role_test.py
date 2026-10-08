@@ -58,7 +58,11 @@ def main():
     t.chk("cashier nav hides finance", 'href="/pos/finance"' not in d, True)
     t.chk("cashier nav hides users", 'href="/pos/users"' not in d, True)
     t.chk("cashier nav hides stocks", 'href="/pos/stocks"' not in d, True)
-    t.chk("cashier nav hides settings", 'href="/pos/locations"' not in d, True)
+    t.chk("cashier nav hides geo settings",
+          all(p not in d for p in ('href="/pos/provinces"',
+                                   'href="/pos/districts"',
+                                   'href="/pos/communes"',
+                                   'href="/pos/villages"')), True)
     t.chk("cashier nav groups (Dashboard/Sales/Party/Reports/Demo)",
           d.count(HEADER_CLS), 5)
     t.chk("cashier nav links (10 entries + logout)",
@@ -78,6 +82,8 @@ def main():
     t.chk("cashier /pos/products gated", c.get("/pos/products")[0], 403)
     t.chk("cashier /pos/stocks gated", c.get("/pos/stocks")[0], 403)
     t.chk("cashier /pos/alerts gated", c.get("/pos/alerts")[0], 403)
+    t.chk("cashier /pos/provinces gated (SD.SETTINGS)",
+          c.get("/pos/provinces")[0], 403)
 
     st, _, _, _ = c.req_full("POST", "/logout")
     t.chk("cashier logout", st, 303)
