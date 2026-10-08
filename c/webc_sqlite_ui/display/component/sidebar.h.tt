@@ -1,0 +1,89 @@
+<aside id="sidebar"
+       class="shrink-0 flex flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-all duration-300 h-full">
+
+    <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 shrink-0">
+        <div id="sidebar-pad"
+             class="flex items-center p-3 user-card">
+            <img src="({ STR(u.profile_pic); })"
+                 alt="({ STR(u.name); })"
+                 class="h-10 w-10 rounded-full shrink-0" />
+            <div class="ml-3 min-w-0 nav-label">
+                <p class="text-sm font-semibold text-gray-800 dark:text-white truncate">
+                    ({ STR(u.name); })
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    ({ STR(u.email); })
+                </p>
+            </div>
+        </div>
+
+        <div class="sidebar-tooltip">
+            ({ STR(u.name); })
+        </div>
+    </div>
+
+    <nav class="flex-1 py-0 px-3 space-y-1 overflow-y-auto no-scrollbar">
+        <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 nav-label">
+            Database
+        </div>
+
+        <div class="relative group/item mb-1">
+            <a href="/db"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/db"),
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Overview
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+                Overview
+            </div>
+        </div>
+
+        <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 nav-label">
+            General
+        </div>
+
+        <div class="relative group/item mb-1">
+            <a href="/"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/") && strcmp(CURRENT_PATH, "/") == 0,
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Home
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+                Home
+            </div>
+        </div>
+
+        <div class="relative group/item mb-1">
+            <a href="/version"
+               class="nav-link flex items-center rounded-lg transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE("/version"),
+                   "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-300",
+                   "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200") })">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
+                    Version
+                </span>
+            </a>
+            <div class="sidebar-tooltip">
+                Version
+            </div>
+        </div>
+    </nav>
+</aside>
+<div id="sidebar-backdrop" data-sidebar-close></div>

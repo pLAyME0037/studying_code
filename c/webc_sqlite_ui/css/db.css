@@ -1,0 +1,1117 @@
+/* ==========================================================================
+   webc sqlite — Catppuccin workspace stylesheet
+   Loaded after css/output.css (framework chrome overrides + #dbapp design).
+
+   Design rules (deliberate):
+   - Hierarchy comes from flat color regions (base / mantle / crust) and
+     1px surface lines — NOT from nested rounded cards with padding stacks.
+   - Border-radius only on small interactive controls (3px); regions are
+     square.
+   - Accents follow the Catppuccin palette: blue = primary, green = ok,
+     red = danger, peach = warning/unsaved, mauve = highlight.
+   - Latte (light) is the :root default; html.dark switches to Mocha
+     (themeSwitcher toggles .dark on <html>).
+   ========================================================================== */
+
+/* -- palette ------------------------------------------------------------- */
+
+:root {
+    /* Catppuccin Latte */
+    --base:      #eff1f5;
+    --mantle:    #e6e9ef;
+    --crust:     #dce0e8;
+    --surface0:  #ccd0da;
+    --surface1:  #bcc0cc;
+    --surface2:  #acb0be;
+    --overlay0:  #9ca0b0;
+    --overlay1:  #8c8fa1;
+    --overlay2:  #7c7f93;
+    --subtext0:  #6c6f85;
+    --subtext1:  #5c5f77;
+    --text:      #4c4f69;
+
+    --blue:      #1e66f5;
+    --mauve:     #8839ef;
+    --green:     #40a02b;
+    --red:       #d20f39;
+    --peach:     #fe640b;
+    --yellow:    #df8e1d;
+    --teal:      #179299;
+    --sky:       #04a5e5;
+    --lavender:  #7287fd;
+    --pink:      #ea76cb;
+
+    /* readable text on pastel accents */
+    --on-blue:   #ffffff;
+    --on-green:  #ffffff;
+    --on-red:    #ffffff;
+    --on-mauve:  #ffffff;
+}
+
+html.dark {
+    /* Catppuccin Mocha */
+    --base:      #1e1e2e;
+    --mantle:    #181825;
+    --crust:     #11111b;
+    --surface0:  #313244;
+    --surface1:  #45475a;
+    --surface2:  #585b70;
+    --overlay0:  #6c7086;
+    --overlay1:  #7f849c;
+    --overlay2:  #9399b2;
+    --subtext0:  #a6adc8;
+    --subtext1:  #bac2de;
+    --text:      #cdd6f4;
+
+    --blue:      #89b4fa;
+    --mauve:     #cba6f7;
+    --green:     #a6e3a1;
+    --red:       #f38ba8;
+    --peach:     #fab387;
+    --yellow:    #f9e2af;
+    --teal:      #94e2d5;
+    --sky:       #89dceb;
+    --lavender:  #b4befe;
+    --pink:      #f5c2e7;
+
+    --on-blue:   #11111b;
+    --on-green:  #11111b;
+    --on-red:    #11111b;
+    --on-mauve:  #11111b;
+}
+
+/* -- framework chrome (header / body) in Catppuccin ---------------------- */
+
+body.bg-gray-100,
+body.text-gray-900 {
+    background-color: var(--base) !important;
+    color: var(--text) !important;
+}
+
+html.dark body.dark\:bg-gray-900,
+html.dark body.dark\:text-gray-100 {
+    background-color: var(--base) !important;
+    color: var(--text) !important;
+}
+
+header {
+    background-color: var(--mantle) !important;
+    border-color: var(--surface0) !important;
+    box-shadow: none !important;
+}
+
+header .font-bold,
+header h1 {
+    color: var(--text) !important;
+}
+
+header .bg-gray-300,
+header .dark\:bg-gray-600 {
+    background-color: var(--surface1) !important;
+}
+
+header button {
+    border-radius: 3px;
+}
+
+header button:hover {
+    background-color: var(--surface0) !important;
+    color: var(--text) !important;
+}
+
+/* active-file pill in the header */
+.db-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 22rem;
+    padding: 2px 9px;
+    margin-left: 10px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--blue) 35%, transparent);
+    border-radius: 3px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.db-pill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--blue);
+    flex: none;
+}
+
+.db-pill .ro {
+    padding: 0 4px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--peach) 22%, transparent);
+    color: var(--peach);
+    font-weight: 700;
+}
+
+/* the DB workspace replaces the app sidebar + marketing footer */
+body:has(#dbapp) #sidebar,
+body:has(#dbapp) footer {
+    display: none;
+}
+
+body:has(#dbapp) main {
+    overflow: hidden !important;
+}
+
+body:has(#dbapp) main > div {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 0 !important;
+}
+
+/* -- workspace layout ----------------------------------------------------- */
+
+#dbapp {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--base);
+    color: var(--text);
+}
+
+#db-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 7px 12px;
+    background: var(--crust);
+    border-bottom: 1px solid var(--surface0);
+}
+
+#db-toolbar .tb-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+#db-toolbar .tb-crumb {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--subtext0);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 50vw;
+}
+
+#db-toolbar .tb-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+#db-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+#db-side {
+    width: 265px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--mantle);
+    border-right: 1px solid var(--surface0);
+}
+
+.side-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--subtext0);
+    border-bottom: 1px solid var(--surface0);
+}
+
+.side-add {
+    border: 1px solid var(--surface1);
+    background: transparent;
+    color: var(--subtext1);
+    font-size: 13px;
+    line-height: 1;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.side-add:hover {
+    background: var(--surface0);
+    color: var(--text);
+}
+
+.side-hint {
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--overlay1);
+    border-top: 1px solid var(--surface0);
+}
+
+#sqlite-db-tree {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: 4px 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--subtext1);
+}
+
+#db-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#db-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 12px;
+    background: var(--mantle);
+    border-bottom: 1px solid var(--surface0);
+}
+
+.tab {
+    padding: 8px 14px 6px;
+    font-size: 13px;
+    color: var(--subtext0);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+}
+
+.tab:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--surface0) 55%, transparent);
+}
+
+.tab.active {
+    color: var(--blue);
+    border-bottom-color: var(--blue);
+    font-weight: 600;
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: -2px;
+}
+
+#db-panes {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.pane {
+    display: none;
+    padding: 16px 20px 28px;
+}
+
+.pane.active {
+    display: block;
+}
+
+#db-status {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 4px 12px;
+    background: var(--crust);
+    border-top: 1px solid var(--surface0);
+    font-size: 12px;
+    color: var(--subtext0);
+}
+
+#db-status .status-right {
+    margin-left: auto;
+    color: var(--overlay1);
+}
+
+/* -- controls ------------------------------------------------------------- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--mantle);
+    border: 1px solid var(--surface1);
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: var(--surface0);
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+}
+
+.btn-primary {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: var(--on-blue);
+    font-weight: 600;
+}
+
+.btn-primary:hover {
+    background: var(--blue);
+    filter: brightness(1.08);
+}
+
+.btn-danger {
+    background: var(--red);
+    border-color: transparent;
+    color: var(--on-red);
+}
+
+.btn-danger:hover {
+    background: var(--red);
+    filter: brightness(1.08);
+}
+
+.btn-sm {
+    padding: 2px 8px;
+    font-size: 12px;
+}
+
+/* file pickers render as one button: invisible input over the label */
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-file input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.input,
+textarea.input,
+select.input {
+    padding: 6px 9px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--crust);
+    border: 1px solid var(--surface0);
+    border-radius: 3px;
+    font-family: inherit;
+}
+
+.input.mono,
+textarea.input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.input:focus,
+textarea.input:focus,
+select.input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 1px var(--blue);
+}
+
+textarea.input {
+    width: 100%;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.w-20 { width: 5.5rem; }
+.w-40 { width: 11rem; }
+.w-56 { width: 15rem; }
+.w-64 { width: 17rem; }
+.grow { flex: 1; min-width: 200px; }
+
+.check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--subtext1);
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    accent-color: var(--blue);
+}
+
+/* -- section headers, messages, badges ------------------------------------ */
+
+.sub-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 20px 0 12px;
+    padding-bottom: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--subtext0);
+    border-bottom: 1px solid var(--surface0);
+}
+
+.pane > .sub-head:first-child {
+    margin-top: 0;
+}
+
+.sub-note {
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--overlay1);
+}
+
+.rule {
+    border: 0;
+    border-top: 1px solid var(--surface0);
+    margin: 18px 0;
+}
+
+.badge {
+    padding: 1px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 3px;
+    background: var(--surface0);
+    color: var(--subtext1);
+}
+
+.badge-ro {
+    background: color-mix(in srgb, var(--peach) 20%, transparent);
+    color: var(--peach);
+}
+
+.db-msg {
+    margin-bottom: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
+    background: var(--mantle);
+    border-left: 3px solid var(--surface1);
+}
+
+.db-msg.err {
+    color: var(--red);
+    border-left-color: var(--red);
+}
+
+.db-msg.ok {
+    color: var(--green);
+    border-left-color: var(--green);
+}
+
+.db-msg.warn {
+    color: var(--peach);
+    border-left-color: var(--peach);
+}
+
+/* inline status text (JS-driven) */
+.msg {
+    font-size: 13px;
+}
+
+.msg.ok { color: var(--green); }
+.msg.err { color: var(--red); }
+.msg.muted { color: var(--subtext0); }
+
+.grid-error {
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 10%, transparent);
+    border-bottom: 1px solid var(--surface0);
+}
+
+/* -- empty state (browse pane) -------------------------------------------- */
+
+#db-empty {
+    max-width: 660px;
+    padding: 36px 8px;
+    color: var(--subtext1);
+}
+
+#db-empty h3 {
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+#db-empty p {
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+#db-empty ol {
+    margin: 14px 0 0;
+    padding-left: 20px;
+    display: grid;
+    gap: 7px;
+    font-size: 13px;
+}
+
+#db-empty b {
+    color: var(--mauve);
+}
+
+/* -- data tables (grid + console results + server listing) ---------------- */
+
+#sqlite-db-grid {
+    background: var(--base);
+    border: 1px solid var(--surface0);
+    max-height: 100%;
+    overflow: auto;
+}
+
+.grid-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 8px 10px;
+    background: var(--mantle);
+    border-bottom: 1px solid var(--surface0);
+}
+
+.grid-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--subtext0);
+}
+
+.grid-row2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+}
+
+.data-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 6px 10px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--subtext0);
+    background: var(--crust);
+    border-bottom: 1px solid var(--surface0);
+    white-space: nowrap;
+}
+
+.data-table th.col-head {
+    cursor: pointer;
+    user-select: none;
+}
+
+.data-table th.col-head:hover {
+    color: var(--text);
+}
+
+.data-table th.col-head.sorted {
+    color: var(--blue);
+}
+
+.data-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--surface0);
+    white-space: nowrap;
+    max-width: 340px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+}
+
+.data-table tbody tr:hover {
+    background: color-mix(in srgb, var(--surface0) 60%, transparent);
+}
+
+.data-table td.null {
+    color: var(--overlay0);
+    font-style: italic;
+}
+
+.data-table td.cell-act {
+    white-space: nowrap;
+}
+
+.data-table td.grid-sel {
+    padding-right: 0;
+    width: 26px;
+}
+
+.count-line {
+    font-size: 11px;
+    color: var(--subtext0);
+    margin-bottom: 6px;
+}
+
+.cell-input {
+    width: 100%;
+    min-width: 90px;
+    padding: 2px 5px;
+    font-size: 12px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--crust);
+    border: 1px solid var(--blue);
+    border-radius: 2px;
+}
+
+/* -- schema tree ----------------------------------------------------------- */
+
+.tree-node {
+    margin-left: 6px;
+}
+
+.tree-node > summary {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.tree-node > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tree-node > summary::before {
+    content: "▸";
+    font-size: 9px;
+    color: var(--overlay0);
+    width: 10px;
+    flex: none;
+}
+
+.tree-node[open] > summary::before {
+    content: "▾";
+}
+
+.tree-node > summary:hover {
+    background: var(--surface0);
+}
+
+.tkind {
+    flex: none;
+    padding: 0 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border-radius: 2px;
+}
+
+.tkind-table {
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 18%, transparent);
+}
+
+.tkind-view {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+.tkind-trigger {
+    color: var(--peach);
+    background: color-mix(in srgb, var(--peach) 18%, transparent);
+}
+
+.tname {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tree-list {
+    list-style: none;
+    margin: 1px 0 3px;
+    padding-left: 22px;
+    color: var(--overlay1);
+}
+
+.tree-li {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.tree-li:hover {
+    background: var(--surface0);
+    color: var(--subtext1);
+}
+
+.x-btn {
+    flex: none;
+    border: none;
+    background: none;
+    padding: 0 4px;
+    font-size: 11px;
+    color: var(--red);
+    opacity: 0.55;
+    cursor: pointer;
+}
+
+.x-btn:hover {
+    opacity: 1;
+}
+
+.ddl-view {
+    margin: 0;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--mauve);
+    white-space: pre-wrap;
+}
+
+/* -- designer / structure pane --------------------------------------------- */
+
+.designer-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.col-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--surface0);
+}
+
+.col-label {
+    font-size: 12px;
+    color: var(--subtext0);
+}
+
+.col-type-note {
+    font-size: 11px;
+    color: var(--overlay1);
+}
+
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+/* -- info pane -------------------------------------------------------------- */
+
+.stat-grid,
+#sqlite-db-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px 22px;
+    margin: 4px 0 14px;
+}
+
+.stat-grid dt,
+.info-k {
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--overlay1);
+}
+
+.stat-grid dd,
+.info-v {
+    margin-top: 2px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.mono-path {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: var(--subtext1);
+    overflow-wrap: anywhere;
+    margin-bottom: 14px;
+}
+
+/* -- console (SQL pane) ------------------------------------------------------ */
+
+.tx-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.tx-ind {
+    font-size: 12px;
+    color: var(--subtext0);
+}
+
+.tx-ind.in-tx {
+    color: var(--peach);
+    font-weight: 700;
+}
+
+.console-hint {
+    font-size: 11px;
+    color: var(--overlay1);
+}
+
+#sqlite-sql-result {
+    margin-top: 12px;
+    font-size: 13px;
+}
+
+#sqlite-dirty {
+    color: var(--peach);
+    font-weight: 600;
+}
+
+/* -- open form + recents (connection pane) ---------------------------------- */
+
+.path-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.recent-block {
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--surface0);
+}
+
+.caps {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--overlay1);
+    margin-bottom: 6px;
+}
+
+.recent-list {
+    list-style: none;
+    display: grid;
+    gap: 2px;
+}
+
+.recent-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 4px 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: var(--subtext1);
+    background: none;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent-item:hover {
+    background: var(--surface0);
+    color: var(--text);
+}
+
+/* -- browse modal ------------------------------------------------------------- */
+
+#db-browse-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+#db-browse-modal.hidden {
+    display: none;
+}
+
+.modal-back {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--crust) 72%, transparent);
+}
+
+.modal-box {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--base);
+    border: 1px solid var(--surface1);
+    box-shadow: 0 18px 40px color-mix(in srgb, var(--crust) 65%, transparent);
+}
+
+.modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--mantle);
+    border-bottom: 1px solid var(--surface0);
+}
+
+.modal-head h3 {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.modal-dir {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: var(--subtext0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.modal-up {
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--surface0);
+}
+
+.modal-list {
+    flex: 1;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.modal-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    padding: 5px 14px;
+    font-size: 13px;
+    text-align: left;
+    color: var(--subtext1);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.modal-row:hover {
+    background: var(--surface0);
+}
+
+.modal-row .row-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: inherit;
+}
+
+.modal-row .row-sub {
+    flex: none;
+    font-size: 11px;
+    color: var(--overlay0);
+}
+
+.modal-row.sqlite {
+    color: var(--blue);
+}
+
+.modal-row.sqlite .row-name {
+    color: var(--blue);
+    font-weight: 600;
+}
+
+.modal-row.dim {
+    color: var(--overlay1);
+}
+
+.modal-foot {
+    padding: 7px 14px;
+    font-size: 11px;
+    color: var(--overlay1);
+    background: var(--mantle);
+    border-top: 1px solid var(--surface0);
+}

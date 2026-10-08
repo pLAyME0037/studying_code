@@ -1,0 +1,343 @@
+<div id="dbapp">
+    <div id="db-toolbar">
+        <div class="tb-left">
+            <span class="tb-crumb" title="({ ESCAPED(db_path); })">({ ESCAPED(db_path); })</span>
+        </div>
+        <div class="tb-right">
+            <button id="sqlite-save-db" type="button" class="btn btn-primary">Save to device</button>
+            <button id="sqlite-reload-db" type="button" class="btn">Reload from device</button>
+            <button id="sqlite-export-db" type="button" class="btn">Export .db</button>
+            <label class="btn btn-file">Import .db
+                <input id="sqlite-import-db" type="file" accept=".db,.sqlite,.sqlite3" />
+            </label>
+            <label class="btn btn-file">Run .sql
+                <input id="sqlite-import-sql" type="file" accept=".sql,.txt" />
+            </label>
+        </div>
+    </div>
+
+    <div id="db-body">
+        <aside id="db-side">
+            <div class="side-head">
+                Objects
+                <button id="db-new-table" type="button" class="side-add"
+                        title="New table — opens the Structure tab">+</button>
+            </div>
+            <div id="sqlite-db-tree" class="hidden"></div>
+            <div class="side-hint">
+                Click a table to browse it. Edits live in the browser until you press
+                <b>Save to device</b>.
+            </div>
+        </aside>
+
+        <div id="db-main">
+            <nav id="db-tabs">
+                <button type="button" class="tab active" data-tab="browse">Browse</button>
+                <button type="button" class="tab" data-tab="sql">SQL</button>
+                <button type="button" class="tab" data-tab="structure">Structure</button>
+                <button type="button" class="tab" data-tab="connection">Connection</button>
+                <button type="button" class="tab" data-tab="info">Info</button>
+            </nav>
+
+            <div id="db-panes">
+                <!-- ======================= BROWSE ======================= -->
+                <section class="pane active" data-pane="browse">
+                    <div id="db-empty">
+                        <h3>Nothing selected yet</h3>
+                        <p>
+                            Pick a table in the <b>Objects</b> sidebar to browse it here,
+                            or jump straight to the <b>SQL</b> tab to run a query.
+                        </p>
+                        <ol>
+                            <li>All SQL runs in your browser against an in-memory copy — the file on disk is untouched.</li>
+                            <li>Press <b>Save to device</b> in the toolbar to persist changes (a <code>.bak</code> backup is written first).</li>
+                            <li>Use <b>Reload from device</b> if the file changed somewhere else.</li>
+                            <li>The <b>Connection</b> tab opens other database files; <b>Info</b> shows pragmas and counts.</li>
+                        </ol>
+                    </div>
+                    <div id="sqlite-db-grid" class="hidden"></div>
+                </section>
+
+                <!-- ========================= SQL ========================= -->
+                <section class="pane" data-pane="sql">
+                    <div class="sub-head">
+                        SQL console
+                        <span class="sub-note">Runs in your browser via WebAssembly. One statement per run · Ctrl+Enter · results capped at 500 rows.</span>
+                    </div>
+                    <textarea id="sqlite-sql-input" rows="4" spellcheck="false" class="input mono"
+                        placeholder="SELECT sqlite_version();">SELECT sqlite_version();</textarea>
+                    <div class="designer-row" style="margin-top:10px">
+                        <button id="sqlite-sql-run" type="button" class="btn btn-primary">Run</button>
+                        <select id="sqlite-sql-history" class="input mono w-56">
+                            <option value="">history…</option>
+                        </select>
+                        <span class="console-hint">statement history (last 20, kept in this browser)</span>
+                    </div>
+                    <div class="tx-row">
+                        <button id="sqlite-tx-begin" type="button" class="btn btn-sm">BEGIN</button>
+                        <button id="sqlite-tx-commit" type="button" class="btn btn-sm">COMMIT</button>
+                        <button id="sqlite-tx-rollback" type="button" class="btn btn-sm">ROLLBACK</button>
+                        <span id="sqlite-tx-status" class="tx-ind"></span>
+                    </div>
+                    <div id="sqlite-sql-result"></div>
+                </section>
+
+                <!-- ====================== STRUCTURE ====================== -->
+                <section class="pane" data-pane="structure">
+                    <div class="sub-head">
+                        Table designer
+                        <span class="sub-note">Builds CREATE TABLE in your browser; applies to the in-memory copy until saved.</span>
+                    </div>
+                    <div class="designer-row">
+                        <input id="sqlite-tbl-name" type="text" placeholder="table name" class="input mono w-40" />
+                        <label class="col-label">Alter existing
+                            <select id="sqlite-tbl-target" class="input mono w-40">
+                                <option value="">— choose table —</option>
+                            </select>
+                        </label>
+                        <button id="sqlite-tbl-alter" type="button" class="btn">Alter table</button>
+                    </div>
+                    <div id="sqlite-tbl-cols"></div>
+                    <div class="form-actions">
+                        <button id="sqlite-tbl-addcol" type="button" class="btn">+ column</button>
+                        <button id="sqlite-tbl-create" type="button" class="btn btn-primary">Create table</button>
+                        <span id="sqlite-tbl-status" class="msg muted"></span>
+                    </div>
+
+                    <hr class="rule" />
+                    <div class="sub-head">
+                        Indexes
+                        <span class="sub-note">Tick the columns after choosing the table.</span>
+                    </div>
+                    <div class="designer-row">
+                        <label class="col-label">on table
+                            <select id="sqlite-idx-table" class="input mono w-40"></select>
+                        </label>
+                        <input id="sqlite-idx-name" type="text" placeholder="index name" class="input mono w-40" />
+                        <label class="check"><input id="sqlite-idx-unique" type="checkbox" /> unique</label>
+                        <button id="sqlite-idx-create" type="button" class="btn btn-primary">Create index</button>
+                    </div>
+                    <div id="sqlite-idx-cols" class="grid-row2"></div>
+
+                    <hr class="rule" />
+                    <div class="sub-head">
+                        Views
+                        <span class="sub-note">Saving replaces the view if the name already exists.</span>
+                    </div>
+                    <div class="designer-row">
+                        <label class="col-label">view
+                            <select id="sqlite-view-target" class="input mono w-40">
+                                <option value="">— existing —</option>
+                            </select>
+                        </label>
+                        <input id="sqlite-view-name" type="text" placeholder="view name" class="input mono w-40" />
+                        <button id="sqlite-view-save" type="button" class="btn btn-primary">Save view</button>
+                    </div>
+                    <textarea id="sqlite-view-sql" rows="3" spellcheck="false" class="input mono"
+                        placeholder="SELECT * FROM people WHERE age >= 18"></textarea>
+
+                    <hr class="rule" />
+                    <div class="sub-head">
+                        Triggers
+                        <span class="sub-note">Full CREATE TRIGGER statement.</span>
+                    </div>
+                    <div class="designer-row">
+                        <textarea id="sqlite-trigger-sql" rows="3" spellcheck="false" class="input mono"
+                            placeholder="CREATE TRIGGER ... AFTER INSERT ON tbl BEGIN ... END"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button id="sqlite-trigger-save" type="button" class="btn btn-primary">Save trigger</button>
+                        <span id="sqlite-schema-status" class="msg muted"></span>
+                    </div>
+                </section>
+
+                <!-- ===================== CONNECTION ====================== -->
+                <section class="pane" data-pane="connection">
+                    ({ if (err_msg) { })
+                    <div class="db-msg err" role="alert">({ ESCAPED(err_msg); })</div>
+                    ({ } })
+                    ({ if (ok_msg) { })
+                    <div class="db-msg ok" role="alert">Database ({ ESCAPED(ok_msg); }).</div>
+                    ({ } })
+
+                    <div class="sub-head">
+                        Active database
+                        ({ if (!db_is_user) { })
+                        <span class="badge badge-app">application</span>
+                        ({ } })
+                        ({ if (db_readonly) { })
+                        <span class="badge badge-ro">read-only</span>
+                        ({ } })
+                        ({ if (db_is_user) { })
+                        <form method="POST" action="/db/close">
+                            <button type="submit" class="btn btn-sm">Close (back to application DB)</button>
+                        </form>
+                        ({ } })
+                    </div>
+                    <p class="mono-path">({ ESCAPED(db_path); })</p>
+
+                    ({ if (!sqlite_tools) { })
+                    <div class="db-msg warn">
+                        The application database is not SQLite, so file/pragma details are not shown here.
+                        Open a SQLite file below to manage it.
+                    </div>
+                    ({ } })
+
+                    ({ if (sqlite_tools) { })
+                    <dl class="stat-grid">
+                        <div>
+                            <dt>File size</dt>
+                            <dd>({ STR(db_size_str); })</dd>
+                        </div>
+                        <div>
+                            <dt>SQLite version</dt>
+                            <dd>({ STR(sqlite_version); })</dd>
+                        </div>
+                        <div>
+                            <dt>Pages</dt>
+                            <dd>({ LLINT(page_count); }) &times; ({ LLINT(page_size); }) B</dd>
+                        </div>
+                        <div>
+                            <dt>Free pages</dt>
+                            <dd>({ LLINT(freelist); })</dd>
+                        </div>
+                        <div>
+                            <dt>Journal mode</dt>
+                            <dd>({ STR(journal_mode); })</dd>
+                        </div>
+                        <div>
+                            <dt>Foreign keys</dt>
+                            <dd>({ STR(foreign_keys); })</dd>
+                        </div>
+                        <div>
+                            <dt>Encoding</dt>
+                            <dd>({ LLINT(encoding); })</dd>
+                        </div>
+                        <div>
+                            <dt>user_version / application_id</dt>
+                            <dd>({ LLINT(user_version); }) / ({ LLINT(app_id); })</dd>
+                        </div>
+                    </dl>
+
+                    <div class="sub-head">
+                        Tables &amp; views
+                        <span class="sub-note">
+                            ({ LLINT(obj_count); }) shown
+                            ({ if (obj_overflow > 0) { }) &middot; +({ LLINT(obj_overflow); }) more ({ } })
+                            &middot; ({ LLINT(trigger_count); }) triggers
+                        </span>
+                    </div>
+                    ({ if (obj_count == 0) { })
+                    <p class="msg muted">No tables or views yet.</p>
+                    ({ } })
+                    ({ if (obj_count > 0) { })
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th style="text-align:right">Rows</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ({ for (size_t oi = 0; oi < obj_count; ++oi) { })
+                            <tr>
+                                <td>({ ESCAPED(objs[oi].name); })</td>
+                                <td>({ STR(objs[oi].type); })</td>
+                                <td style="text-align:right">
+                                    ({ if (objs[oi].rows < 0) { })?({ } else { })({ LLINT(objs[oi].rows); })({ } })
+                                </td>
+                            </tr>
+                            ({ } })
+                        </tbody>
+                    </table>
+                    ({ } })
+                    ({ } })
+
+                    <hr class="rule" />
+                    <div class="sub-head">
+                        Open a database
+                        <span class="sub-note">Any SQLite file on this machine. Opening a file never modifies it.</span>
+                    </div>
+                    <form method="POST" action="/db/open">
+                        <div class="path-row">
+                            <input id="db-path-input"
+                                   name="path"
+                                   type="text"
+                                   required
+                                   placeholder="/absolute/path/to/database.db"
+                                   class="input mono grow" />
+                            <button type="button" data-db-browse class="btn btn-sm">Browse…</button>
+                            <button type="submit" name="action" value="open" class="btn btn-primary">Open</button>
+                            <button type="submit" name="action" value="create" class="btn">New database</button>
+                        </div>
+                        <label class="check">
+                            <input type="checkbox" name="readonly" value="on" />
+                            Open read-only
+                        </label>
+                    </form>
+
+                    ({ if (recents.count > 0) { })
+                    <div class="recent-block">
+                        <div class="caps">Recent</div>
+                        <ul class="recent-list">
+                            ({ for (size_t ri = 0; ri < recents.count; ++ri) { })
+                            <li>
+                                <form method="POST" action="/db/open">
+                                    <input type="hidden" name="path" value="({ ESCAPED(recents.items[ri]); })" />
+                                    <button type="submit" class="recent-item">
+                                        ({ ESCAPED(recents.items[ri]); })
+                                    </button>
+                                </form>
+                            </li>
+                            ({ } })
+                        </ul>
+                    </div>
+                    ({ } })
+                </section>
+
+                <!-- ========================= INFO ======================== -->
+                <section class="pane" data-pane="info">
+                    <div class="sub-head">
+                        Database info
+                        <span class="sub-note">Live from the in-memory engine; refreshes on every change.</span>
+                    </div>
+                    <dl id="sqlite-db-info"></dl>
+                    <label class="check">
+                        <input id="sqlite-fk-toggle" type="checkbox" />
+                        foreign_keys (browser session only)
+                    </label>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="db-status">
+        <span id="sqlite-wasm-status" role="status">Loading browser SQLite (WASI)…</span>
+        <span id="sqlite-dirty" class="hidden">● unsaved changes</span>
+        <span id="sqlite-io-status"></span>
+        <span class="status-right">SQLite in your browser · WebAssembly · no server-side SQL</span>
+    </div>
+
+    <script src="/js/sqliteBrowser.js" defer></script>
+
+    <div id="db-browse-modal" class="hidden">
+        <div class="modal-back" data-db-browse-close></div>
+        <div class="modal-box">
+            <div class="modal-head">
+                <div style="min-width:0">
+                    <h3>Browse for a database file</h3>
+                    <p id="db-browse-dir" class="modal-dir"></p>
+                </div>
+                <button type="button" class="btn btn-sm" data-db-browse-close>&times;</button>
+            </div>
+            <div class="modal-up">
+                <button type="button" id="db-browse-up" class="btn btn-sm">&larr; parent directory</button>
+            </div>
+            <ul id="db-browse-list" class="modal-list"></ul>
+            <div class="modal-foot">Click a directory to enter it, a highlighted file to select it.</div>
+        </div>
+    </div>
+
+    <script src="/js/dbOpen.js"></script>
+</div>
