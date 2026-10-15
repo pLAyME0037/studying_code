@@ -17,9 +17,9 @@
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #define NOB_NO_ECHO
-#include "module/nob.h"
+#include "third_party/nob/nob.h"
 
-#include "core/http/serve.h"
+#include "src/http/serve.h"
 #include "src/db/db.h"
 #include "build/bundle.h"
 

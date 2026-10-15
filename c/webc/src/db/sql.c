@@ -5,7 +5,7 @@
 #include <sys/types.h>
 
 #define NOB_STRIP_PREFIX
-#include "module/nob.h"
+#include "third_party/nob/nob.h"
 
 #include "sql.h"
 
