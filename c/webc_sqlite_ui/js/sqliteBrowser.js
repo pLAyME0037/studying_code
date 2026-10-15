@@ -6,8 +6,8 @@
     'use strict';
     const status = document.getElementById('sqlite-wasm-status');
     if (!status) return;
-    const treeEl = document.getElementById('sqlite-db-tree');
-    const gridEl = document.getElementById('sqlite-db-grid');
+    const treeEl  = document.getElementById('sqlite-db-tree');
+    const gridEl  = document.getElementById('sqlite-db-grid');
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     // Change-detection token from GET /db/file; echoed back on save-back.
@@ -73,40 +73,40 @@
     // Table designer (P7): CREATE TABLE via the browser engine.
     function bindDesigner(api, refreshTree) {
         const nameInput = document.getElementById('sqlite-tbl-name');
-        const colsBox = document.getElementById('sqlite-tbl-cols');
-        const addCol = document.getElementById('sqlite-tbl-addcol');
+        const colsBox   = document.getElementById('sqlite-tbl-cols');
+        const addCol    = document.getElementById('sqlite-tbl-addcol');
         const createBtn = document.getElementById('sqlite-tbl-create');
-        const out = document.getElementById('sqlite-tbl-status');
+        const out       = document.getElementById('sqlite-tbl-status');
         if (!nameInput || !colsBox || !addCol || !createBtn) return;
         const cols = [];
         const renderCols = () => {
             colsBox.replaceChildren(...cols.map((c, i) => {
-                const row = document.createElement('div');
+                const row     = document.createElement('div');
                 row.className = 'col-row';
-                const mkText = (value, ph, onInput) => {
-                    const inp = document.createElement('input');
-                    inp.type = 'text';
-                    inp.value = value;
+                const mkText  = (value, ph, onInput) => {
+                    const inp       = document.createElement('input');
+                    inp.type        = 'text';
+                    inp.value       = value;
                     inp.placeholder = ph;
-                    inp.className = 'input mono w-40';
-                    inp.oninput = () => onInput(inp.value);
+                    inp.className   = 'input mono w-40';
+                    inp.oninput     = () => onInput(inp.value);
                     return inp;
                 };
                 const mkChk = (label, checked, onChange) => {
-                    const wrap = document.createElement('label');
+                    const wrap     = document.createElement('label');
                     wrap.className = 'check col-label';
-                    const cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.checked = checked;
-                    cb.onchange = () => onChange(cb.checked);
+                    const cb       = document.createElement('input');
+                    cb.type        = 'checkbox';
+                    cb.checked     = checked;
+                    cb.onchange    = () => onChange(cb.checked);
                     wrap.append(cb, document.createTextNode(label));
                     return wrap;
                 };
-                const rm = document.createElement('button');
-                rm.type = 'button';
+                const rm       = document.createElement('button');
+                rm.type        = 'button';
                 rm.textContent = '✕';
-                rm.title = 'remove column';
-                rm.className = 'x-btn';
+                rm.title       = 'remove column';
+                rm.className   = 'x-btn';
                 rm.onclick = () => { cols.splice(i, 1); renderCols(); };
                 row.append(
                     mkText(c.name, 'column name', (v) => { c.name = v; }),
@@ -140,16 +140,18 @@
                 }
             }
         };
-        const target = document.getElementById('sqlite-tbl-target');
-        const alterBtn = document.getElementById('sqlite-tbl-alter');
+        const target      = document.getElementById('sqlite-tbl-target');
+        const alterBtn    = document.getElementById('sqlite-tbl-alter');
         const syncTargets = () => {
             if (!target) return;
-            const keep = target.value;
-            const tables = api.schema().tree
-                .filter((t) => t.kind === 'table').map((t) => t.name);
+            const keep   = target.value;
+            const tables = api.schema()
+                .tree
+                .filter((t) => t.kind === 'table')
+                .map((t) => t.name);
             target.replaceChildren(...tables.map((n) => {
-                const o = document.createElement('option');
-                o.value = n;
+                const o       = document.createElement('option');
+                o.value       = n;
                 o.textContent = n;
                 return o;
             }));
@@ -157,15 +159,22 @@
         };
         syncTargets();
         if (target) {
-            target.onfocus = syncTargets;  // refresh options when opened
+            target.onfocus  = syncTargets;  // refresh options when opened
             target.onchange = () => {
-                const t = api.schema().tree.find((x) =>
-                    x.kind === 'table' && x.name === target.value);
+                const t = api.schema()
+                    .tree
+                    .find((x) => x.kind === 'table' 
+                        && x.name === target.value);
                 if (!t) return;
                 cols.length = 0;
                 for (const c of t.columns) {
-                    cols.push({ name: c.name, type: c.type, notnull: c.notnull,
-                                pk: !!c.pk, orig: c.name });
+                    cols.push({
+                        name: c.name,
+                        type: c.type,
+                        notnull: c.notnull,
+                        pk: !!c.pk,
+                        orig: c.name
+                    });
                 }
                 nameInput.value = t.name;
                 renderCols();
@@ -173,18 +182,18 @@
         }
         if (alterBtn) alterBtn.onclick = () => {
             try {
-                const name = target ? target.value : '';
+                const name   = target ? target.value : '';
                 const result = api.alterTable(name, cols, (stmts) =>
                     confirm('Apply to ' + name + '?\n\n' + stmts.join('\n')));
                 if (out) {
                     if (result === null) {
-                        out.className = 'msg muted';
+                        out.className   = 'msg muted';
                         out.textContent = 'cancelled';
                     } else if (!result.length) {
-                        out.className = 'msg muted';
+                        out.className   = 'msg muted';
                         out.textContent = 'no changes';
                     } else {
-                        out.className = 'msg ok';
+                        out.className   = 'msg ok';
                         out.textContent = 'altered ' + name + ': ' + result.join('; ');
                     }
                 }
@@ -225,9 +234,11 @@
             out.className = ok ? 'msg ok' : 'msg err';
             out.textContent = msg;
         };
-        const tables = () => api.schema().tree
+        const tables = () => api.schema()
+            .tree
             .filter((t) => t.kind === 'table');
-        const views = () => api.schema().tree
+        const views = () => api.schema()
+            .tree
             .filter((t) => t.kind === 'view');
         const fill = (sel, names) => {
             if (!sel) return;
@@ -629,7 +640,7 @@
             },
             // Serialize the attached database to a fresh byte array (P8 export).
             dump() {
-                const sizePtr = wasm.malloc(8);
+                const sizePtr   = wasm.malloc(8);
                 const schemaPtr = cstring('main');
                 try {
                     const ptr = wasm.sqlite3_serialize(db, schemaPtr, sizePtr, 0);

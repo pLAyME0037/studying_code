@@ -3,10 +3,17 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-WASI_SDK_PATH="${WASI_SDK_PATH:-/opt/wasi-sdk}"
+# SDK search order: env override -> system install -> project-local copy.
+if [ -z "${WASI_SDK_PATH:-}" ]; then
+    for cand in /opt/wasi-sdk ./wasi-sdk-34.0-x86_64-linux; do
+        if [ -x "$cand/bin/clang" ]; then WASI_SDK_PATH="$cand"; break; fi
+    done
+    WASI_SDK_PATH="${WASI_SDK_PATH:-/opt/wasi-sdk}"
+fi
 CC="$WASI_SDK_PATH/bin/clang"
 if [ ! -x "$CC" ]; then
-    echo "WASI SDK not found: $CC (set WASI_SDK_PATH)" >&2
+    echo "WASI SDK not found: $CC" >&2
+    echo "(tried WASI_SDK_PATH, /opt/wasi-sdk, ./wasi-sdk-34.0-x86_64-linux)" >&2
     exit 1
 fi
 

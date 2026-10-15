@@ -10,10 +10,10 @@
 // Extract + classify the id segment from "/<path>/<id>/<suffix>".
 // Ids are TEXT primary keys (legacy numeric strings or schema uuid defaults);
 // route_id_parse() tags all-digits segments as ID_INT for INTEGER tables.
-static bool parse_uri_id(String_View path,
-                         String_View uri,
-                         const char *suffix,
-                         Route_Id   *id)
+static bool parse_uri_id(String_View  path,
+                         String_View  uri,
+                         const char  *suffix,
+                         Route_Id    *id)
 {
     char prefix_buf[128];
     snprintf(prefix_buf, sizeof(prefix_buf), "%.*s/", (int)path.count, path.data);
@@ -152,16 +152,16 @@ static bool route_init = false;
 void route_initialize(void) {
     // Landing page: the version page for now (DB Admin overview comes with
     // the "open arbitrary SQLite file" phase).
-    route_new(&routes, "/", NULL,        "GET", ROUTE_EXACT, serve_version_page);
+    route_new(&routes, "/",        NULL, "GET", ROUTE_EXACT, serve_version_page);
     route_new(&routes, "/version", NULL, "GET", ROUTE_EXACT, serve_version_page);
 
     // DB Admin (Phase 1: open/switch arbitrary SQLite files).
-    route_new(&routes, "/db", NULL,         "GET",  ROUTE_EXACT, serve_db_page);
-    route_new(&routes, "/db/file", NULL,    "GET",  ROUTE_EXACT, serve_db_file);
-    route_new(&routes, "/db/save", NULL,    "POST", ROUTE_EXACT, serve_db_save);
+    route_new(&routes, "/db",        NULL,  "GET",  ROUTE_EXACT, serve_db_page);
+    route_new(&routes, "/db/file",   NULL,  "GET",  ROUTE_EXACT, serve_db_file);
+    route_new(&routes, "/db/save",   NULL,  "POST", ROUTE_EXACT, serve_db_save);
     route_new(&routes, "/db/browse", NULL,  "GET",  ROUTE_EXACT, serve_db_browse);
-    route_new(&routes, "/db/open", NULL,    "POST", ROUTE_EXACT, serve_db_open);
-    route_new(&routes, "/db/close", NULL,   "POST", ROUTE_EXACT, serve_db_close);
+    route_new(&routes, "/db/open",   NULL,  "POST", ROUTE_EXACT, serve_db_open);
+    route_new(&routes, "/db/close",  NULL,  "POST", ROUTE_EXACT, serve_db_close);
 
     route_new(&routes, "/wasm/sqlite.wasm", NULL, "GET", ROUTE_EXACT, serve_resource_route);
     route_new(&routes, "/css/",        NULL, NULL, ROUTE_PREFIX, serve_resource_route);

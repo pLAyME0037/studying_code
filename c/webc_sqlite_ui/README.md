@@ -4,6 +4,11 @@ C web server + SQLite admin UI framework. No npm, no framework — hand-rolled
 HTTP server (coroutine based), `.tt` templates compiled to C headers, Tailwind
 for styling, vendored SQLite amalgamation.
 
+Documentation — how SQLite (C) is compiled and driven from the browser, the
+system/code lifecycles and state machines behind the `/db` engine — lives in
+[`wiki/`](wiki/), including a converter that turns the wiki into an Impress
+deck (`python3 wiki/tools/wiki2impress.py`, see the wiki index).
+
 ## Build / run
 
 ```sh
@@ -13,10 +18,13 @@ for styling, vendored SQLite amalgamation.
 ```
 
 Build browser SQLite separately with [WASI SDK](https://github.com/WebAssembly/wasi-sdk)
-(Preview 1; set `WASI_SDK_PATH` to its installation directory):
+(Preview 1). `build-wasm.sh` picks the SDK automatically: `WASI_SDK_PATH`
+if set, else `/opt/wasi-sdk`, else the project-local
+`./wasi-sdk-34.0-x86_64-linux/`:
 
 ```sh
-WASI_SDK_PATH=/opt/wasi-sdk ./build-wasm.sh
+./build-wasm.sh                                    # uses ./wasi-sdk-34.0-x86_64-linux
+WASI_SDK_PATH=/opt/wasi-sdk ./build-wasm.sh        # explicit override
 ```
 
 This creates `build/sqlite.wasm`; `/db` serves it to the page, which runs

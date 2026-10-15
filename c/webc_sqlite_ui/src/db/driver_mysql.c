@@ -19,9 +19,9 @@
 #define MYSQL_TEXT_CAP 1024
 
 typedef struct {
-    MYSQL_STMT *stmt;
-    bool        executed;
-    bool        has_result;
+    MYSQL_STMT    *stmt;
+    bool           executed;
+    bool           has_result;
 
     // input params (sql_bind's 1-based index maps to index-1)
     unsigned long  nparams;

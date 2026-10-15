@@ -10,8 +10,8 @@
 #include "open_db.h"
 #include "db.h"
 
-const char *WEBC_ACTIVE_DB_PATH = NULL;
-bool         WEBC_ACTIVE_READONLY = false;
+const char *WEBC_ACTIVE_DB_PATH  = NULL;
+bool        WEBC_ACTIVE_READONLY = false;
 
 // Owned copy of the active path (the app DB constant is never freed).
 static char *active_owned = NULL;
@@ -123,9 +123,7 @@ db_t *open_active_db(void) {
                    user_db_dsn(WEBC_ACTIVE_DB_PATH, WEBC_ACTIVE_READONLY));
 }
 
-bool db_switch(const char *path, bool readonly, bool create,
-               char *err, size_t errsz)
-{
+bool db_switch(const char *path, bool readonly, bool create, char *err, size_t errsz) {
     if (!db_path_sane(path)) {
         snprintf(err, errsz, "path must be absolute and contain no `..`: %s",
                  path ? path : "(empty)");
@@ -166,7 +164,7 @@ bool db_switch(const char *path, bool readonly, bool create,
     WEBC_ACTIVE_READONLY = readonly && !create;
     db_recents_add(path);
     return true;
-}
+} 
 
 void db_close_active(void) {
     db_pool_cleanup();
