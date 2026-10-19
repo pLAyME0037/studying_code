@@ -65,8 +65,8 @@ def main():
                                    'href="/pos/villages"')), True)
     t.chk("cashier nav groups (Dashboard/Sales/Party/Reports/Demo)",
           d.count(HEADER_CLS), 5)
-    t.chk("cashier nav links (10 entries + accounts + logout)",
-          d.count('class="nav-link'), 12)
+    t.chk("cashier nav links (11 entries + accounts + logout)",
+          d.count('class="nav-link'), 13)
 
     # page gate: SELL + report pages open, everything else 403
     t.chk("cashier /pos/orders allowed", c.get("/pos/orders")[0], 200)

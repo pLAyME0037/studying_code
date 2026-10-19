@@ -22,6 +22,9 @@ typedef struct {
     const char *role;        /* first live role_name (Khmer), "" when none */
     const char *role_code;   /* SD-MANAGER / SD-CASHIER / SD-DRIVER, "" none */
     const char *staff_id;    /* linked staff row id, "" when none */
+    const char *org_unit_id; /* the staff row's branch (staff.org_unit_id,
+                                else users.org_unit_id), "" when none - the
+                                POS sale stamps the selling branch from here */
     const char *perms;       /* ",SD.SELL,SD.REPORT.VIEW," joined grants,
                                 NULL/"" when the role holds none */
 } Auth_User;

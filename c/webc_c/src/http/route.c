@@ -15,6 +15,7 @@
 #include "src/pos/stocks.h"
 #include "src/pos/ledger.h"
 #include "src/pos/orders.h"
+#include "src/pos/sale.h"
 #include "src/pos/shifts.h"
 #include "src/pos/finance.h"
 #include "src/pos/order_items.h"
@@ -284,6 +285,10 @@ void route_initialize(void) {
     route_new(&routes, "/pos/orders", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_orders_update);
     route_new(&routes, "/pos/orders", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_orders_delete);
     route_new(&routes, "/pos/orders", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_orders_restore);
+
+    // Dedicated in-store sale: session staff/org, computed money, PAID.
+    route_new(&routes, "/pos/sale", NULL, "GET",  ROUTE_EXACT, serve_pos_sale);
+    route_new(&routes, "/pos/sale", NULL, "POST", ROUTE_EXACT, serve_pos_sale_post);
 
     route_new(&routes, "/pos/shifts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_shifts);
     route_new(&routes, "/pos/shifts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_shifts_create);

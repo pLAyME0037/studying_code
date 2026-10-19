@@ -307,8 +307,8 @@ def main():
     header_cls = ('class="px-2 py-1 text-xs font-semibold uppercase '
                   'tracking-wide text-overlay0 bg-surface0/60 nav-label"')
     t.chk("sidebar group headers (color-step)", html.count(header_cls), 10)
-    t.chk("sidebar nav links (28 entries + accounts + logout)",
-          html.count('class="nav-link'), 30)
+    t.chk("sidebar nav links (29 entries + accounts + logout)",
+          html.count('class="nav-link'), 31)
     t.chk("sidebar pos links present",
           all(p in html for p in
               ('href="/pos/products"', 'href="/pos/orders"',
@@ -576,7 +576,7 @@ def main():
 
     # a guest checkout account (0007 leaves password_hash empty until the
     # buyer deliberately claims it) gets claimed by signup
-    db_exec("INSERT OR REPLACE INTO users "
+    db_exec(DB, "INSERT OR REPLACE INTO users "
             "(id, name, username, phone, password_hash, user_type_dict_id, "
             " customer_id) VALUES (?, ?, ?, ?, '', 'CUSTOMER', ?)",
             ("su-guest-1", "Guest Buyer", "0885544332", "0885544332",

@@ -9,27 +9,45 @@
             </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2 py-0.5 text-xs font-semibold border ({ STR(ws->role_cls); })">
+            <span class="px-2 py-1.5 text-xs font-semibold border ({ STR(ws->role_cls); })">
                 ({ STR(ws->role_label); })
             </span>
             ({ if (ws->kind == 0) { })
-            <a href="/pos/orders"
-               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">New sale</a>
+            <a href="/pos/sale"
+               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">
+                New sale
+            </a>
             <a href="/reports"
-               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Reports</a>
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
+                Reports
+            </a>
             <a href="/pos/alerts"
-               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Alerts</a>
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
+                Alerts
+            </a>
             ({ } })
             ({ if (ws->kind == 1) { })
-            <a href="/pos/orders"
-               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">New sale</a>
+            <a href="/pos/sale"
+               class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">
+                New sale
+            </a>
             <a href="/pos/shifts"
-               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Shifts</a>
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
+                Shifts
+            </a>
             <a href="/reports"
-               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">Reports</a>
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
+                Reports
+            </a>
             ({ } })
+            <a href="/"
+               class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
+                Shopping
+            </a>
             ({ if (ws->kind == 3) { })
-            <span class="text-xs text-subtext0">No workspace assigned - ask a manager for a role.</span>
+            <span class="text-xs text-subtext0">
+                No workspace assigned - ask a manager for a role.
+            </span>
             ({ } })
         </div>
     </div>

@@ -24,9 +24,9 @@ static bool hash_hex(const char *pw, const char *salt, char *out /* 65 */) {
     EVP_MD_CTX *ctx = EVP_MD_CTX_new();
     if (!ctx) return false;
     bool ok = EVP_DigestInit_ex(ctx, EVP_sha256(), NULL) == 1
-        && EVP_DigestUpdate(ctx, salt, strlen(salt)) == 1
-        && EVP_DigestUpdate(ctx, pw, strlen(pw)) == 1
-        && EVP_DigestFinal_ex(ctx, digest, &dlen) == 1;
+           && EVP_DigestUpdate(ctx, salt, strlen(salt)) == 1
+           && EVP_DigestUpdate(ctx, pw, strlen(pw)) == 1
+           && EVP_DigestFinal_ex(ctx, digest, &dlen) == 1;
     EVP_MD_CTX_free(ctx);
     if (!ok || dlen != 32) return false;
     for (unsigned int i = 0; i < dlen; ++i) sprintf(out + 2 * i, "%02x", digest[i]);
@@ -134,9 +134,9 @@ static bool active_session(db_t *db, Serve_Context *sc,
 
 // route_request() is atomic - coroutines only yield at socket I/O outside
 // it - so one request-scoped static is safe (same pattern as i18n_begin).
-static Serve_Context  *g_auth_sc;
-static Auth_User        g_auth_user;
-static bool             g_auth_resolved;
+static Serve_Context *g_auth_sc;
+static Auth_User      g_auth_user;
+static bool           g_auth_resolved;
 
 static void auth_resolve(void) {
     g_auth_resolved = true;
@@ -151,42 +151,45 @@ static void auth_resolve(void) {
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE] =
             "SELECT u.id, u.name, u.email, u.profile_pic, "
-                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
-                   "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
-                   "COALESCE(s.id, '') "
+                "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
+                "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
+                "COALESCE(s.id, ''), "
+                "COALESCE(s.org_unit_id, u.org_unit_id, '') "
             "FROM users u "
             "LEFT JOIN user_roles ur ON ur.user_id = u.id "
-                                   "AND ur.deleted_at IS NULL "
+                "AND ur.deleted_at IS NULL "
             "LEFT JOIN roles r ON r.id = ur.role_id "
-                             "AND r.deleted_at IS NULL "
+                "AND r.deleted_at IS NULL "
             "LEFT JOIN staff s ON s.user_id = u.id "
-                             "AND s.deleted_at IS NULL "
+                "AND s.deleted_at IS NULL "
             "WHERE u.id = ? AND u.deleted_at IS NULL LIMIT 1;",
         [SQL_MYSQL] =
             "SELECT u.id, u.name, u.email, u.profile_pic, "
-                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
-                   "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
-                   "COALESCE(s.id, '') "
+                "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
+                "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
+                "COALESCE(s.id, ''), "
+                "COALESCE(s.org_unit_id, u.org_unit_id, '') "
             "FROM users u "
             "LEFT JOIN user_roles ur ON ur.user_id = u.id "
-                                   "AND ur.deleted_at IS NULL "
+                "AND ur.deleted_at IS NULL "
             "LEFT JOIN roles r ON r.id = ur.role_id "
-                             "AND r.deleted_at IS NULL "
+                "AND r.deleted_at IS NULL "
             "LEFT JOIN staff s ON s.user_id = u.id "
-                             "AND s.deleted_at IS NULL "
+                "AND s.deleted_at IS NULL "
             "WHERE u.id = ? AND u.deleted_at IS NULL LIMIT 1;",
         [SQL_POSTGRES] =
             "SELECT u.id, u.name, u.email, u.profile_pic, "
-                   "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
-                   "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
-                   "COALESCE(s.id, '') "
+                "u.user_type_dict_id, u.status, COALESCE(r.role_name, ''), "
+                "COALESCE(r.role_code, ''), COALESCE(ur.role_id, ''), "
+                "COALESCE(s.id, ''), "
+                "COALESCE(s.org_unit_id, u.org_unit_id, '') "
             "FROM users u "
             "LEFT JOIN user_roles ur ON ur.user_id = u.id "
-                                   "AND ur.deleted_at IS NULL "
+                "AND ur.deleted_at IS NULL "
             "LEFT JOIN roles r ON r.id = ur.role_id "
-                             "AND r.deleted_at IS NULL "
+                "AND r.deleted_at IS NULL "
             "LEFT JOIN staff s ON s.user_id = u.id "
-                             "AND s.deleted_at IS NULL "
+                "AND s.deleted_at IS NULL "
             "WHERE u.id = $1 AND u.deleted_at IS NULL LIMIT 1;",
     };
     db_t *db = open_webc_db();
@@ -200,6 +203,7 @@ static void auth_resolve(void) {
         g_auth_user.id          = temp_strdup(uid);
         g_auth_user.role_code   = "";
         g_auth_user.staff_id    = "";
+        g_auth_user.org_unit_id = "";
         g_auth_user.perms       = "";
         if ((v = sql_col_text(&stmt, 0)) != NULL && v[0]) g_auth_user.id = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 1)) != NULL && v[0]) g_auth_user.name = temp_strdup(v);
@@ -207,11 +211,12 @@ static void auth_resolve(void) {
         if ((v = sql_col_text(&stmt, 3)) != NULL && v[0]) g_auth_user.profile_pic = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 4)) != NULL && v[0]) g_auth_user.user_type = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 5)) != NULL && v[0]) g_auth_user.status = temp_strdup(v);
-        if ((v = sql_col_text(&stmt, 6)) != NULL)        g_auth_user.role = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 6)) != NULL)         g_auth_user.role = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 7)) != NULL && v[0]) g_auth_user.role_code = temp_strdup(v);
         if ((v = sql_col_text(&stmt, 8)) != NULL && v[0])
             snprintf(rid, sizeof(rid), "%s", v);
         if ((v = sql_col_text(&stmt, 9)) != NULL && v[0]) g_auth_user.staff_id = temp_strdup(v);
+        if ((v = sql_col_text(&stmt, 10)) != NULL && v[0]) g_auth_user.org_unit_id = temp_strdup(v);
     }
     sql_finalize(&stmt);
 
@@ -367,6 +372,7 @@ static const Perm_Rule perm_rules[] = {
     { "/pos/products",     "SD.PRODUCT.MGMT" },
     { "/pos/categories",   "SD.PRODUCT.MGMT" },
     { "/pos/orders",       "SD.SELL" },
+    { "/pos/sale",         "SD.SELL" },
     { "/pos/shifts",       "SD.SELL" },
     { "/pos/customers",    "SD.SELL" },
     { "/pos/finance",      "SD.FINANCE" },

@@ -15,7 +15,9 @@
           "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
         { NULL,       "/pos/categories","Categories",
           "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" },
-        { "Sales",    "/pos/orders",    "Orders",
+        { "Sales",    "/pos/sale",      "New Sale",
+          "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" },
+        { NULL,       "/pos/orders",    "Orders",
           "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" },
         { NULL,       "/pos/shifts",    "Shifts",
           "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
@@ -77,6 +79,7 @@
         NULL,                  /* Dashboard / Overview */
         "SD.PRODUCT.MGMT",     /* Products */
         "SD.PRODUCT.MGMT",     /* Categories */
+        "SD.SELL",             /* New Sale */
         "SD.SELL",             /* Orders */
         "SD.SELL",             /* Shifts */
         "SD.FINANCE",          /* Finance */
