@@ -565,7 +565,7 @@ def main():
     st, body, _ = c.post_urlencoded(
         "/signup", {**su, "username": "phase16_other",
                     "phone": "0887766556",
-                    "email": "taken16@signup.test"})
+                    "email": "phase16@signup.test"})
     t.chk("signup: duplicate email rejected",
           (st, b"data-signup-error" in body), (200, True))
     st, body, _ = c.post_urlencoded(
