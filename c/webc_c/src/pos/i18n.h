@@ -1,7 +1,7 @@
 #ifndef POS_I18N_H_
 #define POS_I18N_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/i18n: languages master (code/name + is_default/is_active flags)
  * with a translations child tab (fk language_id). */

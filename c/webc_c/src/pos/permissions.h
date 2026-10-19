@@ -1,7 +1,7 @@
 #ifndef POS_PERMISSIONS_H_
 #define POS_PERMISSIONS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/permissions: master-only page for the permissions catalogue
  * (perm_code/perm_name/module_name; no children). */

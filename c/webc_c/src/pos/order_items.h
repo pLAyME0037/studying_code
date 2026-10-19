@@ -1,7 +1,7 @@
 #ifndef POS_ORDER_ITEMS_H_
 #define POS_ORDER_ITEMS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* order_items: child entity of /pos/orders (fk = order_id via the child
  * forms' query string). Write routes only -- no master page. */

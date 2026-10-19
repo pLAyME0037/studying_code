@@ -1,7 +1,7 @@
 #ifndef POS_PRODUCTS_H_
 #define POS_PRODUCTS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/products: catalog master with product_variants + inventory_stocks
  * child tabs; also rendered as a child tab under /pos/categories

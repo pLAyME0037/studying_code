@@ -3,9 +3,9 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "module/nob.h"
+#include "third_party/nob/nob.h"
 #include "../db/sql.h"
-#include "core/display/paging.h"
+#include "src/layout/paging.h"
 
 typedef struct {
     const char *id;
@@ -24,3 +24,17 @@ bool update_note(db_t *db, String_View *values, size_t count, String_View id);
 bool delete_note(db_t *db, String_View id);
 
 #endif // SRC_NOTES_H_
+
+#ifndef NOTES_SERVE_H_
+#define NOTES_SERVE_H_
+
+#include "src/http/serve.h"
+
+void serve_notes_read(Serve_Context *sc);
+void serve_notes_create(Serve_Context *sc);
+void serve_notes_edit(Serve_Context *sc);
+void serve_notes_update(Serve_Context *sc);
+void serve_notes_delete(Serve_Context *sc);
+void serve_notes_api(Serve_Context *sc);
+
+#endif // NOTES_SERVE_H_

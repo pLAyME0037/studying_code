@@ -1,7 +1,7 @@
 #ifndef SRC_DASHBOARD_H_
 #define SRC_DASHBOARD_H_
 
-#include "core/auth/auth.h"
+#include "src/auth/auth.h"
 
 // Phase 14 enterprise role workspaces: /dashboard loads one Dashboard_Data
 // and the template renders the center matching the signed-in role -

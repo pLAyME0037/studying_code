@@ -1,7 +1,7 @@
 #ifndef POS_ROLE_PERMISSIONS_H_
 #define POS_ROLE_PERMISSIONS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* role_permissions: child entity of /pos/roles (fk = role_id via the
  * child forms' query string). UNIQUE(role_id, permission_id).

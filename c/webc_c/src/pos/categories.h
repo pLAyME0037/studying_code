@@ -1,7 +1,7 @@
 #ifndef POS_CATEGORIES_H_
 #define POS_CATEGORIES_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/categories: catalog master (self-FK parent select); its child tab
  * is products (fk = category_id, handlers in src/pos/products.c). */

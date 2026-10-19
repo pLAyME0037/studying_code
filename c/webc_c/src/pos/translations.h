@@ -1,7 +1,7 @@
 #ifndef POS_TRANSLATIONS_H_
 #define POS_TRANSLATIONS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* translations: child entity of /pos/i18n (fk = language_id via the
  * child forms' query string). UNIQUE(language_id, trans_key).

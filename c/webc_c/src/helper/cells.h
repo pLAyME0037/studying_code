@@ -1,7 +1,7 @@
 #ifndef HELPER_CELLS_H_
 #define HELPER_CELLS_H_
 
-#include "../../core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 // =========================================================================
 // Composite column cell renderers (master_child engine). One column with

@@ -1,7 +1,7 @@
 #ifndef POS_GEO_H_
 #define POS_GEO_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* Phase 16 geo redo: the four Cambodia admin-area masters seeded from the
  * cam-geo locations.json export (src/pos/geo.c). Provinces/districts/

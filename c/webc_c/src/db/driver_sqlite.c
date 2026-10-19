@@ -2,7 +2,7 @@
 #include <string.h>
 
 #define NOB_STRIP_PREFIX
-#include "module/nob.h"
+#include "third_party/nob/nob.h"
 
 #include "sqlite3.h"
 #include "sql.h"

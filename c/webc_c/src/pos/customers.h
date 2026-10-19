@@ -1,11 +1,11 @@
 #ifndef POS_CUSTOMERS_H_
 #define POS_CUSTOMERS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/customers: tier FK + loyalty points + created_at, with users and
  * customer_interactions child tabs (users shape comes from
- * core/display/pos.h -- the users showcase owns its own columns). */
+ * src/pos/pos.h -- the users showcase owns its own columns). */
 void serve_pos_customers(Serve_Context *sc);
 void serve_pos_customers_create(Serve_Context *sc);
 void serve_pos_customers_update(Serve_Context *sc);

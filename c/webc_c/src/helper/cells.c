@@ -1,10 +1,10 @@
 #define NOB_STRIP_PREFIX
-#include "module/nob.h"
+#include "third_party/nob/nob.h"
 
 #include <time.h>
 
 #include "cells.h"
-#include "core/http/serve.h"
+#include "src/http/serve.h"
 
 // =========================================================================
 // Composite column cell renderers. Three styles (MD_Cell.style):

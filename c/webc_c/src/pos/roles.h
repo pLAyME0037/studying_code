@@ -1,7 +1,7 @@
 #ifndef POS_ROLES_H_
 #define POS_ROLES_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/roles: role_code/name + org FK + description, with
  * role_permissions and user_roles child tabs (both link shapes are

@@ -1,9 +1,9 @@
 #include "finance.h"
 
-#include "core/display/master_child.h"
-#include "module/webc_template.h"
+#include "src/layout/master_child.h"
+#include "src/core/webc_template.h"
 #include "src/db/db.h"
-#include "core/http/utils.h"
+#include "src/http/utils.h"
 
 // =========================================================================
 // /pos/finance: financial_ledgers, read_only (mirrors /pos/dictionaries).

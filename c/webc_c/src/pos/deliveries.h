@@ -1,7 +1,7 @@
 #ifndef POS_DELIVERIES_H_
 #define POS_DELIVERIES_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* deliveries: child entity of /pos/orders (fk = order_id via the child
  * forms' query string; order_id is UNIQUE -- one delivery per order).

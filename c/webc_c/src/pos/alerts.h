@@ -1,7 +1,7 @@
 #ifndef POS_ALERTS_H_
 #define POS_ALERTS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/alerts: system_alerts master-only (user/order FKs + type + payload
  * + {seen,sent} flags cell). */

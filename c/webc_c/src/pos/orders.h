@@ -1,7 +1,7 @@
 #ifndef POS_ORDERS_H_
 #define POS_ORDERS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/orders: sales master (org/staff/customer/status FKs + amounts
  * cell) with order_items, payments and deliveries child tabs. */

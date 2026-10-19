@@ -1,7 +1,7 @@
 #ifndef POS_STAFF_H_
 #define POS_STAFF_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/staff: staff master (code + name cell + user/org/location FKs +
  * phone/hire_date/staff_type) with a cash_shifts child tab. Staff is a

@@ -2,9 +2,9 @@
 #define SRC_USER_H_
 
 #include <stddef.h>
-#include "module/nob.h"
-#include "../db/sql.h"
-#include "core/display/paging.h"
+#include "third_party/nob/nob.h"
+#include "src/db/sql.h"
+#include "src/layout/paging.h"
 
 /* Demo /users + /people row shape. The sidebar no longer reads this -
  * it shows the signed-in session user via auth_current_user() (Phase 13).
@@ -27,3 +27,16 @@ bool update_user(db_t *db, String_View *fields, size_t count, String_View id);
 bool delete_user(db_t *db, String_View id);
 
 #endif // SRC_USER_H_
+
+#ifndef USER_SERVE_H_
+#define USER_SERVE_H_
+
+#include "src/http/serve.h"
+
+void serve_users_read(Serve_Context *sc);
+void serve_users_create(Serve_Context *sc);
+void serve_users_edit(Serve_Context *sc);
+void serve_users_update(Serve_Context *sc);
+void serve_users_delete(Serve_Context *sc);
+
+#endif // USER_SERVE_H_

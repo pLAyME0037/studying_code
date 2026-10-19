@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "core/auth/auth.h"
-#include "core/http/utils.h"
-#include "core/i18n/i18n.h"
+#include "src/auth/auth.h"
+#include "src/http/utils.h"
+#include "src/i18n/i18n.h"
 #include "src/db/db.h"
 
 #define SHOP_PER_PAGE 12

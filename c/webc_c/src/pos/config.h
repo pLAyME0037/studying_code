@@ -1,7 +1,7 @@
 #ifndef POS_CONFIG_H_
 #define POS_CONFIG_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/config: system_configs, master-only (config_key/value + JSON
  * payload + is_encrypted flag). */

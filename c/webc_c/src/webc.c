@@ -17,16 +17,15 @@
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #define NOB_NO_ECHO
-#include "module/nob.h"
+#include "third_party/nob/nob.h"
 
-#include "core/http/serve.h"
+#include "src/http/serve.h"
 #include "src/db/db.h"
 #include "build/bundle.h"
 
 #define STR(x) STR2_ELECTRIC_BOOGALOO(x)
 #define STR2_ELECTRIC_BOOGALOO(x) #x
 #define DEFAULT_SERVER_ADDRESS "127.0.0.1"
-// #define DEFAULT_SERVER_ADDRESS "192.168.8.8"
 #define DEFAULT_SERVE_PORT 8080
 #define DEFAULT_COMMAND "help"
 
@@ -51,7 +50,7 @@ static bool dev_visit_file(Walk_Entry entry) {
     String_View path = sv_from_cstr(entry.path);
     // Generate / vendored files that must nerver trigger a rebuild
     if (sv_ends_with(path, sv_from_cstr("css/output.css"))) return true;
-    if (sv_starts_with(path, sv_from_cstr("module/sqlite-amalgamation-3460100/"))) return true;
+    if (sv_starts_with(path, sv_from_cstr("third_party/sqlite-amalgamation-3460100/"))) return true;
     struct stat st;
     if (stat(entry.path, &st) != 0) return true;
     uint64_t h = (uint64_t)st.st_mtime;
@@ -65,13 +64,12 @@ static uint64_t dev_watch_signature(void) {
     uint64_t hash = 0;
     const char *roots[] = {
         "display",
-        "core",
         "src",
         "css",
         "js",
         "resource",
         "src/webc.c",
-        "build/nob.c"
+        "nob.c"
     };
     for (size_t i = 0; i < ARRAY_LEN(roots); ++i) {
         File_Type type = get_file_type(roots[i]);
@@ -227,7 +225,7 @@ bool dev_run(Command *self, const char *program_name, int argc, char **argv) {
     uint16_t port = DEFAULT_SERVE_PORT;
     if (argc > 0) port = atoi(shift(argv, argc));
 
-    printf("dev: watching display/ core/ src/ css/ webc.c nob.c ...\n");
+    printf("dev: watching display/ src/ css/ third_party/ webc.c nob.c ...\n");
     printf("dev: http://%s:%d/ (Ctrl+C to stop)\n", addr, port);
 
     pid_t server_pid = 0;
@@ -352,7 +350,7 @@ int main(int argc, char **argv) {
     HOME_PATH = getenv("HOME");
     if (HOME_PATH == NULL) {
         fprintf(stderr, "ERROR: No $HOME environment variable is setup. We "
-                "need it to find the location of ~/.sqlite3/webc/ directory.\n");
+                "need it to find the location of ~/sqlite3/webc_c/ directory.\n");
         return 1;
     }
     // WEBC_DB overrides the database location (tests, alternate instances).
@@ -366,7 +364,7 @@ int main(int argc, char **argv) {
                                ? temp_sprintf("%.*s", (int) (slash - webc_db), webc_db)
                                : ".");
     } else {
-        WEBC_DIR_PATH = strdup(temp_sprintf("%s/.sqlite3/webc", HOME_PATH));
+        WEBC_DIR_PATH = strdup(temp_sprintf("%s/sqlite3/webc_c", HOME_PATH));
         WEBC_DB_PATH = strdup(temp_sprintf("%s/db", WEBC_DIR_PATH));
     }
     WEBC_TRACE_MIGRATION_QUERIES = getenv("WEBC_TRACE_MIGRATION_QUERIES") != NULL;

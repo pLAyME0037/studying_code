@@ -1,7 +1,7 @@
 #ifndef POS_SHIFTS_H_
 #define POS_SHIFTS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* /pos/shifts: cash_shifts master-only page (no children). opened_at
  * rides its column default (form-less); closing happens via the cash

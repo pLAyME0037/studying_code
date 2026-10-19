@@ -4,8 +4,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "core/http/utils.h"
-#include "core/i18n/i18n.h"
+#include "src/http/utils.h"
+#include "src/i18n/i18n.h"
 #include "src/db/db.h"
 
 // Guest checkout - the ONLY customer-facing order path (Phase 11):

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
-#include "../module/nob.h"
+#include "../third_party/nob/nob.h"
 
 void compile_c_code(String_View s) {
     printf("%.*s\n", (int) s.count, s.data);

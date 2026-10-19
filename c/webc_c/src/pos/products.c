@@ -2,11 +2,11 @@
 
 #include <string.h>
 
-#include "core/display/master_child.h"
-#include "module/webc_template.h"
+#include "src/layout/master_child.h"
+#include "src/core/webc_template.h"
 #include "src/db/db.h"
 #include "src/pos/pos_util.h"
-#include "core/http/utils.h"
+#include "src/http/utils.h"
 
 // =========================================================================
 // /pos/products: name + codes cell + prices cell + category/type FKs.

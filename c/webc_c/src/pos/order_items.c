@@ -1,10 +1,10 @@
 #include "order_items.h"
 
-#include "core/display/master_child.h"
-#include "module/webc_template.h"
+#include "src/layout/master_child.h"
+#include "src/core/webc_template.h"
 #include "src/db/db.h"
 #include "src/pos/pos_util.h"
-#include "core/http/utils.h"
+#include "src/http/utils.h"
 
 // =========================================================================
 // order_items rows: created/edited from the /pos/orders Items child tab

@@ -1,7 +1,7 @@
 #ifndef POS_USER_ROLES_H_
 #define POS_USER_ROLES_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* user_roles: child entity of /pos/users (fk = user_id via the child
  * forms' query string). Surrogate id PK + UNIQUE(user_id, role_id).

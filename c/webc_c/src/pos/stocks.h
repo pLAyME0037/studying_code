@@ -1,7 +1,7 @@
 #ifndef POS_STOCKS_H_
 #define POS_STOCKS_H_
 
-#include "core/display/master_child.h"
+#include "src/layout/master_child.h"
 
 /* inventory_stocks: /pos/stocks master (product/org/variant FKs + qty +
  * range cell) with a stock_ledger child tab. Also created as a child of

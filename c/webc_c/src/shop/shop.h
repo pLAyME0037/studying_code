@@ -1,7 +1,7 @@
 #ifndef SRC_SHOP_H_
 #define SRC_SHOP_H_
 
-#include "core/http/serve.h"
+#include "src/http/serve.h"
 
 // Storefront (Phase 11): public catalog at /, cookie-backed cart, guest
 // checkout. Orders enter the system only through serve_shop_checkout_post
