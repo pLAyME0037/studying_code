@@ -152,9 +152,11 @@ const Report_Def *report_find(const char *id) {
 // honored by Writer/Web, NotoSansKhmer embedded, ~1 s, table fidelity ok)
 // =========================================================================
 
-// Print styling for the A4 table only -- the title band, generation meta and
-// footnote moved out of the body into the ODF page-style header/footer (see
-// report_fodt_decorate) so they repeat on every page. NOTE: LibreOffice's
+// Print styling for the A4 table only. The Cambodian letterhead (Kingdom
+// motto + logo + memo) + report title are BODY content starting the document
+// on page 1 (see report_append_letterhead); the 3-column imprint header
+// (shop / title / date+count) and the footer (live page numbers) repeat on
+// every page via report_fodt_decorate. NOTE: LibreOffice's
 // html->FODT import DROPS CSS backgrounds and cell borders (only paragraph
 // properties survive), so the grid / dark header / zebra are emitted as
 // presentational HTML attributes (border, cellpadding, bgcolor, <font color>)
@@ -169,7 +171,7 @@ const Report_Def *report_find(const char *id) {
 #define REPORT_CSS                                                          \
     "@page { size: A4; margin: 1.6cm 1.4cm 1.5cm 1.4cm; }\n"                \
     "body { font-family: \"Noto Sans\", \"Liberation Sans\","               \
-    " \"DejaVu Sans\", \"Noto Sans Khmer\", sans-serif;"                     \
+    " \"DejaVu Sans\", \"Noto Sans Khmer\", sans-serif;"                    \
     " font-size: 9.5pt; color: #1a1a1a; }\n"                                \
     ".num { text-align: right; font-variant-numeric: tabular-nums;"         \
     " white-space: nowrap; }\n"
@@ -199,7 +201,10 @@ static const char *report_shop_name(void) {
 // is emitted verbatim so a mistyped column type never eats data. The fraction
 // is preserved as-is for NUM (SUM can be fractional) but pinned to 2 for MONEY.
 static void sb_append_number(String_Builder *sb, const char *v, bool money) {
-    if (!v || !v[0]) { sb_append_cstr(sb, money ? "0.00" : "0"); return; }
+    if (!v || !v[0]) { 
+		sb_append_cstr(sb, money ? "0.00" : "0"); 
+		return; 
+	}
     const char *p = v;
     bool neg = false;
     if (*p == '-') { neg = true; ++p; }
@@ -229,6 +234,87 @@ static Report_Col_Type report_col_type(const Report_Def *rep, int ci) {
     if (!rep->col_types || (size_t)ci >= rep->header_count)
         return REPORT_COL_TEXT;
     return rep->col_types[ci];
+}
+
+// =========================================================================
+// Cambodian official letterhead (body, page 1). The Kingdom motto is set
+// centered in Khmer OS Muol (the formal Khmer face, installed system-wide);
+// below it the shop logo + name sit left and the memo "from/to" right, in one
+// borderless row; then the report title. This REPLACED the old page-style
+// header -- the letterhead carries the identity now, so only the footer
+// (live page numbers) repeats per page and nothing doubles up on page 1.
+// =========================================================================
+
+#define REPORT_KINGDOM_1 "ព្រះរាជាណាចក្រកម្ពុជា"
+#define REPORT_KINGDOM_2 "ជាតិ សាសនា ព្រះមហាក្សត្រ"
+#define REPORT_MEMO_FROM "ពី ក្រុមបច្ចេកទេស"
+#define REPORT_MEMO_TO   "ទៅ ខណះគ្រប់គ្រង"
+#define REPORT_LOGO_PATH "resource/image/user1.png"
+
+// Append `n` bytes of `s` as base64. The logo is embedded as a data: URI so
+// the html blob is self-contained -- the soffice child converts a copy in a
+// temp dir, where a relative image path would not resolve.
+static void sb_append_base64(String_Builder *sb, const unsigned char *s,
+                             size_t n) {
+    static const char tbl[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    for (size_t i = 0; i < n; i += 3) {
+        unsigned v = (unsigned)s[i] << 16;
+        if (i + 1 < n) v |= (unsigned)s[i + 1] << 8;
+        if (i + 2 < n) v |= (unsigned)s[i + 2];
+        char c[4] = { tbl[(v >> 18) & 63], tbl[(v >> 12) & 63],
+                      (i + 1 < n) ? tbl[(v >> 6) & 63] : '=',
+                      (i + 2 < n) ? tbl[v & 63] : '=' };
+        sb_append_buf(sb, c, 4);
+    }
+}
+
+// Embed the shop logo as a base64 data: URI (type sniffed from magic bytes --
+// user1.png is really a JPEG). Returns false if unreadable, in which case no
+// <img> is emitted (the shop name still prints).
+static bool report_append_logo(String_Builder *out) {
+    String_Builder img = {0};
+    if (!read_entire_file(REPORT_LOGO_PATH, &img)) { sb_free(img); return false; }
+    const char *mime = "image/png";
+    if (img.count >= 4 && (unsigned char)img.items[0] == 0x89
+        && img.items[1] == 'P')
+        mime = "image/png";
+    else if (img.count >= 2 && (unsigned char)img.items[0] == 0xFF
+             && (unsigned char)img.items[1] == 0xD8)
+        mime = "image/jpeg";
+    sb_appendf(out, "<img src=\"data:%s;base64,", mime);
+    sb_append_base64(out, (const unsigned char *)img.items, img.count);
+    sb_append_cstr(out, "\" width=\"54\" height=\"54\">");
+    sb_free(img);
+    return true;
+}
+
+// Emit the letterhead + report title at the top of the body (page 1).
+static void report_append_letterhead(String_Builder *out, const Report_Def *rep) {
+    // Kingdom motto, centered, in the formal Khmer face.
+    sb_append_cstr(out, "<p align=\"center\" style=\"font-family:'Khmer OS Muol';"
+                       " margin:0\">");
+    sb_append_html_escaped(out, REPORT_KINGDOM_1);
+    sb_append_cstr(out, "</p><p align=\"center\" style=\"font-family:'Khmer OS Muol';"
+                       " margin:0\">");
+    sb_append_html_escaped(out, REPORT_KINGDOM_2);
+    sb_append_cstr(out, "</p>");
+    // Logo + shop name (left) | memo from/to (right), one borderless row.
+    sb_append_cstr(out, "<table width=\"100%\" border=\"0\" cellspacing=\"0\" "
+                        "cellpadding=\"0\"><tr>");
+    sb_append_cstr(out, "<td align=\"left\" width=\"55%\">");
+    report_append_logo(out);
+    sb_append_cstr(out, " ");
+    sb_append_html_escaped(out, report_shop_name());
+    sb_append_cstr(out, "</td><td align=\"right\" width=\"45%\">");
+    sb_append_html_escaped(out, REPORT_MEMO_FROM);
+    sb_append_cstr(out, "<br>");
+    sb_append_html_escaped(out, REPORT_MEMO_TO);
+    sb_append_cstr(out, "</td></tr></table>");
+    // Report title, centered + bold.
+    sb_append_cstr(out, "<p align=\"center\" style=\"margin:8px 0\"><b>");
+    sb_append_html_escaped(out, rep->khmer_title);
+    sb_append_cstr(out, "</b></p>");
 }
 
 bool report_build_html(const Report_Def *rep, String_Builder *out,
@@ -337,17 +423,22 @@ bool report_build_html(const Report_Def *rep, String_Builder *out,
         sb_append_cstr(out, REPORT_CSS);
         sb_append_cstr(out, "</style></head><body>");
 
+        // Cambodian official letterhead (page 1): Kingdom + logo + shop name
+        // + memo from/to, then the report title. The date+row-count imprint
+        // is carried by the repeating page-style header, so no separate meta
+        // line here (it would double up on page 1).
+        report_append_letterhead(out, rep);
+
         // Table only. The column-header row lives in <tbody> -- NOT <thead>
         // -- so LibreOffice prints it once at the top instead of repeating it
         // on every page. Grid/dark-header/zebra are presentational attributes
         // (CSS backgrounds + borders do not survive the html->FODT import).
-        // The document header/footer and live page numbers are page-style
-        // chrome injected into the FODT during conversion, not body content.
+
         sb_append_cstr(out, "<table border=\"1\" cellpadding=\"1\" "
                             "cellspacing=\"0\" width=\"100%\"><tbody><tr>");
         for (int ci = 0; ci < ncols; ++ci) {
-            const char *label =
-                (size_t)ci < rep->header_count ? rep->headers[ci] : NULL;
+            const char *label = (size_t)ci < rep->header_count ? rep->headers[ci] 
+                                                               : NULL;
             Report_Col_Type t = report_col_type(rep, ci);
             // Numeric column headers align with their right-aligned cells.
             bool num = (t == REPORT_COL_NUM || t == REPORT_COL_MONEY);
@@ -369,6 +460,7 @@ bool report_build_html(const Report_Def *rep, String_Builder *out,
         // migration SQL into the last page).
         sb_append_null(out);
     }
+
     if (n_rows_out) *n_rows_out = n_rows;
 
 done:
@@ -383,14 +475,14 @@ done:
 // and avoids a per-request profile litter; the work dir is a fresh
 // mkdtemp removed on both paths.
 //
-// One path for both formats (pdf and docx), because the running header/
-// footer + live page numbers only exist in a Writer document:
+// One path for both formats (pdf and docx), because the repeating imprint
+// header/footer + live page numbers only exist in a Writer document:
 //   step 1 -- open the html as Writer (infilter), export flat ODT (fodt).
 //   step 2 -- patch letter -> A4 (Writer's html import ignores @page size),
 //             then inject the page-style header/footer (report_fodt_decorate).
 //   step 3 -- export that flat ODT to pdf or docx.
 // Writer/Web (the old direct html->pdf path) has no page-style headers/
-// footers and no page-number fields, so it cannot repeat a letterhead or
+// footers and no page-number fields, so it cannot repeat a footer or
 // show "Page X of Y" -- hence the FODT detour for pdf too.
 // =========================================================================
 
@@ -468,14 +560,13 @@ static bool report_patch_a4(const char *path) {
 }
 
 // =========================================================================
-// Running page chrome (ODF page-style header/footer).
+// Running page footer (ODF page-style footer).
 //
-// A standard document repeats its letterhead and page number on every page.
-// That is a PAGE-STYLE header/footer, which only exists in Writer (Writer/Web
-// has none) -- so both pdf and docx route through FODT and we inject the
-// chrome here. Each band is a 3-column borderless table (a table, not tab
-// stops, so a multi-line cell like the 2-line shop header still lines up),
-// with a divider rule under the header and over the footer.
+// The Cambodian letterhead lives in the body on page 1; only the footer (live
+// page numbers) must repeat on every page. A PAGE-STYLE footer only exists in
+// Writer (Writer/Web has none) -- so both pdf and docx route through FODT and
+// we inject it here as a 3-column borderless table (a table, not tab stops, so
+// a multi-line cell lines up), with a divider rule over the footer cells.
 // =========================================================================
 
 // Escape `s` for an ODF text run, turning embedded newlines into
@@ -569,6 +660,11 @@ static bool report_fodt_decorate(const char *path, const Report_Def *rep,
     if (!read_entire_file(path, &sb)) return false;
     sb_append_buf(&sb, "", 1); // NUL-terminate for the scanners below
 
+    // Imprint header: shop block (left) / report title (mid) / generated
+    // date + row count (right), repeated on every page. The Kingdom/logo/
+    // memo letterhead is separate BODY content starting the document on
+    // page 1 (report_append_letterhead); the page style carries both the
+    // imprint header and the footer (live page numbers).
     const char *shop = report_shop_name();
     char right_hdr[96];
     {

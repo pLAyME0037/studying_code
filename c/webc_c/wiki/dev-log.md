@@ -13,6 +13,53 @@ Status vocabulary:
 
 ---
 
+## 2026-10-19 — Cambodian official letterhead (page-1 body) + repeating 3-section imprint header — **done**
+
+Two layers now, as on real letterhead stationery:
+- **Letterhead** = the start of the letter, **page-1 body only** (the memo
+  "from/to" is page-1-specific).
+- **Imprint header** = the repeating **page-style** 3-column header (shop
+  block / title / date+row-count), on **every page**.
+
+(An earlier pass mistakenly dropped the imprint header to "avoid doubling up
+with the letterhead"; the user wanted it back — it is the imprint, separate
+from the letterhead.)
+
+### Built
+
+- **Letterhead** (`report_append_letterhead`, body page 1):
+  - Kingdom motto centered in **Khmer OS Muol** — `ព្រះរាជាណាចក្រកម្ពុជា` /
+    `ជាតិ សាសនា ព្រះមហាក្សត្រ` (the font is installed system-wide as
+    `KhmerOS_muol.ttf`; the family name is "Khmer OS Muol", spaces — the
+    original snippet's `khmer-os-muol` would not have matched).
+  - A borderless row: **logo + shop name left**, memo **`ពី ក្រុមបច្ចេកទេស` /
+    `ទៅ ខណះគ្រប់គ្រង` (from/to) right**, on the same row.
+  - Report title (centered, bold) below. (No separate meta line — the date +
+    row count live in the repeating imprint header.)
+- **Logo embedded as a base64 `data:` URI** (`report_append_logo`): the html
+  blob is copied to a temp dir for soffice, where a relative
+  `resource/image/user1.png` would not resolve. Type is sniffed from magic
+  bytes (the file is really a JPEG despite the `.png` name). A tiny
+  `sb_append_base64` does the encoding — the codebase had none.
+- **Imprint header restored** in `report_fodt_decorate` (a `<style:header>`
+  holding the 3-column `sb_append_hf_table`, `RptCellHdr` style), injected
+  alongside the footer on the "HTML" master-page so LibreOffice repeats it on
+  every printed page. `Report_Def.lheader/mheader/rheader` are **used again**
+  (left falls back to `report_shop_name()`, mid to the report title, right to
+  a "date · row count" stamp). The `n_rows` plumbing that feeds that count is
+  back across `report_build_html`/`report_convert`/`report_fodt_decorate`.
+
+### Verified
+
+All four reports, PDF + DOCX, against a fresh seeded DB: page 1 = imprint
+header + Kingdom/logo/memo letterhead + title + table + `PAGE 1-N`; page 2+ =
+repeating imprint header (incl. the row count) + table + `PAGE k-N`. Logo
+embeds (PDF shows an embedded image; DOCX ~205 KB). Full suite green except
+the pre-existing signup duplicate-email gap: 357 / 118 / 48 / 179 / 41 / 6,
+0 failed.
+
+---
+
 ## 2026-10-19 — Report page chrome: ODF header/footer, once-only table header, live page numbers — **done**
 
 Reworked the downloadable-report layout so it reads like a standard
