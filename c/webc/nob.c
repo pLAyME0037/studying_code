@@ -2,7 +2,7 @@
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #define NOB_REBUILD_URSELF(binary_path, source_path) \
-    "cc", "-x", "c", "-I.", "-o", binary_path, source_path
+     "cc", "-x", "c", "-I.", "-o", binary_path, source_path
 #include "third_party/nob/nob.h"
 
 #define BUILD_DIR                "./build/"

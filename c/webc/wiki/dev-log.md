@@ -1,126 +1,184 @@
-<!-- EXAMPLE dev-logs.md structure -->
+<!-- Log starts 2026-10-15. Entries before that date were a different project's
+     (mcme) and were removed from this wiki by request on 2026-10-15; they are
+     still recoverable from git history. Nothing is back-filled here. -->
 # Dev log
 
 Newest entry at the top. Append; do not rewrite history.
 
 Status vocabulary:
+
 **scaffold** = files exist, not functional · **wip** = being written ·
 **works** = runs, may lack tests · **done** = runs and covered by tests ·
 **blocked** = needs something first
 
 ---
 
-## 2026-10-14 — Load test: the game keeps the documents and rewrites the id to its own spelling
+## 2026-10-15 — Definition pass, first full test run, and a database this code refuses to open
 
 ### Built
 
-- Nothing; this entry is the experiment D16 closed on. A copy of
-  the D15 snapshot holds three full chests (27 lava-bucket stacks
-  each) side by side: a control the game itself wrote (`Chest`,
-  -994,18,79), one mcme wrote as `minecraft:chest` (-994,20,79)
-  and one as `chest` (-993,19,79) — the namespaced spelling
-  mcme's own writes used, and a wrong-case one that is neither
-  spelling's canonical form. Loaded in the game (1.26.52.3),
-  played about five minutes (Time +5,996 ticks), Save & Quit,
-  store read back.
+Documentation only; no source file under `src/`, `display/`, `migrations/` or
+`test/` was touched.
 
-### Measured
+- **`README.md`** — was 6 bytes. Now defines the project: what it is,
+  requirements, quick start, CLI, environment, dialect selection, TLS, route
+  table, project layout, request flow, tests, and pointers into the wiki.
+- **`wiki/`** — was 1,200+ lines about *`mcme`*, a Minecraft world editor
+  (`simplexity.md`, `decisions.md` D1/D2 on C11+GTK4, `dev-log.md`, and a
+  914-line `cli.md` documenting `mcme <verb>`). That content existed nowhere
+  else in the repo; it was overwritten on request and remains recoverable from
+  git history. Rewritten for webc:
+  [README](README.md) (index), [simplexity](simplexity.md),
+  [architecture](architecture.md), [templates](templates.md),
+  [database](database.md), [testing](testing.md), [cli](cli.md),
+  [decisions](decisions.md), and this log.
 
-- Every document survived, and all three ids came back `Chest`.
-  The game accepts either spelling on load — nothing dropped, no
-  items lost — and rewrites the id to its own spelling at the
-  next save. The `minecraft:chest` chest demonstrably worked
-  in-game: its contents changed during the session (27 stacks
-  down to 4, the player interacting with it).
-- The re-serialization is the game's usual touch-up, not the
-  id's fate: it added `BlockEntityVersion: 0` and dropped
-  `isMovable` — on the control document mcme never touched, the
-  same as on the two it did. `Items`,
-  `pairlead`/`pairx`/`pairz` and the position carried unchanged,
-  and level.dat kept the name and spawn mcme wrote.
-- D16 does not reverse: nothing dropped, so there is no repair
-  job — mcme's namespaced writes load, work, and the game
-  canonicalises them itself. `put` keeps storing what it was
-  given; the game's save is the normaliser.
+Measured while writing: `src/` 5,484 lines (`.c`+`.h`), `display/*.tt` 1,366,
+`test/` 1,167, `js/` 730, `nob.c` 390.
 
-### Method notes
+### Verified — build and tests
 
-- Two earlier sessions went to the operator's live world instead
-  of the prepared copy — the world list shows both under the same
-  name. The store told them apart without guessing: in the
-  prepared world `level.dat` still held the prep write and
-  `Time`/`currentTick` never advanced, while the live world's db
-  and `level.dat` carried the session. A world that ticked says
-  so in level.dat; document reads alone cannot.
-- The load-test world survives at
-  `minecraftWorlds/mcme_D16_loadtest` with the post-load store in
-  place.
+| | |
+|---|---|
+| `./build.sh` | **exit 0**, `build/bin/webc` ~8.36 MB |
+| warnings/errors in full build | **0** |
+| `./test/run.sh` | **exit 0 — 140 passed, 0 failed** |
+| └ `http_test.py` (SQLite) | 94 passed, 0 failed |
+| └ `mysql_test.py` (own `mariadbd`) | 40 passed, 0 failed |
+| └ `https_test.py` (own cert) | 6 passed, 0 failed |
 
-### Next
+Both optional suites **actually ran** — `mariadbd` and `openssl` are both
+installed, so neither skipped. No `FAIL:` lines in the log. This is the first
+recorded full-suite result for this tree; treat it as the baseline.
 
-- None for D16 — the question it named is closed. The load-test
-  world and the operator-world strays from the two misdirected
-  sessions await disposal.
+### Discovered — `~/.sqlite3/webc/db` cannot be opened  ·  status: **blocked on a decision**
 
----
+The app does not run against its own default database.
 
-## 2026-10-14 — The write side meets the game's spelling: `put` takes a bare savegame id
+```
+$ ./build/bin/webc serve 8123
+ERROR: /home/playme/.sqlite3/webc/db: Database scheme is too new. Contains
+more migrations applied than expected. Update your application.
+ERROR: Failed to initialize DB pool connection 0
+Listening to http://127.0.0.1:8123/ (coroutine mode)
 
-### Built
+GET /        → 200, 29018 bytes   (dashboard needs no DB)
+GET /notes   → 500,  257 bytes    (needs DB)
+```
 
-- `mcme_bedrock_put_block_entity` now refuses an id in *neither*
-  spelling instead of an id without a colon. The old premise —
-  "the reference's decoder requires [a namespace] … the game and
-  amulet drop" anything else — measures backwards: the real-world
-  store holds 23,806 documents across 43 distinct ids and every
-  one is bare (`Chest`, `TrappedChest`, `BrushableBlock`), the
-  wiki calls the field "the savegame ID of the block entity", and
-  `strings` on the game's `libminecraftpe.so` (v1.26.52.3) holds
-  the registry literals bare — `Chest`, `Barrel`, `Hopper`,
-  `BlastFurnace` and a dozen more — with no bare
-  `minecraft:chest` anywhere. The refuser was refusing the game's
-  own format.
-- What stays refused is a shape neither spelling has: no id, an
-  empty side of the colon, a second colon, a character an id in
-  neither form holds (letters, digits, `_`, `-`, `.`) — USAGE,
-  before any byte is written. The id itself is stored exactly as
-  given: mcme checks the shape both spellings share, not the
-  registry, which is the game's and versioned. `Chest` in,
-  `Chest` out; `minecraft:chest` in, `minecraft:chest` out — and
-  D15's read path takes either back.
-- Pins: `test_bedrock_entity_write` refuses an id-less document,
-  an empty name and a stray space, and round-trips a bare id
-  (put `{id: "Chest"}` at a block, read `Chest` back with the
-  position's coordinates set). `test_convert_carry` now puts the
-  furnace under the bare id, so the write API itself feeds both
-  spellings to convert — same five carried, the same
-  `minecraft:furnace` answer under Java. The reference
-  (`ref_bedrock_entity`, 27 checks) stores a bare id verbatim,
-  cross-reads it against amulet's own loader, and keeps the
-  refusal pin on documents in neither spelling, record untouched.
+The log repeats `Database scheme is too new` once per DB request, and the
+`DB pool initialized with 8 connections` line never appears.
+`db_pool_init()` returns at connection 0 **without** setting
+`db_pool_initialized`, so `db_pool_get()` re-attempts and fails every time —
+hence 500s rather than one clean refusal at startup.
 
-### Cross-check
+**Root cause: 9 migrations applied, 2 registered.** `migrations[]` in
+`src/db/db.c` and the `migrations/` directory both contain exactly
+`0001_notes` and `0002_users`; the database holds 9 rows in `Migrations`,
+applied 2026-10-04 → 2026-10-07:
 
-- 5 suites PASS under ASan (debug + release); battery 11/11
-  rc=0; goldens untouched (`git status tests/` empty); release
-  selftest PASS.
-- Measurements behind the rule: the D15 world snapshot's id
-  census (43 distinct, 0 namespaced), the wiki's field
-  definition, and the game binary's own strings.
+| # | Migration (from its SQL header) | SQL size |
+|---|---|---|
+| 1 | `0001_notes` | 510 B |
+| 2 | `0002_users` | 530 B |
+| 3 | `SQLITE3 POS + E-SHOP SCHEMA` | 37,281 B |
+| 4 | `0004_seed_pos` — demo/seed data | 25,531 B |
+| 5 | `0005_auth` — staff login sessions | 2,597 B |
+| 6 | `0006_i18n` — storefront/log | 8,438 B |
+| 7 | `0007_users_contact` — contacts | 6,407 B |
+| 8 | `0008_role_workspace` | 1,478 B |
+| 9 | `0009_geo_admin` — Phase 16 | **2,449,513 B** |
+
+The database therefore has **34 tables** — `orders`, `order_items`, `payments`,
+`products`, `customers`, `roles`, `permissions`, `audit_logs`, `stock_ledger`,
+`financial_ledgers`, `provinces`/`districts`/`communes`/`villages`,
+`translations`, `languages`, … — a POS/e-shop schema, not the notes/users
+schema this tree declares.
+
+### Evidence — these migrations were never committed
+
+```
+$ ls migrations/
+0001_notes  0002_users
+
+$ git ls-files c/webc/migrations/      → same 6 files, 0001 + 0002 only
+$ git status -- c/webc/migrations/     → empty (no deletions reported)
+
+$ git log -S'0003_' -- c/webc/src/db/db.c
+  → empty: db.c never contained them in any commit
+
+$ git show HEAD:c/webc/src/db/db.c | grep -c '"[0-9]\{4\}_'
+  → 2   (identical to the working copy — db.c is not locally modified)
+```
+
+So a `migrations[]` with 9 entries and 7 untracked migration directories
+existed on disk between 2026-10-04 and 2026-10-07, migrated the database, and
+were then removed **without ever being committed**. Nothing in git can restore
+them.
+
+Corroborating:
+
+- Commit `03882263 "pos database madness AI don't understand data"` and the
+  migration names themselves point at the POS/e-shop work.
+- `migrations/pos_and_eshop_db_schema.sql` was **deleted** by
+  `ce80dedb "Try to compress webc filestructure for more compress"`. Git still
+  has it at `ce80dedb^` — **30,890 bytes**, which does *not* match DB row 3's
+  37,281 — so git's copy is an older variant and the database's own record is
+  the authoritative one.
+- `~/.sqlite3/webc/db.bak` (430,080 B, Oct 4) with `-shm`/`-wal` (Oct 7) — the
+  D5 backup/restore path has run before.
+
+### Options — none chosen
+
+**A. Reconstruct migrations 0003–0009 from the database itself.**
+D5 exists precisely for this: `Migrations.query` stores the **exact SQL that
+was applied**, so the seven missing files can be dumped straight out
+(`SELECT query FROM Migrations WHERE rowid BETWEEN 3 AND 9`) and
+`migrations[]` re-extended. The database opens as-is with all 34 tables and
+its data intact.
+
+- Caveat: only the **`sqlite3.sql`** siblings are recoverable. The `mysql.sql`
+  and `postgres.sql` variants of 0003–0009 are gone entirely.
+- Caveat: names for 0004–0009 are legible in their SQL headers; row 3's array
+  name is not recoverable and would have to be chosen.
+- Decision required: **should this tree carry a POS/e-shop schema at all?**
+  That is a product question, not a technical one.
+
+**B. Set the POS database aside and start fresh.**
+Point `WEBC_DB` elsewhere, or rename `~/.sqlite3/webc/db`. The app works
+immediately on a clean notes/users schema — which is exactly what the test
+suite already proves happens (140 passing tests all run against a fresh DB).
+The 34-table database stays on disk untouched.
+
+**C. Ship as-is.** Not viable: any DB-backed route returns 500.
+
+Recommendation: decide the product question first — *is the POS schema part of
+webc?* If yes → A (it is fully recoverable, thanks to D5). If no → B, and keep
+the file where it is until the question is settled.
 
 ### Known gaps
 
-- Still untested, and only the game can test it: which
-  spellings survive a load. mcme's earlier writes are
-  namespaced; this world holds none, so nothing in it says what
-  the game does with them — or with the wrong-case `{id:
-  "chest"}`, which now stores. The experiment is one world
-  holding both spellings, loaded, store read back after.
+All verified today; each is documented where it lives.
+
+| # | Gap | Where |
+|---|---|---|
+| 1 | **Database refuses to open — DB routes 500** | above; [decisions.md](decisions.md) D9 |
+| 2 | `src/crud/` compiles but has **zero callers** (live path is `SERVE_*` + `master_child.c`) | [architecture.md](architecture.md) |
+| 3 | `driver_postgres.c` is an honest stub; `postgres:` fails at `db_open()` | [database.md](database.md), D4 |
+| 4 | `dev` watches two dead paths: `core` and `nob.c` — **editing `nob.c` does not trigger a rebuild** | [cli.md](cli.md) |
+| 5 | `dev_visit_file` excludes `module/sqlite-amalgamation-…`, now at `third_party/` — vendored SQLite retrigger builds again | [cli.md](cli.md) |
+| 6 | Port argument is `atoi()` with no validation: `serve notanumber` → port 0, `serve 70000` → 4464 | [cli.md](cli.md) |
+| 7 | DB pool round-robins with **no checkout tracking** — invariant rests on handlers not yielding while holding a connection | [database.md](database.md) |
+| 8 | `tt` prints `char` with `%02x` → 8-digit escapes for bytes ≥ 0x80; bytes correct, build warning-free, but ugly | [templates.md](templates.md) |
+| 9 | No `-std=` pinned; compiles as C23 on GCC 16 | [decisions.md](decisions.md) D12 |
+| 10 | No concurrency test, no keep-alive/chunked (neither implemented), no Postgres suite | [testing.md](testing.md) |
 
 ### Next
 
-- That load test: a prepared copy with a `Chest` doc and a
-  `minecraft:chest` doc side by side, opened in the game, the
-  store compared afterwards — then decide from what the game
-  left standing whether put writes one spelling after all.
-
+1. **Decide A vs B for the database.** Everything else can wait; this is the
+   only gap a user hits on their first `serve`.
+2. If B: move the DB aside and re-run `serve` → confirm `GET /notes` → 200.
+3. If A: dump rows 3–9 to `migrations/000{3..9}_*/sqlite3.sql`, extend
+   `migrations[]`, rebuild, re-run the suite **and** the real-DB smoke test.
+4. Cheap follow-ups once the above is settled: gaps 4, 5 and 6 are each a
+   one-line fix in `src/webc.c`.
