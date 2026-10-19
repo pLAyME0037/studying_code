@@ -192,6 +192,9 @@ void route_initialize(void) {
     route_new(&routes, "/signup",      NULL, "POST", ROUTE_EXACT, serve_auth_signup_post);
     route_new(&routes, "/logout",      NULL, "GET",  ROUTE_EXACT, serve_auth_logout);
     route_new(&routes, "/logout",      NULL, "POST", ROUTE_EXACT, serve_auth_logout);
+    // Multi-account: list/switch the sessions signed in on this browser.
+    route_new(&routes, "/accounts",    NULL, "GET",  ROUTE_EXACT, serve_auth_accounts);
+    route_new(&routes, "/switch",      NULL, "POST", ROUTE_EXACT, serve_auth_switch);
     // Phase 12: language switch - validate the code, set webc_lang, 303 back.
     route_new(&routes, "/lang",        NULL, "GET", ROUTE_EXACT, serve_lang_set);
     route_new(&routes, "/version",     NULL, "GET", ROUTE_EXACT, serve_version_page);

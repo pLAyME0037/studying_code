@@ -86,6 +86,48 @@ static bool session_user_id(Serve_Context *sc, char *out, size_t outsz) {
     return got;
 }
 
+// Reads webc_sid and, when it maps to a live session, writes the session id
+// to sid_out and its switch_group ("" when NULL) to group_out. This is the
+// multi-account anchor: whichever session is active also names the browser
+// group its sibling logins share. Returns false when nobody is signed in.
+static bool active_session(db_t *db, Serve_Context *sc,
+                           char *sid_out, size_t sid_sz,
+                           char *group_out, size_t grp_sz) {
+    String_View sid = {0};
+    sid_out[0] = group_out[0] = '\0';
+    if (!http_cookie_find(sc, SID_COOKIE, &sid) || sid.count == 0
+        || sid.count > 64) {
+        return false;
+    }
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "SELECT id, COALESCE(switch_group, '') "
+                         "FROM user_sessions WHERE id = ? "
+                         "AND expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+                         "LIMIT 1;",
+        [SQL_MYSQL]    = "SELECT id, COALESCE(switch_group, '') "
+                         "FROM user_sessions WHERE id = ? AND expires_at > NOW() "
+                         "LIMIT 1;",
+        [SQL_POSTGRES] = "SELECT id, COALESCE(switch_group, '') "
+                         "FROM user_sessions WHERE id = $1 AND expires_at > now() "
+                         "LIMIT 1;",
+    };
+    bool got = false;
+    sql_stmt stmt = {0};
+    if (sql_prepare(db, q[db->lang], &stmt)
+        && sql_bind(&stmt, 1, SQL_SV(sid))
+        && sql_step(&stmt) == SQL_ROW) {
+        const char *id  = sql_col_text(&stmt, 0);
+        const char *grp = sql_col_text(&stmt, 1);
+        if (id && id[0]) {
+            snprintf(sid_out, sid_sz, "%s", id);
+            snprintf(group_out, grp_sz, "%s", (grp && grp[0]) ? grp : "");
+            got = true;
+        }
+    }
+    sql_finalize(&stmt);
+    return got;
+}
+
 // ---------------------------------------------------------------------------
 // Current request identity (sidebar / workspaces)
 // ---------------------------------------------------------------------------
@@ -483,7 +525,9 @@ void serve_auth_login(Serve_Context *sc) {
 // Housekeeping + session mint shared by the login and signup flows: drop
 // expired rows, insert the new one, hand the C-generated id back so the
 // caller can set the cookie (no RETURNING clause across the dialects).
-static bool auth_mint_session(db_t *db, const char *user_id, char *sid /* 40 */) {
+static bool auth_mint_session(db_t *db, const char *user_id,
+                              const char *group /* NULL = mint fresh */,
+                              char *sid /* 40 */) {
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE] = "DELETE FROM user_sessions "
                        "WHERE expires_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now');",
@@ -491,13 +535,16 @@ static bool auth_mint_session(db_t *db, const char *user_id, char *sid /* 40 */)
         [SQL_POSTGRES] = "DELETE FROM user_sessions WHERE expires_at <= now();",
     };
     static const char *const ins[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "INSERT INTO user_sessions (id, user_id, expires_at) "
-                         "VALUES (?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now',"
+        [SQL_SQLITE]   = "INSERT INTO user_sessions "
+                         "(id, user_id, switch_group, expires_at) "
+                         "VALUES (?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now',"
                          "'+7 days'));",
-        [SQL_MYSQL]    = "INSERT INTO user_sessions (id, user_id, expires_at) "
-                         "VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY));",
-        [SQL_POSTGRES] = "INSERT INTO user_sessions (id, user_id, expires_at) "
-                         "VALUES ($1, $2, now() + interval '7 days');",
+        [SQL_MYSQL]    = "INSERT INTO user_sessions "
+                         "(id, user_id, switch_group, expires_at) "
+                         "VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY));",
+        [SQL_POSTGRES] = "INSERT INTO user_sessions "
+                         "(id, user_id, switch_group, expires_at) "
+                         "VALUES ($1, $2, $3, now() + interval '7 days');",
     };
     // Housekeeping first (best effort): drop expired sessions.
     {
@@ -506,10 +553,19 @@ static bool auth_mint_session(db_t *db, const char *user_id, char *sid /* 40 */)
         sql_finalize(&hs);
     }
     bool created = webc_uuid(sid);
+    // Join the caller's browser group when given; otherwise mint a fresh one
+    // (a first login on a new browser starts a group by itself).
+    char grp[40] = {0};
+    if (group && group[0]) {
+        snprintf(grp, sizeof(grp), "%s", group);
+    } else if (!webc_uuid(grp)) {
+        created = false;
+    }
     sql_stmt stmt = {0};
     if (created && sql_prepare(db, ins[db->lang], &stmt)) {
         created = sql_bind(&stmt, 1, SQL_SV(sv_from_cstr(sid)))
             && sql_bind(&stmt, 2, SQL_SV(sv_from_cstr(user_id)))
+            && sql_bind(&stmt, 3, SQL_SV(sv_from_cstr(grp)))
             && sql_final_step(&stmt);
     } else {
         created = false;
@@ -522,6 +578,37 @@ static void auth_send_session(Serve_Context *sc, const char *sid) {
     http_set_cookie(sc, temp_sprintf(
         SID_COOKIE "=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d",
         sid, SESSION_DAYS * 24 * 60 * 60));
+}
+
+// The browser's account group: reuse the switch_group of whatever session is
+// already active on this browser (so a second login joins it); a session
+// minted before 0010 has none and is stamped here so it can participate; a
+// fresh browser (nobody signed in) starts a brand-new group. The group lives
+// only in the DB, anchored by the active webc_sid - no second cookie.
+static bool browser_group(db_t *db, Serve_Context *sc, char *grp /* 40 */) {
+    char sid[40] = {0}, cur[40] = {0};
+    if (!active_session(db, sc, sid, sizeof(sid), cur, sizeof(cur)))
+        return webc_uuid(grp);  // nobody signed in on this browser yet
+    if (cur[0]) { snprintf(grp, 40, "%s", cur); return true; }
+
+    // Active session predates the group column: stamp it now so this login
+    // links to it instead of orphaning it.
+    if (!webc_uuid(grp)) return false;
+    static const char *const u[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE user_sessions SET switch_group = ? WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE user_sessions SET switch_group = ? WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE user_sessions SET switch_group = $1 WHERE id = $2;",
+    };
+    bool ok = false;
+    sql_stmt st = {0};
+    if (sql_prepare(db, u[db->lang], &st)
+        && sql_bind(&st, 1, SQL_SV(sv_from_cstr(grp)))
+        && sql_bind(&st, 2, SQL_SV(sv_from_cstr(sid)))
+        && sql_final_step(&st)) {
+        ok = true;
+    }
+    sql_finalize(&st);
+    return ok;
 }
 
 void serve_auth_login_post(Serve_Context *sc) {
@@ -599,7 +686,9 @@ void serve_auth_login_post(Serve_Context *sc) {
         next = sv_from_cstr("/");
 
     char sid[40];
-    bool created = auth_mint_session(db, user_id, sid);
+    char group[40] = {0};
+    bool grouped = browser_group(db, sc, group);
+    bool created = grouped && auth_mint_session(db, user_id, group, sid);
     db_close(db);
 
     if (!created) { serve_error(sc, 500); return; }
@@ -864,7 +953,11 @@ void serve_auth_signup_post(Serve_Context *sc) {
     }
 
     bool minted = false;
-    if (!err) minted = auth_mint_session(db, uid, sid);
+    if (!err) {
+        char group[40] = {0};
+        minted = browser_group(db, sc, group)
+            && auth_mint_session(db, uid, group, sid);
+    }
     db_close(db);
 
     if (err) { render_signup(sc, err); return; }
@@ -873,25 +966,284 @@ void serve_auth_signup_post(Serve_Context *sc) {
     http_render_redirect(sc, 303, "/");
 }
 
+// Signs out of this browser entirely: every session in the browser's account
+// group is deleted and the cookie cleared. A group never spans browsers, so
+// this only ends sessions the user signed into here (a lone account behaves
+// exactly as before). Drop a single account instead via /accounts (op=remove).
 void serve_auth_logout(Serve_Context *sc) {
-    String_View sid = {0};
-    if (http_cookie_find(sc, SID_COOKIE, &sid) && sid.count > 0) {
-        db_t *db = open_webc_db();
-        if (db) {
-            static const char *const q[SQL_LANG_COUNT] = {
-                [SQL_SQLITE]   = "DELETE FROM user_sessions WHERE id = ?;",
-                [SQL_MYSQL]    = "DELETE FROM user_sessions WHERE id = ?;",
-                [SQL_POSTGRES] = "DELETE FROM user_sessions WHERE id = $1;",
+    char sid[40] = {0}, group[40] = {0};
+    db_t *db = open_webc_db();
+    if (db) {
+        if (active_session(db, sc, sid, sizeof(sid), group, sizeof(group))) {
+            static const char *const del[SQL_LANG_COUNT] = {
+                [SQL_SQLITE]   = "DELETE FROM user_sessions "
+                                 "WHERE id = ? OR switch_group = ?;",
+                [SQL_MYSQL]    = "DELETE FROM user_sessions "
+                                 "WHERE id = ? OR switch_group = ?;",
+                [SQL_POSTGRES] = "DELETE FROM user_sessions "
+                                 "WHERE id = $1 OR switch_group = $2;",
             };
             sql_stmt stmt = {0};
-            if (sql_prepare(db, q[db->lang], &stmt)) {
-                sql_bind(&stmt, 1, SQL_SV(sid));
+            if (sql_prepare(db, del[db->lang], &stmt)) {
+                sql_bind(&stmt, 1, SQL_SV(sv_from_cstr(sid)));
+                sql_bind(&stmt, 2, SQL_SV(sv_from_cstr(group)));
                 sql_final_step(&stmt);
             }
             sql_finalize(&stmt);
-            db_close(db);
         }
+        db_close(db);
     }
     http_set_cookie(sc, SID_COOKIE "=; Path=/; HttpOnly; Max-Age=0");
     http_render_redirect(sc, 303, "/");
+}
+
+// ---------------------------------------------------------------------------
+// Multi-account: /accounts (list + hop) and /switch (POST). Sessions share a
+// switch_group per browser, so switching is just repointing webc_sid at a
+// sibling session - no second cookie, no password re-entry.
+// ---------------------------------------------------------------------------
+
+#define ACCT_MAX 16  // accounts shown on the switcher (deduped per user)
+
+static void render_accounts(Serve_Context *sc, const char *rows_html) {
+    String_Builder content = {0};
+    sb_append_cstr(&content,
+        "<div class=\"min-h-screen bg-base py-6\">"
+        "<div class=\"max-w-lg mx-auto bg-mantle border border-surface0\">"
+        "<div class=\"bg-text text-onbase px-3 py-2 flex items-center"
+        " justify-between\">"
+        "<div><div class=\"text-sm font-semibold\">");
+    sb_append_html_escaped(&content, tr("auth.acct_title", "គណនី"));
+    sb_append_cstr(&content, "</div>"
+        "<div class=\"text-xs text-onbase/70\">");
+    sb_append_html_escaped(&content,
+        tr("auth.acct_sub", "ចូលហើយក្នុងកម្មវិធីនេះ"));
+    sb_append_cstr(&content, "</div></div>"
+        "<a href=\"/\" class=\"text-xs text-onbase/80 hover:underline\">"
+        "Store</a></div>"
+        "<ul class=\"divide-y divide-surface0\">");
+    sb_append_cstr(&content, rows_html ? rows_html : "");
+    sb_append_cstr(&content,
+        "</ul>"
+        "<div class=\"p-3 flex items-center justify-between text-xs\">"
+        "<a href=\"/login?next=/accounts\" class=\"text-blue hover:underline\">");
+    sb_append_html_escaped(&content,
+        tr("auth.acct_add", "បន្ថែមគណនី"));
+    sb_append_cstr(&content, "</a>"
+        "<a href=\"/logout\" class=\"text-red hover:underline\">");
+    sb_append_html_escaped(&content, tr("shop.logout_link", "ចេញ"));
+    sb_append_cstr(&content, "</a></div></div></div>");
+
+    sc->body.count = 0;
+    render_page_shell(sc, sv_from_cstr(tr("auth.acct_title", "គណនី")),
+                      sb_to_sv(content));
+    http_render_response(sc, 200, "text/html", sb_to_sv(sc->body));
+    sb_free(content);
+}
+
+void serve_auth_accounts(Serve_Context *sc) {
+    const Auth_User *me = auth_current_user();
+    if (!me || !me->id) {
+        http_render_redirect(sc, 303, "/login?next=/accounts");
+        return;
+    }
+    db_t *db = open_webc_db();
+    if (!db) { serve_error(sc, 500); return; }
+
+    char my_sid[40] = {0}, group[40] = {0};
+    active_session(db, sc, my_sid, sizeof(my_sid), group, sizeof(group));
+
+    String_Builder rows = {0};
+    char seen[ACCT_MAX][64];
+    size_t nseen = 0;
+    if (group[0]) {
+        // Sibling sessions in this browser group, newest session first; the
+        // loop keeps only the newest live session per user so a user who
+        // signed in twice is listed once.
+        static const char *const q[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "SELECT s.id, u.id, u.name, COALESCE(u.email,''), "
+                             "u.user_type_dict_id, COALESCE(u.profile_pic,'') "
+                             "FROM user_sessions s JOIN users u ON u.id = s.user_id "
+                             "WHERE s.switch_group = ? "
+                             "AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+                             "AND u.deleted_at IS NULL "
+                             "ORDER BY s.created_at DESC;",
+            [SQL_MYSQL]    = "SELECT s.id, u.id, u.name, COALESCE(u.email,''), "
+                             "u.user_type_dict_id, COALESCE(u.profile_pic,'') "
+                             "FROM user_sessions s JOIN users u ON u.id = s.user_id "
+                             "WHERE s.switch_group = ? AND s.expires_at > NOW() "
+                             "AND u.deleted_at IS NULL "
+                             "ORDER BY s.created_at DESC;",
+            [SQL_POSTGRES] = "SELECT s.id, u.id, u.name, COALESCE(u.email,''), "
+                             "u.user_type_dict_id, COALESCE(u.profile_pic,'') "
+                             "FROM user_sessions s JOIN users u ON u.id = s.user_id "
+                             "WHERE s.switch_group = $1 AND s.expires_at > now() "
+                             "AND u.deleted_at IS NULL "
+                             "ORDER BY s.created_at DESC;",
+        };
+        sql_stmt st = {0};
+        if (sql_prepare(db, q[db->lang], &st)
+            && sql_bind(&st, 1, SQL_SV(sv_from_cstr(group)))) {
+            while (sql_step(&st) == SQL_ROW && nseen < ACCT_MAX) {
+                const char *sid  = sql_col_text(&st, 0);
+                const char *uid  = sql_col_text(&st, 1);
+                const char *name = sql_col_text(&st, 2);
+                const char *mail = sql_col_text(&st, 3);
+                const char *type = sql_col_text(&st, 4);
+                if (!sid || !uid) continue;
+                bool dup = false;
+                for (size_t i = 0; i < nseen; ++i)
+                    if (strcmp(seen[i], uid) == 0) { dup = true; break; }
+                if (dup) continue;
+                snprintf(seen[nseen++], sizeof(seen[0]), "%s", uid);
+
+                bool is_me = strcmp(sid, my_sid) == 0;
+                const char *initial = (name && name[0]) ? name : "?";
+                sb_append_cstr(&rows, "<li class=\"flex items-center gap-3"
+                    " px-3 py-2.5\">");
+                sb_append_cstr(&rows,
+                    "<span class=\"h-9 w-9 rounded-full bg-surface1"
+                    " text-subtext0 inline-flex items-center justify-center"
+                    " text-sm font-semibold shrink-0\">");
+                sb_append_html_escaped(&rows, initial[0] ? temp_sprintf("%c", initial[0]) : "?");
+                sb_append_cstr(&rows, "</span>"
+                    "<div class=\"min-w-0 flex-1\">"
+                    "<div class=\"text-sm text-text truncate\">");
+                sb_append_html_escaped(&rows, (name && name[0]) ? name : "");
+                sb_append_cstr(&rows, "</div>"
+                    "<div class=\"text-xs text-subtext0 truncate\">");
+                sb_append_html_escaped(&rows, (mail && mail[0]) ? mail : "");
+                if (type && type[0]) {
+                    sb_append_cstr(&rows, " · ");
+                    sb_append_html_escaped(&rows, type);
+                }
+                sb_append_cstr(&rows, "</div></div>");
+                if (is_me) {
+                    sb_append_cstr(&rows,
+                        "<span class=\"text-xs text-blue border border-blue/40"
+                        " px-2 py-1 whitespace-nowrap\">");
+                    sb_append_html_escaped(&rows,
+                        tr("auth.acct_current", "ឥឡូវនេះ"));
+                    sb_append_cstr(&rows, "</span>");
+                } else {
+                    sb_append_cstr(&rows,
+                        "<form method=\"POST\" action=\"/switch\""
+                        " class=\"flex items-center gap-1.5\">"
+                        "<input type=\"hidden\" name=\"sid\" value=\"");
+                    sb_append_html_escaped(&rows, sid);
+                    sb_append_cstr(&rows, "\">"
+                        "<input type=\"hidden\" name=\"next\""
+                        " value=\"/accounts\">"
+                        "<button name=\"op\" value=\"switch\""
+                        " class=\"text-xs bg-blue text-onbase px-2 py-1\">");
+                    sb_append_html_escaped(&rows,
+                        tr("auth.acct_switch", "ប្តូរ"));
+                    sb_append_cstr(&rows, "</button>"
+                        "<button name=\"op\" value=\"remove\""
+                        " class=\"text-xs text-red border border-surface0"
+                        " px-2 py-1\">");
+                    sb_append_html_escaped(&rows,
+                        tr("auth.acct_remove", "លុប"));
+                    sb_append_cstr(&rows, "</button></form>");
+                }
+                sb_append_cstr(&rows, "</li>");
+            }
+        }
+        sql_finalize(&st);
+    }
+    db_close(db);
+    sb_append_null(&rows);
+    render_accounts(sc, rows.items);
+    sb_free(rows);
+}
+
+void serve_auth_switch(Serve_Context *sc) {
+    const Auth_User *me = auth_current_user();
+    if (!me || !me->id) {
+        http_render_redirect(sc, 303, "/login?next=/accounts");
+        return;
+    }
+    String_View req  = sb_to_sv(sc->request);
+    String_View body = sb_to_sv(sc->body);
+    String_View op   = form_text(req, body, "op");
+    String_View targ = form_text(req, body, "sid");
+    String_View next = form_text(req, body, "next");
+    if (!next_safe(next)) next = sv_from_cstr("/accounts");
+    if (targ.count == 0 || targ.count > 64) {
+        http_render_redirect(sc, 303, "/accounts");
+        return;
+    }
+
+    db_t *db = open_webc_db();
+    if (!db) { serve_error(sc, 500); return; }
+    char my_sid[40] = {0}, group[40] = {0};
+    active_session(db, sc, my_sid, sizeof(my_sid), group, sizeof(group));
+    if (!group[0]) {  // no group = nothing to switch between
+        db_close(db);
+        http_render_redirect(sc, 303, "/accounts");
+        return;
+    }
+
+    if (op.count == 6 && strncmp(op.data, "remove", 6) == 0) {
+        // Drop a sibling session from MY group only (never the active one).
+        static const char *const q[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "DELETE FROM user_sessions "
+                             "WHERE id = ? AND switch_group = ? AND id <> ?;",
+            [SQL_MYSQL]    = "DELETE FROM user_sessions "
+                             "WHERE id = ? AND switch_group = ? AND id <> ?;",
+            [SQL_POSTGRES] = "DELETE FROM user_sessions "
+                             "WHERE id = $1 AND switch_group = $2 AND id <> $3;",
+        };
+        sql_stmt st = {0};
+        if (sql_prepare(db, q[db->lang], &st)) {
+            sql_bind(&st, 1, SQL_SV(targ));
+            sql_bind(&st, 2, SQL_SV(sv_from_cstr(group)));
+            sql_bind(&st, 3, SQL_SV(sv_from_cstr(my_sid)));
+            sql_final_step(&st);
+        }
+        sql_finalize(&st);
+        db_close(db);
+        http_render_redirect(sc, 303, "/accounts");
+        return;
+    }
+
+    // Switch: the target must be a live session in MY group owned by a live
+    // user - this blocks hopping to an arbitrary/stolen sid.
+    bool ok = false;
+    {
+        static const char *const q[SQL_LANG_COUNT] = {
+            [SQL_SQLITE]   = "SELECT 1 FROM user_sessions s "
+                             "JOIN users u ON u.id = s.user_id "
+                             "WHERE s.id = ? AND s.switch_group = ? "
+                             "AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now') "
+                             "AND u.deleted_at IS NULL LIMIT 1;",
+            [SQL_MYSQL]    = "SELECT 1 FROM user_sessions s "
+                             "JOIN users u ON u.id = s.user_id "
+                             "WHERE s.id = ? AND s.switch_group = ? "
+                             "AND s.expires_at > NOW() AND u.deleted_at IS NULL "
+                             "LIMIT 1;",
+            [SQL_POSTGRES] = "SELECT 1 FROM user_sessions s "
+                             "JOIN users u ON u.id = s.user_id "
+                             "WHERE s.id = $1 AND s.switch_group = $2 "
+                             "AND s.expires_at > now() AND u.deleted_at IS NULL "
+                             "LIMIT 1;",
+        };
+        sql_stmt st = {0};
+        if (sql_prepare(db, q[db->lang], &st)
+            && sql_bind(&st, 1, SQL_SV(targ))
+            && sql_bind(&st, 2, SQL_SV(sv_from_cstr(group)))
+            && sql_step(&st) == SQL_ROW) {
+            ok = true;
+        }
+        sql_finalize(&st);
+    }
+    db_close(db);
+
+    if (ok) {
+        auth_send_session(sc, temp_sprintf("%.*s", (int) targ.count, targ.data));
+        http_render_redirect(sc, 303,
+                             temp_sprintf("%.*s", (int) next.count, next.data));
+    } else {
+        http_render_redirect(sc, 303, "/accounts");
+    }
 }

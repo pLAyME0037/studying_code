@@ -13,6 +13,53 @@ Status vocabulary:
 
 ---
 
+## 2026-10-19 — Multi-account login + switching — **done**
+
+Sign into several accounts on one browser and hop between them without
+re-entering passwords. Sessions signed-into from the same browser share a
+**`switch_group`** (a uuid); the active `webc_sid` anchors it, so no second
+cookie is needed (the codebase only emits one `Set-Cookie` per response).
+
+### Built
+
+- **Migration `0010_account_switch`** (sqlite/mysql/postgres): adds
+  `user_sessions.switch_group TEXT NULL` + an index. Registered in
+  `migrations[]` (`src/db/db.c`).
+- **`auth_mint_session`** now takes a group and stamps `switch_group` on the
+  new row (NULL/empty = mint a fresh group). **`browser_group()`** decides the
+  group at login/signup: reuse the active session's group (a second login
+  joins it), stamp a pre-migration session that has none, or start a new one
+  on a fresh browser.
+- **`serve_auth_accounts` (GET `/accounts`)**: the switcher page - lists the
+  group's live sessions (one row per user, newest first), marks the current
+  account, and gives each other account **Switch** / **Remove** buttons plus an
+  "add account" (`/login?next=/accounts`) link. Standalone shell via
+  `render_page_shell`.
+- **`serve_auth_switch` (POST `/switch`)**: `op=switch` repoints `webc_sid`
+  at a sibling session (validated: same group + live user, so a stolen sid
+  elsewhere can't be hopped to); `op=remove` drops a sibling session (never the
+  active one) from the group.
+- **`serve_auth_logout`**: now ends the whole browser session - deletes every
+  session in the group + clears the cookie (a group never spans browsers; a
+  lone account behaves exactly as before). Granular per-account sign-out lives
+  on `/accounts` (op=remove).
+- **Entry points**: an "Accounts" link in the storefront chrome (`shop.c`) and
+  a "Accounts" item above Log Out in the staff sidebar
+  (`display/component/sidebar.h.tt`).
+
+### Verified
+
+End-to-end (one cookie jar = one browser): login staff1 → login staff2 (joins
+the group) → `/accounts` lists both, current = staff2 → switch to staff1
+(cookie repoints) → remove staff2 → logout of the last account clears the
+cookie. Full suite green except the pre-existing signup duplicate-email gap:
+357 / 118 / 48 / 179 / 0 / 6, 0 failed (the three sidebar-nav counts in
+http_test/role_test were bumped +1 for the new Accounts link; the shop_test
+"logout clears cookie" contract is preserved by the sign-out-everywhere
+semantics).
+
+---
+
 ## 2026-10-19 — Cambodian official letterhead (page-1 body) + repeating 3-section imprint header — **done**
 
 Two layers now, as on real letterhead stationery:

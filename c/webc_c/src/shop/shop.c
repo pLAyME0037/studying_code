@@ -122,6 +122,10 @@ void shop_chrome_start(String_Builder *sb, Serve_Context *sc,
             "<span class=\"text-sm text-text px-1 whitespace-nowrap\">");
         sb_append_html_escaped(sb, au->name && au->name[0] ? au->name : au->id);
         sb_append_cstr(sb, "</span>"
+            "<a href=\"/accounts\" class=\"text-sm text-blue px-1"
+            " whitespace-nowrap\">");
+        sb_append_html_escaped(sb, tr("shop.accounts_link", "គណនី"));
+        sb_append_cstr(sb, "</a>"
             "<a href=\"/logout\" class=\"text-sm text-text border"
             " border-surface0 px-2 py-1.5 whitespace-nowrap\">");
         sb_append_html_escaped(sb, tr("shop.logout_link", "ចេញ"));

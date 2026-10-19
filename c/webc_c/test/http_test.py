@@ -302,12 +302,13 @@ def main():
     t.chk("people sidebar link", 'href="/people"' in html, "True")
 
     # grouped POS sidebar: 10 color-step group headers, one nav-link per
-    # entry (28) + the logout button, exactly one active highlight here
+    # entry (28) + the accounts link + the logout button, exactly one active
+    # highlight here
     header_cls = ('class="px-2 py-1 text-xs font-semibold uppercase '
                   'tracking-wide text-overlay0 bg-surface0/60 nav-label"')
     t.chk("sidebar group headers (color-step)", html.count(header_cls), 10)
-    t.chk("sidebar nav links (28 entries + logout)",
-          html.count('class="nav-link'), 29)
+    t.chk("sidebar nav links (28 entries + accounts + logout)",
+          html.count('class="nav-link'), 30)
     t.chk("sidebar pos links present",
           all(p in html for p in
               ('href="/pos/products"', 'href="/pos/orders"',

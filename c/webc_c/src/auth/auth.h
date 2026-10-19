@@ -47,6 +47,14 @@ void serve_auth_login(Serve_Context *sc);       // GET  /login
 void serve_auth_login_post(Serve_Context *sc);  // POST /login
 void serve_auth_logout(Serve_Context *sc);      // GET/POST /logout
 
+// Multi-account login + switching. Sessions signed-into from one browser
+// share a switch_group (0010_account_switch); the active webc_sid anchors
+// it. /accounts lists them and lets the user hop; /switch (POST) repoints
+// webc_sid at a sibling session (op=switch) or drops one (op=remove) --
+// no second cookie and no re-entering of passwords.
+void serve_auth_accounts(Serve_Context *sc);    // GET  /accounts
+void serve_auth_switch(Serve_Context *sc);      // POST /switch
+
 // Phase 16 signup: public permanent CUSTOMER accounts (guest checkout
 // rows with an empty hash get claimed here). The minted session is the
 // login one, so the storefront keeps the identity across visits.

@@ -65,8 +65,8 @@ def main():
                                    'href="/pos/villages"')), True)
     t.chk("cashier nav groups (Dashboard/Sales/Party/Reports/Demo)",
           d.count(HEADER_CLS), 5)
-    t.chk("cashier nav links (10 entries + logout)",
-          d.count('class="nav-link'), 11)
+    t.chk("cashier nav links (10 entries + accounts + logout)",
+          d.count('class="nav-link'), 12)
 
     # page gate: SELL + report pages open, everything else 403
     t.chk("cashier /pos/orders allowed", c.get("/pos/orders")[0], 200)
@@ -108,8 +108,8 @@ def main():
     t.chk("driver nav = overview + demo only",
           'href="/pos/orders"' not in d, True)
     t.chk("driver nav groups (Dashboard/Demo)", d.count(HEADER_CLS), 2)
-    t.chk("driver nav links (6 entries + logout)",
-          d.count('class="nav-link'), 7)
+    t.chk("driver nav links (6 entries + accounts + logout)",
+          d.count('class="nav-link'), 8)
 
     t.chk("driver /pos/orders gated", c.get("/pos/orders")[0], 403)
     t.chk("driver /pos/shifts gated", c.get("/pos/shifts")[0], 403)

@@ -171,6 +171,19 @@
     </nav>
 
     <div id="sidebar-pad" class="border-t border-surface0 shrink-0">
+        <a href="/accounts"
+           class="nav-link relative flex items-center w-full p-2 text-subtext0 hover:bg-blue/10 hover:text-blue transition-colors">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M17 19v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 9a4 4 0 100-8 4 4 0 000 8zM23 19v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+            <span class="ml-3 text-sm font-medium whitespace-nowrap nav-label">
+                Accounts
+            </span>
+            <div class="sidebar-tooltip">
+                Accounts
+            </div>
+        </a>
         <form method="POST"
               action="/logout">
             <button type="submit"
