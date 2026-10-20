@@ -14,14 +14,16 @@
 #include "src/layout/footer.h"
 
 // =========================================================================
-// /pos/sale: dedicated in-store POS sale. The cashier picks products from a
-// single dropdown (product_variants joined to products, plus products with
-// no variants) and a quantity per line; the server builds the whole order -
-// staff/org from the session, customer NULL, status PAID, auto id + order
-// number, delivery fee 0 - and computes every money figure from
-// products.base_price (+ variant price_delta) x quantity. A CASH payment is
-// written for the total and stock is decremented, all in one transaction.
-// The online / e-shop checkout path is untouched.
+// /pos/sale: dedicated in-store POS sale. The cashier finds products with a
+// faceted finder - nullable Category, Type, SKU and Barcode dropdowns, each
+// an individual trigger that narrows the product list (filtered client-side
+// so already-built sale lines survive). The picked product's price is shown
+// as read-only text; every other attribute is just a way to locate it. The
+// server then builds the whole order - staff/org from the session, customer
+// NULL, status PAID, auto id + order number, delivery fee 0 - and computes
+// every money figure from products.base_price (+ variant price_delta) x
+// quantity. A CASH payment is written and stock is decremented, all in one
+// transaction. The online / e-shop checkout path is untouched.
 // =========================================================================
 
 #define SALE_MAX_LINES 64
@@ -35,67 +37,116 @@ static void sv_copy(char *dst, size_t sz, String_View sv) {
     dst[n] = '\0';
 }
 
-// Options for the product dropdown: one row per variant, plus one row for
-// every product that has no variants (v.* NULL). The value is "product_id"
-// or "product_id:variant_id"; data-price carries the effective unit price so
-// the page can total live. Dialect-neutral (no string concat in SQL).
-static void sale_load_options(String_Builder *opts) {
+// Emit a JSON string literal (with surrounding quotes). This JSON is
+// embedded straight into a <script> block, so escape '"', '\', control
+// bytes as \uXXXX, and also the characters <, > and & as the escapes
+// <, > and & - that keeps a stray "</script>" or '&' inside a
+// product name from ever breaking the page.
+static void json_str(String_Builder *sb, const char *s) {
+    sb_append_cstr(sb, "\"");
+    if (s) {
+        for (const unsigned char *p = (const unsigned char *) s; *p; ++p) {
+            unsigned char c = *p;
+            if (c == '"')       sb_append_cstr(sb, "\\\"");
+            else if (c == '\\') sb_append_cstr(sb, "\\\\");
+            else if (c == '<')  sb_append_cstr(sb, "\\u003c");
+            else if (c == '>')  sb_append_cstr(sb, "\\u003e");
+            else if (c == '&')  sb_append_cstr(sb, "\\u0026");
+            else if (c == '\n') sb_append_cstr(sb, "\\n");
+            else if (c == '\r') sb_append_cstr(sb, "\\r");
+            else if (c == '\t') sb_append_cstr(sb, "\\t");
+            else if (c < 0x20)  sb_appendf(sb, "\\u%04x", c);
+            else                sb_append_buf(sb, (const char *) &c, 1);
+        }
+    }
+    sb_append_cstr(sb, "\"");
+}
+
+// The sellable list as a JSON array the finder narrows client-side. One row
+// per product variant, plus one for products with no variants. Each entry
+// carries the product-level filter fields (category name, type label, product
+// sku, barcode) next to the unit sku and effective price, so the page can
+// filter and total live without a round trip. Dialect-neutral SQL.
+static void sale_load_units(String_Builder *json) {
     db_t *db = open_webc_db();
     if (!db) return;
     static const char q[] =
         "SELECT p.id, v.id, p.name, COALESCE(v.variant_name, ''), "
-               "COALESCE(v.sku, p.sku, ''), "
+               "COALESCE(v.sku, p.sku, ''), p.sku, COALESCE(p.barcode, ''), "
+               "COALESCE(c.name, ''), "
+               "COALESCE(d.label, p.product_type_dict_id, ''), "
                "p.base_price + COALESCE(v.price_delta, 0) AS price "
         "FROM products p "
         "LEFT JOIN product_variants v ON v.product_id = p.id "
             "AND v.deleted_at IS NULL "
+        "LEFT JOIN categories c ON c.id = p.category_id "
+            "AND c.deleted_at IS NULL "
+        "LEFT JOIN dictionaries d ON d.id = p.product_type_dict_id "
+            "AND d.deleted_at IS NULL "
         "WHERE p.deleted_at IS NULL "
         "ORDER BY p.name;";
     sql_stmt st = {0};
+    sb_append_cstr(json, "[");
+    bool first = true;
     if (sql_prepare(db, q, &st)) {
         while (sql_step(&st) == SQL_ROW) {
             const char *pid   = sql_col_text(&st, 0);
             const char *vid   = sql_col_text(&st, 1);
             const char *name  = sql_col_text(&st, 2);
             const char *vname = sql_col_text(&st, 3);
-            const char *sku   = sql_col_text(&st, 4);
-            const char *price = sql_col_text(&st, 5);
+            const char *usku  = sql_col_text(&st, 4);
+            const char *psku  = sql_col_text(&st, 5);
+            const char *bar   = sql_col_text(&st, 6);
+            const char *cat   = sql_col_text(&st, 7);
+            const char *type  = sql_col_text(&st, 8);
+            const char *price = sql_col_text(&st, 9);
             if (!pid || !pid[0]) continue;
-            const char *value = (vid && vid[0])
+            const char *key = (vid && vid[0])
                 ? temp_sprintf("%s:%s", pid, vid) : pid;
-            double pr = price ? atof(price) : 0.0;
-            String_Builder label = {0};
-            sb_append_html_escaped(&label, name ? name : "");
+            String_Builder disp = {0};
+            sb_append_cstr(&disp, name ? name : "");
             if (vname && vname[0]) {
-                sb_append_cstr(&label, " \xE2\x80\xA2 ");
-                sb_append_html_escaped(&label, vname);
+                sb_append_cstr(&disp, " \xE2\x80\xA2 ");
+                sb_append_cstr(&disp, vname);
             }
-            if (sku && sku[0]) {
-                sb_append_cstr(&label, " \xE2\x80\xA2 ");
-                sb_append_html_escaped(&label, sku);
-            }
-            sb_append_null(&label);
-            sb_appendf(opts,
-                "<option value=\"%s\" data-price=\"%.2f\">%s &mdash; %.2f"
-                "</option>", value, pr, label.items, pr);
-            sb_free(label);
+            sb_append_null(&disp);
+            if (!first) sb_append_cstr(json, ",");
+            first = false;
+            sb_append_cstr(json, "{\"key\":");
+            json_str(json, key);
+            sb_append_cstr(json, ",\"name\":");
+            json_str(json, disp.items ? disp.items : "");
+            sb_append_cstr(json, ",\"sku\":");
+            json_str(json, usku);
+            sb_append_cstr(json, ",\"psku\":");
+            json_str(json, psku);
+            sb_append_cstr(json, ",\"barcode\":");
+            json_str(json, bar);
+            sb_append_cstr(json, ",\"cat\":");
+            json_str(json, cat);
+            sb_append_cstr(json, ",\"type\":");
+            json_str(json, type);
+            sb_appendf(json, ",\"price\":%.2f}",
+                       price ? atof(price) : 0.0);
+            sb_free(disp);
         }
     }
     sql_finalize(&st);
+    sb_append_cstr(json, "]");
     db_close(db);
 }
 
 static void render_sale(Serve_Context *sc, bool can_sell, const char *err) {
-    String_Builder opts = {0};
-    sale_load_options(&opts);
-    sb_append_null(&opts);
+    String_Builder units = {0};
+    sale_load_units(&units);
+    sb_append_null(&units);
 
     String_Builder *sb = &sc->body;
     sb->count = 0;
     render_page_header(sb, "New sale", "/pos/sale");
 
     sb_append_cstr(sb,
-        "<div class=\"max-w-2xl mx-auto\">"
+        "<div class=\"max-w-3xl mx-auto\">"
         "<div class=\"bg-mantle border border-surface0\">"
         "<div class=\"bg-text text-onbase px-4 py-2 flex items-center"
         " justify-between\">"
@@ -117,68 +168,161 @@ static void render_sale(Serve_Context *sc, bool can_sell, const char *err) {
             "<a href=\"/pos/staff\" class=\"text-blue hover:underline\">"
             "Staff</a>.</div></div></div>");
     } else {
+        const char *sel =
+            "mt-1 w-full bg-base border border-surface0 text-sm px-2"
+            " py-1.5";
+        // ---- the form: finder (filters + product + read-only price +
+        // qty + add line), then the built lines, then total + submit ----
         sb_append_cstr(sb,
             "<form method=\"POST\" action=\"/pos/sale\" class=\"p-4"
-            " space-y-3\">"
-            "<select id=\"sale-opt-tpl\" class=\"hidden\">");
-        sb_append_cstr(sb, opts.items ? opts.items : "");
+            " space-y-4\">"
+            "<div>"
+            "<div class=\"text-xs font-semibold text-subtext0 uppercase"
+            " tracking-wide mb-1\">Find product</div>"
+            "<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">");
+        sb_appendf(sb,
+            "<label class=\"text-xs text-subtext0\">Category"
+            "<select id=\"sale-cat\" class=\"%s\"></select></label>", sel);
+        sb_appendf(sb,
+            "<label class=\"text-xs text-subtext0\">Type"
+            "<select id=\"sale-type\" class=\"%s\"></select></label>", sel);
+        sb_appendf(sb,
+            "<label class=\"text-xs text-subtext0\">SKU"
+            "<select id=\"sale-sku\" class=\"%s\"></select></label>", sel);
+        sb_appendf(sb,
+            "<label class=\"text-xs text-subtext0\">Barcode"
+            "<select id=\"sale-bar\" class=\"%s\"></select></label>", sel);
         sb_append_cstr(sb,
-            "</select>"
-            "<div id=\"sale-lines\" class=\"space-y-2\"></div>"
-            "<div class=\"flex items-center justify-between pt-2"
-            " border-t border-surface0\">"
+            "</div>"
+            "<div class=\"flex flex-wrap items-end gap-3 mt-3\">"
+            "<label class=\"flex-1 text-xs text-subtext0\">Product");
+        sb_appendf(sb,
+            "<select id=\"sale-product\" class=\"%s\"></select></label>",
+            sel);
+        sb_append_cstr(sb,
+            "<div class=\"text-xs text-subtext0\">Price"
+            "<div id=\"sale-price\" class=\"mt-1 px-3 py-2 text-sm"
+            " font-mono bg-surface0 border border-surface0 text-text\">-"
+            "</div></div>"
+            "<label class=\"w-24 text-xs text-subtext0\">Qty");
+        sb_appendf(sb,
+            "<input id=\"sale-qty\" type=\"number\" value=\"1\" min=\"1\""
+            " step=\"1\" class=\"%s\"></label>", sel);
+        sb_append_cstr(sb,
             "<button type=\"button\" id=\"sale-add\" class=\"text-sm"
-            " text-blue border border-surface0 px-3 py-1.5\">+ Add line"
+            " text-blue border border-surface0 px-3 py-2\">+ Add line"
             "</button>"
+            "</div></div>"
+            "<div id=\"sale-lines\" class=\"space-y-2\"></div>"
+            "<div class=\"flex items-center justify-between pt-2 border-t"
+            " border-surface0\">"
             "<div class=\"text-sm\">Total&nbsp;<span id=\"sale-total\""
-            " class=\"font-semibold\">0.00</span></div></div>"
-            "<button type=\"submit\" class=\"w-full bg-blue text-onbase"
-            " text-sm px-3 py-2\">Complete sale (paid)</button>"
-            "</form>"
-            "<script>"
-            "(function(){"
-            "var tpl=document.getElementById('sale-opt-tpl').innerHTML;"
-            "var lines=document.getElementById('sale-lines');"
-            "var total=document.getElementById('sale-total');"
-            "var n=0;"
+            " class=\"font-semibold\">0.00</span></div>"
+            "<button type=\"submit\" class=\"bg-blue text-onbase text-sm"
+            " px-4 py-2\">Complete sale (paid)</button>"
+            "</div>"
+            "</form>");
+        // ---- data: every sellable unit + its filter attributes ----
+        sb_append_cstr(sb, "<script>window.SALE_UNITS=");
+        sb_append_cstr(sb, units.items ? units.items : "[]");
+        sb_append_cstr(sb, ";</script>");
+        // ---- client-side finder + line builder ----
+        sb_append_cstr(sb,
+            "<script>(function(){"
+            "var U=window.SALE_UNITS||[];"
+            "function g(i){return document.getElementById(i);}"
+            "function fmt(n){return (Math.round(n*100)/100).toFixed(2);}"
+            // build each nullable filter's options ("" = all) from U
+            "function distinct(fs){var s={},o=[];U.forEach(function(u){"
+            "fs.forEach(function(f){var v=u[f]||'';if(v&&!s[v]){s[v]=1;"
+            "o.push(v);}});});o.sort();return o;}"
+            "function fill(id,vals,all){var s=g(id);"
+            "while(s.firstChild)s.removeChild(s.firstChild);"
+            "var a=document.createElement('option');a.value='';"
+            "a.textContent=all;s.appendChild(a);"
+            "vals.forEach(function(v){var o=document.createElement('option');"
+            "o.value=v;o.textContent=v;s.appendChild(o);});}"
+            "fill('sale-cat',distinct(['cat']),'All categories');"
+            "fill('sale-type',distinct(['type']),'All types');"
+            "fill('sale-sku',distinct(['sku','psku']),'All SKUs');"
+            "fill('sale-bar',distinct(['barcode']),'All barcodes');"
+            "var prod=g('sale-product'),priceEl=g('sale-price');"
+            // a unit matches only the filters that are actually set
+            "function fv(){return{cat:g('sale-cat').value,"
+            "type:g('sale-type').value,sku:g('sale-sku').value,"
+            "bar:g('sale-bar').value};}"
+            "function ok(u,k){if(k.cat&&u.cat!==k.cat)return false;"
+            "if(k.type&&u.type!==k.type)return false;"
+            "if(k.sku&&u.sku!==k.sku&&u.psku!==k.sku)return false;"
+            "if(k.bar&&u.barcode!==k.bar)return false;return true;}"
+            // price is read-only text: mirror the picked unit's price
+            "function showPrice(){var o=prod.options[prod.selectedIndex];"
+            "priceEl.textContent=(o&&o.value)"
+            "?o.getAttribute('data-price'):'-';}"
+            "function rebuild(){var k=fv(),prev=prod.value;"
+            "while(prod.firstChild)prod.removeChild(prod.firstChild);"
+            "var b=document.createElement('option');b.value='';"
+            "b.textContent='Select product...';prod.appendChild(b);"
+            "U.forEach(function(u){if(!ok(u,k))return;"
+            "var o=document.createElement('option');o.value=u.key;"
+            "o.textContent=u.name+' - '+(u.sku||u.psku||'');"
+            "o.setAttribute('data-price',fmt(u.price));"
+            "prod.appendChild(o);});"
+            "if(prev){prod.value=prev;if(prod.value!==prev)prod.value='';}"
+            "showPrice();}"
+            // every filter is an individual trigger -> narrows the list
+            "['sale-cat','sale-type','sale-sku','sale-bar']"
+            ".forEach(function(i){g(i).addEventListener('change',rebuild);});"
+            "prod.addEventListener('change',showPrice);"
+            "var lines=g('sale-lines'),totalEl=g('sale-total'),seq=0;"
             "function recalc(){var t=0;"
-            "lines.querySelectorAll('[data-row]').forEach(function(r){"
-            "var s=r.querySelector('select');"
-            "var q=parseFloat(r.querySelector('input').value)||0;"
-            "var o=s.options[s.selectedIndex];"
-            "var pr=o?parseFloat(o.getAttribute('data-price'))||0:0;"
-            "t+=pr*q;});"
-            "total.textContent=t.toFixed(2);}"
-            "function add(){var i=n++;"
-            "var d=document.createElement('div');"
-            "d.setAttribute('data-row','');"
-            "d.className='flex items-center gap-2';"
-            "d.innerHTML='<select name=\"line'+i+'_item\" class=\"flex-1"
-            " bg-base border border-surface0 text-sm px-2 py-1.5\">'+tpl"
-            "+'</select>'"
-            "+'<input type=\"number\" name=\"line'+i+'_qty\" value=\"1\""
-            " min=\"1\" step=\"1\" class=\"w-20 bg-base border"
-            " border-surface0 text-sm px-2 py-1.5\">'"
-            "+'<button type=\"button\" data-rm class=\"text-red"
-            " px-2\">&#10005;</button>';"
-            "lines.appendChild(d);recalc();}"
-            "document.getElementById('sale-add').addEventListener"
-            "('click',add);"
-            "lines.addEventListener('change',recalc);"
-            "lines.addEventListener('input',recalc);"
+            "lines.querySelectorAll('[data-line]').forEach(function(r){"
+            "t+=parseFloat(r.getAttribute('data-total'))||0;});"
+            "totalEl.textContent=fmt(t);}"
+            // add the picked unit + qty as a posted line, then reset
+            "function add(){var o=prod.options[prod.selectedIndex];"
+            "if(!o||!o.value)return;"
+            "var key=o.value,label=o.textContent,"
+            "pr=parseFloat(o.getAttribute('data-price'))||0;"
+            "var q=parseInt(g('sale-qty').value,10);if(!(q>0))q=1;"
+            "var i=seq++,row=document.createElement('div');"
+            "row.setAttribute('data-line','');"
+            "row.setAttribute('data-total',fmt(pr*q));"
+            "row.className='flex items-center gap-2 text-sm border-t"
+            " border-surface0 pt-2';"
+            "var hi=document.createElement('input');hi.type='hidden';"
+            "hi.name='line'+i+'_item';hi.value=key;row.appendChild(hi);"
+            "var hq=document.createElement('input');hq.type='hidden';"
+            "hq.name='line'+i+'_qty';hq.value=String(q);row.appendChild(hq);"
+            "var nm=document.createElement('div');"
+            "nm.className='flex-1 min-w-0 truncate';"
+            "nm.textContent=label;row.appendChild(nm);"
+            "var pc=document.createElement('div');"
+            "pc.className='w-20 text-right text-subtext0';"
+            "pc.textContent=fmt(pr);row.appendChild(pc);"
+            "var qc=document.createElement('div');qc.className='w-10"
+            " text-right';qc.textContent='x'+q;row.appendChild(qc);"
+            "var tt=document.createElement('div');"
+            "tt.className='w-24 text-right font-mono';"
+            "tt.textContent=fmt(pr*q);row.appendChild(tt);"
+            "var rm=document.createElement('button');rm.type='button';"
+            "rm.setAttribute('data-rm','');rm.className='text-red px-1';"
+            "rm.textContent='\\u2715';row.appendChild(rm);"
+            "lines.appendChild(row);prod.value='';showPrice();"
+            "g('sale-qty').value='1';recalc();}"
+            "g('sale-add').addEventListener('click',add);"
             "lines.addEventListener('click',function(e){"
             "if(e.target.hasAttribute&&e.target.hasAttribute('data-rm')){"
-            "var r=e.target.closest('[data-row]');if(r){r.remove();"
+            "var r=e.target.closest('[data-line]');if(r){r.remove();"
             "recalc();}}});"
-            "add();"
-            "})();"
-            "</script>"
+            "rebuild();"
+            "})();</script>"
             "</div></div>");
     }
 
     render_page_footer(sb);
     http_render_response(sc, 200, "text/html", sb_to_sv(*sb));
-    sb_free(opts);
+    sb_free(units);
 }
 
 void serve_pos_sale(Serve_Context *sc) {
