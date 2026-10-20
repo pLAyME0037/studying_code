@@ -1,0 +1,26 @@
+<!-- /signup - public account form. The field loop and error banner are code
+     state, so the page lives in a template (design rule:
+     wiki/templates.md). Host: render_signup() in src/auth/auth.c; the
+     Signup_Field table there drives the inputs. Width is auto - no max-w
+     clamp, only page padding. -->
+<div class="min-h-screen flex items-center justify-center bg-base px-4 sm:px-6 lg:px-8 py-6">
+    <form method="POST" action="/signup" data-signup-form class="w-full bg-mantle border border-surface0">
+        <div class="bg-text text-onbase px-3 py-2">
+            <div class="text-sm font-semibold">({ ESCAPED(tr("auth.signup_title", "បង្កើតគណនីថ្មី")); })</div>
+            <div class="text-xs text-onbase/70">POS Admin</div>
+        </div>
+        <div class="px-3 py-3 flex flex-col gap-3">
+({ if (err && err[0]) { })
+            <div data-signup-error class="bg-red/10 border-l-2 border-red text-red px-2 py-1.5 text-xs">({ ESCAPED(err); })</div>
+({ } })
+({ for (size_t i = 0; i < ARRAY_LEN(signup_fields); ++i) { })
+({ const Signup_Field *f = &signup_fields[i]; })
+            <label class="text-xs text-subtext0">({ ESCAPED(tr(f->trk, f->def)); })</label>
+            <input name="({ STR(f->input); })" type="({ STR(f->type); })" autocomplete="({ STR(f->ac); })" required({ if (f->min_len > 0) { }) minlength="({ INT(f->min_len); })"({ } }) class="border border-surface0 bg-base text-text px-2 py-1.5 text-sm w-full">
+({ } })
+            <button type="submit" class="bg-blue text-onbase hover:brightness-90 px-2 py-1.5 text-sm w-full">({ ESCAPED(tr("auth.su_submit", "បង្កើតគណនី")); })</button>
+            <a href="/login" class="text-xs text-blue hover:underline text-center">({ ESCAPED(tr("auth.su_have", "មានគណនីហើយ? ចូល")); })</a>
+            <a href="/" class="text-xs text-blue hover:underline text-center">({ ESCAPED(tr("auth.back", "ត្រឡប់ទៅហាង")); })</a>
+        </div>
+    </form>
+</div>

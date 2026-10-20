@@ -12,18 +12,23 @@
 #include "src/pos/pos_util.h"
 #include "src/layout/header.h"
 #include "src/layout/footer.h"
+#include "src/core/webc_template.h"
 
 // =========================================================================
 // /pos/sale: dedicated in-store POS sale. The cashier finds products with a
-// faceted finder - nullable Category, Type, SKU and Barcode dropdowns, each
-// an individual trigger that narrows the product list (filtered client-side
-// so already-built sale lines survive). The picked product's price is shown
-// as read-only text; every other attribute is just a way to locate it. The
-// server then builds the whole order - staff/org from the session, customer
-// NULL, status PAID, auto id + order number, delivery fee 0 - and computes
-// every money figure from products.base_price (+ variant price_delta) x
-// quantity. A CASH payment is written and stock is decremented, all in one
-// transaction. The online / e-shop checkout path is untouched.
+// cascading faceted finder - nullable Category, Type, SKU and Barcode
+// dropdowns that re-derive their options from each other's selections, so a
+// combination can never cancel the others out into an empty list (filtered
+// client-side so already-built sale lines survive). The picked product's
+// price is shown as read-only text; every other attribute is just a way to
+// locate it. The page UI lives in display/pos/sale.h.tt (state-driven HTML
+// -> template, per the design rule in wiki/templates.md); this file keeps
+// the data loader and the POST handler. The server then builds the whole
+// order - staff/org from the session, customer NULL, status PAID, auto id +
+// order number, delivery fee 0 - and computes every money figure from
+// products.base_price (+ variant price_delta) x quantity. A CASH payment is
+// written and stock is decremented, all in one transaction. The online /
+// e-shop checkout path is untouched.
 // =========================================================================
 
 #define SALE_MAX_LINES 64
@@ -136,6 +141,9 @@ static void sale_load_units(String_Builder *json) {
     db_close(db);
 }
 
+// The page UI is display/pos/sale.h.tt (design rule: state-driven HTML
+// lives in a .tt template). This host feeds it three islands: the error
+// banner text, the staff gate and the sellable-unit JSON payload.
 static void render_sale(Serve_Context *sc, bool can_sell, const char *err) {
     String_Builder units = {0};
     sale_load_units(&units);
@@ -144,182 +152,7 @@ static void render_sale(Serve_Context *sc, bool can_sell, const char *err) {
     String_Builder *sb = &sc->body;
     sb->count = 0;
     render_page_header(sb, "New sale", "/pos/sale");
-
-    sb_append_cstr(sb,
-        "<div class=\"max-w-3xl mx-auto\">"
-        "<div class=\"bg-mantle border border-surface0\">"
-        "<div class=\"bg-text text-onbase px-4 py-2 flex items-center"
-        " justify-between\">"
-        "<div class=\"text-sm font-semibold\">New sale</div>"
-        "<a href=\"/pos/orders\" class=\"text-xs text-onbase/80"
-        " hover:underline\">Orders</a></div>");
-    if (err && err[0]) {
-        sb_append_cstr(sb,
-            "<div class=\"bg-red/10 border-l-2 border-red text-red px-3"
-            " py-2 text-xs m-3\">");
-        sb_append_html_escaped(sb, err);
-        sb_append_cstr(sb, "</div>");
-    }
-    if (!can_sell) {
-        sb_append_cstr(sb,
-            "<div class=\"px-4 py-6 text-sm text-subtext0\">This account"
-            " isn't linked to a staff record with a branch, so it can't"
-            " record a sale. Ask a manager to link it under "
-            "<a href=\"/pos/staff\" class=\"text-blue hover:underline\">"
-            "Staff</a>.</div></div></div>");
-    } else {
-        const char *sel =
-            "mt-1 w-full bg-base border border-surface0 text-sm px-2"
-            " py-1.5";
-        // ---- the form: finder (filters + product + read-only price +
-        // qty + add line), then the built lines, then total + submit ----
-        sb_append_cstr(sb,
-            "<form method=\"POST\" action=\"/pos/sale\" class=\"p-4"
-            " space-y-4\">"
-            "<div>"
-            "<div class=\"text-xs font-semibold text-subtext0 uppercase"
-            " tracking-wide mb-1\">Find product</div>"
-            "<div class=\"grid grid-cols-2 md:grid-cols-4 gap-2\">");
-        sb_appendf(sb,
-            "<label class=\"text-xs text-subtext0\">Category"
-            "<select id=\"sale-cat\" class=\"%s\"></select></label>", sel);
-        sb_appendf(sb,
-            "<label class=\"text-xs text-subtext0\">Type"
-            "<select id=\"sale-type\" class=\"%s\"></select></label>", sel);
-        sb_appendf(sb,
-            "<label class=\"text-xs text-subtext0\">SKU"
-            "<select id=\"sale-sku\" class=\"%s\"></select></label>", sel);
-        sb_appendf(sb,
-            "<label class=\"text-xs text-subtext0\">Barcode"
-            "<select id=\"sale-bar\" class=\"%s\"></select></label>", sel);
-        sb_append_cstr(sb,
-            "</div>"
-            "<div class=\"flex flex-wrap items-end gap-3 mt-3\">"
-            "<label class=\"flex-1 text-xs text-subtext0\">Product");
-        sb_appendf(sb,
-            "<select id=\"sale-product\" class=\"%s\"></select></label>",
-            sel);
-        sb_append_cstr(sb,
-            "<div class=\"text-xs text-subtext0\">Price"
-            "<div id=\"sale-price\" class=\"mt-1 px-3 py-2 text-sm"
-            " font-mono bg-surface0 border border-surface0 text-text\">-"
-            "</div></div>"
-            "<label class=\"w-24 text-xs text-subtext0\">Qty");
-        sb_appendf(sb,
-            "<input id=\"sale-qty\" type=\"number\" value=\"1\" min=\"1\""
-            " step=\"1\" class=\"%s\"></label>", sel);
-        sb_append_cstr(sb,
-            "<button type=\"button\" id=\"sale-add\" class=\"text-sm"
-            " text-blue border border-surface0 px-3 py-2\">+ Add line"
-            "</button>"
-            "</div></div>"
-            "<div id=\"sale-lines\" class=\"space-y-2\"></div>"
-            "<div class=\"flex items-center justify-between pt-2 border-t"
-            " border-surface0\">"
-            "<div class=\"text-sm\">Total&nbsp;<span id=\"sale-total\""
-            " class=\"font-semibold\">0.00</span></div>"
-            "<button type=\"submit\" class=\"bg-blue text-onbase text-sm"
-            " px-4 py-2\">Complete sale (paid)</button>"
-            "</div>"
-            "</form>");
-        // ---- data: every sellable unit + its filter attributes ----
-        sb_append_cstr(sb, "<script>window.SALE_UNITS=");
-        sb_append_cstr(sb, units.items ? units.items : "[]");
-        sb_append_cstr(sb, ";</script>");
-        // ---- client-side finder + line builder ----
-        sb_append_cstr(sb,
-            "<script>(function(){"
-            "var U=window.SALE_UNITS||[];"
-            "function g(i){return document.getElementById(i);}"
-            "function fmt(n){return (Math.round(n*100)/100).toFixed(2);}"
-            // build each nullable filter's options ("" = all) from U
-            "function distinct(fs){var s={},o=[];U.forEach(function(u){"
-            "fs.forEach(function(f){var v=u[f]||'';if(v&&!s[v]){s[v]=1;"
-            "o.push(v);}});});o.sort();return o;}"
-            "function fill(id,vals,all){var s=g(id);"
-            "while(s.firstChild)s.removeChild(s.firstChild);"
-            "var a=document.createElement('option');a.value='';"
-            "a.textContent=all;s.appendChild(a);"
-            "vals.forEach(function(v){var o=document.createElement('option');"
-            "o.value=v;o.textContent=v;s.appendChild(o);});}"
-            "fill('sale-cat',distinct(['cat']),'All categories');"
-            "fill('sale-type',distinct(['type']),'All types');"
-            "fill('sale-sku',distinct(['sku','psku']),'All SKUs');"
-            "fill('sale-bar',distinct(['barcode']),'All barcodes');"
-            "var prod=g('sale-product'),priceEl=g('sale-price');"
-            // a unit matches only the filters that are actually set
-            "function fv(){return{cat:g('sale-cat').value,"
-            "type:g('sale-type').value,sku:g('sale-sku').value,"
-            "bar:g('sale-bar').value};}"
-            "function ok(u,k){if(k.cat&&u.cat!==k.cat)return false;"
-            "if(k.type&&u.type!==k.type)return false;"
-            "if(k.sku&&u.sku!==k.sku&&u.psku!==k.sku)return false;"
-            "if(k.bar&&u.barcode!==k.bar)return false;return true;}"
-            // price is read-only text: mirror the picked unit's price
-            "function showPrice(){var o=prod.options[prod.selectedIndex];"
-            "priceEl.textContent=(o&&o.value)"
-            "?o.getAttribute('data-price'):'-';}"
-            "function rebuild(){var k=fv(),prev=prod.value;"
-            "while(prod.firstChild)prod.removeChild(prod.firstChild);"
-            "var b=document.createElement('option');b.value='';"
-            "b.textContent='Select product...';prod.appendChild(b);"
-            "U.forEach(function(u){if(!ok(u,k))return;"
-            "var o=document.createElement('option');o.value=u.key;"
-            "o.textContent=u.name+' - '+(u.sku||u.psku||'');"
-            "o.setAttribute('data-price',fmt(u.price));"
-            "prod.appendChild(o);});"
-            "if(prev){prod.value=prev;if(prod.value!==prev)prod.value='';}"
-            "showPrice();}"
-            // every filter is an individual trigger -> narrows the list
-            "['sale-cat','sale-type','sale-sku','sale-bar']"
-            ".forEach(function(i){g(i).addEventListener('change',rebuild);});"
-            "prod.addEventListener('change',showPrice);"
-            "var lines=g('sale-lines'),totalEl=g('sale-total'),seq=0;"
-            "function recalc(){var t=0;"
-            "lines.querySelectorAll('[data-line]').forEach(function(r){"
-            "t+=parseFloat(r.getAttribute('data-total'))||0;});"
-            "totalEl.textContent=fmt(t);}"
-            // add the picked unit + qty as a posted line, then reset
-            "function add(){var o=prod.options[prod.selectedIndex];"
-            "if(!o||!o.value)return;"
-            "var key=o.value,label=o.textContent,"
-            "pr=parseFloat(o.getAttribute('data-price'))||0;"
-            "var q=parseInt(g('sale-qty').value,10);if(!(q>0))q=1;"
-            "var i=seq++,row=document.createElement('div');"
-            "row.setAttribute('data-line','');"
-            "row.setAttribute('data-total',fmt(pr*q));"
-            "row.className='flex items-center gap-2 text-sm border-t"
-            " border-surface0 pt-2';"
-            "var hi=document.createElement('input');hi.type='hidden';"
-            "hi.name='line'+i+'_item';hi.value=key;row.appendChild(hi);"
-            "var hq=document.createElement('input');hq.type='hidden';"
-            "hq.name='line'+i+'_qty';hq.value=String(q);row.appendChild(hq);"
-            "var nm=document.createElement('div');"
-            "nm.className='flex-1 min-w-0 truncate';"
-            "nm.textContent=label;row.appendChild(nm);"
-            "var pc=document.createElement('div');"
-            "pc.className='w-20 text-right text-subtext0';"
-            "pc.textContent=fmt(pr);row.appendChild(pc);"
-            "var qc=document.createElement('div');qc.className='w-10"
-            " text-right';qc.textContent='x'+q;row.appendChild(qc);"
-            "var tt=document.createElement('div');"
-            "tt.className='w-24 text-right font-mono';"
-            "tt.textContent=fmt(pr*q);row.appendChild(tt);"
-            "var rm=document.createElement('button');rm.type='button';"
-            "rm.setAttribute('data-rm','');rm.className='text-red px-1';"
-            "rm.textContent='\\u2715';row.appendChild(rm);"
-            "lines.appendChild(row);prod.value='';showPrice();"
-            "g('sale-qty').value='1';recalc();}"
-            "g('sale-add').addEventListener('click',add);"
-            "lines.addEventListener('click',function(e){"
-            "if(e.target.hasAttribute&&e.target.hasAttribute('data-rm')){"
-            "var r=e.target.closest('[data-line]');if(r){r.remove();"
-            "recalc();}}});"
-            "rebuild();"
-            "})();</script>"
-            "</div></div>");
-    }
-
+#include "build/h_to_html/pos/sale.h"
     render_page_footer(sb);
     http_render_response(sc, 200, "text/html", sb_to_sv(*sb));
     sb_free(units);
@@ -337,8 +170,7 @@ void serve_pos_sale_post(Serve_Context *sc) {
     bool can = au && au->staff_id && au->staff_id[0]
                && au->org_unit_id && au->org_unit_id[0];
     if (!can) {
-        render_sale(sc, false,
-                    "This account can't record a sale.");
+        render_sale(sc, false, "This account can't record a sale.");
         return;
     }
 

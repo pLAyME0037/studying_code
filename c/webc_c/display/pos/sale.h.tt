@@ -1,0 +1,135 @@
+<!-- /pos/sale - in-store POS sale. State-driven UI (error banner, staff
+     gate, embedded product JSON), so it lives in a template per the design
+     rule in wiki/templates.md. Host: render_sale() in src/pos/sale.c. -->
+<div class="bg-mantle border border-surface0">
+    <div class="bg-text text-onbase px-4 py-2 flex items-center justify-between">
+        <div class="text-sm font-semibold">New sale</div>
+        <a href="/pos/orders" class="text-xs text-onbase/80 hover:underline">Orders</a>
+    </div>
+({ if (err && err[0]) { })
+    <div class="bg-red/10 border-l-2 border-red text-red px-3 py-2 text-xs m-3">
+        ({ ESCAPED(err); })
+    </div>
+({ } })
+({ if (!can_sell) { })
+    <div class="px-4 py-6 text-sm text-subtext0">This account isn't linked to a staff record with a branch, so it can't record a sale. Ask a manager to link it under <a href="/pos/staff" class="text-blue hover:underline">Staff</a>.</div>
+</div>
+({ } else { })
+    <form method="POST" action="/pos/sale" class="p-4 space-y-4">
+        <div>
+            <div class="text-xs font-semibold text-subtext0 uppercase tracking-wide mb-1">Find product</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <label class="text-xs text-subtext0">Category<select id="sale-cat" class="mt-1 w-full bg-base border border-surface0 text-sm px-2 py-1.5"></select></label>
+                <label class="text-xs text-subtext0">Type<select id="sale-type" class="mt-1 w-full bg-base border border-surface0 text-sm px-2 py-1.5"></select></label>
+                <label class="text-xs text-subtext0">SKU<select id="sale-sku" class="mt-1 w-full bg-base border border-surface0 text-sm px-2 py-1.5"></select></label>
+                <label class="text-xs text-subtext0">Barcode<select id="sale-bar" class="mt-1 w-full bg-base border border-surface0 text-sm px-2 py-1.5"></select></label>
+            </div>
+            <div class="flex flex-wrap items-end gap-3 mt-3">
+                <label class="flex-1 text-xs text-subtext0">Product<select id="sale-product" class="mt-1 w-full bg-base border border-surface0 text-sm px-2 py-1.5"></select></label>
+                <div class="text-xs text-subtext0">Price<div id="sale-price" class="mt-1 px-3 py-2 text-sm font-mono bg-surface0 border border-surface0 text-text">-</div></div>
+                <label class="w-24 text-xs text-subtext0">Qty<input id="sale-qty" type="number" value="1" min="1" step="1" class="mt-1 w-full bg-base border border-surface0 text-sm px-2 py-1.5"></label>
+                <button type="button" id="sale-add" class="text-sm text-blue border border-surface0 px-3 py-2">+ Add line</button>
+            </div>
+        </div>
+        <div id="sale-lines" class="space-y-2"></div>
+        <div class="flex items-center justify-between pt-2 border-t border-surface0">
+            <div class="text-sm">Total&nbsp;<span id="sale-total" class="font-semibold">0.00</span></div>
+            <button type="submit" class="bg-blue text-onbase text-sm px-4 py-2">Complete sale (paid)</button>
+        </div>
+    </form>
+    <script>window.SALE_UNITS=({ STR(units.items ? units.items : "[]"); });</script>
+    <script>(function(){var U=window.SALE_UNITS||[];
+function g(i){return document.getElementById(i);}
+function fmt(n){return (Math.round(n*100)/100).toFixed(2);}
+// the four nullable facets: DOM id, filter key, the unit fields it reads
+var F=[
+{id:'sale-cat',k:'cat',fs:['cat'],all:'All categories'},
+{id:'sale-type',k:'type',fs:['type'],all:'All types'},
+{id:'sale-sku',k:'sku',fs:['sku','psku'],all:'All SKUs'},
+{id:'sale-bar',k:'bar',fs:['barcode'],all:'All barcodes'}
+];
+function sel(){var kv={};F.forEach(function(f){kv[f.k]=g(f.id).value;});return kv;}
+function hit(u,f,v){for(var j=0;j<f.fs.length;j++){if(u[f.fs[j]]===v)return true;}return false;}
+// a unit passes every selected facet except the one named in `skip`
+function pass(u,kv,skip){for(var i=0;i<F.length;i++){var f=F[i];
+if(f.k===skip)continue;var v=kv[f.k];if(v&&!hit(u,f,v))return false;}return true;}
+// the values a facet may offer right now: what the units matching all the
+// OTHER selected facets carry. Because a facet is never checked against its
+// own options, the set is never empty and no two facets can cancel each
+// other out - the chain reaction stays consistent at every step.
+function opts(f,kv){var seen={},out=[];
+U.forEach(function(u){if(!pass(u,kv,f.k))return;
+for(var j=0;j<f.fs.length;j++){var v=u[f.fs[j]]||'';
+if(v&&!seen[v]){seen[v]=1;out.push(v);}}});
+out.sort();return out;}
+function fill(f,vals){var s=g(f.id),keep=s.value;
+while(s.firstChild)s.removeChild(s.firstChild);
+var a=document.createElement('option');a.value='';a.textContent=f.all;
+s.appendChild(a);
+vals.forEach(function(v){var o=document.createElement('option');
+o.value=v;o.textContent=v;s.appendChild(o);});
+if(keep){s.value=keep;if(!s.value)s.value='';}}
+// chain reaction: one facet changed -> re-derive EVERY facet's options
+// (each against the other facets' current selections), then rebuild the list
+function refresh(){F.forEach(function(f){fill(f,opts(f,sel()));});}
+var prod=g('sale-product'),priceEl=g('sale-price');
+// price is read-only text: mirror the picked unit's price
+function showPrice(){var o=prod.options[prod.selectedIndex];
+priceEl.textContent=(o&&o.value)?o.getAttribute('data-price'):'-';}
+function rebuild(){var kv=sel(),prev=prod.value;
+while(prod.firstChild)prod.removeChild(prod.firstChild);
+var b=document.createElement('option');b.value='';
+b.textContent='Select product...';prod.appendChild(b);
+U.forEach(function(u){if(!pass(u,kv,null))return;
+var o=document.createElement('option');o.value=u.key;
+o.textContent=u.name+' - '+(u.sku||u.psku||'');
+o.setAttribute('data-price',fmt(u.price));
+prod.appendChild(o);});
+if(prev){prod.value=prev;if(prod.value!==prev)prod.value='';}
+showPrice();}
+function onFilter(){refresh();rebuild();}
+F.forEach(function(f){g(f.id).addEventListener('change',onFilter);});
+prod.addEventListener('change',showPrice);
+var lines=g('sale-lines'),totalEl=g('sale-total'),seq=0;
+function recalc(){var t=0;
+lines.querySelectorAll('[data-line]').forEach(function(r){
+t+=parseFloat(r.getAttribute('data-total'))||0;});
+totalEl.textContent=fmt(t);}
+// add the picked unit + qty as a posted line, then reset
+function add(){var o=prod.options[prod.selectedIndex];
+if(!o||!o.value)return;
+var key=o.value,label=o.textContent,
+pr=parseFloat(o.getAttribute('data-price'))||0;
+var q=parseInt(g('sale-qty').value,10);if(!(q>0))q=1;
+var i=seq++,row=document.createElement('div');
+row.setAttribute('data-line','');
+row.setAttribute('data-total',fmt(pr*q));
+row.className='flex items-center gap-2 text-sm border-t border-surface0 pt-2';
+var hi=document.createElement('input');hi.type='hidden';
+hi.name='line'+i+'_item';hi.value=key;row.appendChild(hi);
+var hq=document.createElement('input');hq.type='hidden';
+hq.name='line'+i+'_qty';hq.value=String(q);row.appendChild(hq);
+var nm=document.createElement('div');
+nm.className='flex-1 min-w-0 truncate';
+nm.textContent=label;row.appendChild(nm);
+var pc=document.createElement('div');
+pc.className='w-20 text-right text-subtext0';
+pc.textContent=fmt(pr);row.appendChild(pc);
+var qc=document.createElement('div');
+qc.className='w-10 text-right';qc.textContent='x'+q;row.appendChild(qc);
+var tt=document.createElement('div');
+tt.className='w-24 text-right font-mono';
+tt.textContent=fmt(pr*q);row.appendChild(tt);
+var rm=document.createElement('button');rm.type='button';
+rm.setAttribute('data-rm','');rm.className='text-red px-1';
+rm.textContent='\u2715';row.appendChild(rm);
+lines.appendChild(row);prod.value='';showPrice();
+g('sale-qty').value='1';recalc();}
+g('sale-add').addEventListener('click',add);
+lines.addEventListener('click',function(e){
+if(e.target.hasAttribute&&e.target.hasAttribute('data-rm')){
+var r=e.target.closest('[data-line]');if(r){r.remove();recalc();}}});
+refresh();rebuild();
+})();</script>
+</div>
+({ } })

@@ -46,7 +46,9 @@ vanilla JS only.
 - display/ — .tt templates (build/bin/tt -> build/h_to_html/** hex-escaped C
   OUT("...") literals). ({ C code }) = raw inline C, else literal HTML.
   component/master_child.h.tt, md_child_*.h.tt, pagination.h.tt,
-  pager_templates.h.tt, sidebar.h.tt; layout/header|footer|dashboard.h.tt.
+  pager_templates.h.tt, sidebar.h.tt; layout/header|footer|dashboard.h.tt;
+  auth/login|signup|accounts.h.tt; pos/sale.h.tt. Design rule for template
+  vs inline HTML: templates.md "When to template vs inline".
 - js/ — ListExpandSwitcher.js (smart master_child: snapshot->fetch->swap->
   reveal), PaginationSwitcher.js (fragment-store paging), sidebarSwitcher,
   themeSwitcher. Bundled via root nob.c resources[].

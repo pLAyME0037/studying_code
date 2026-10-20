@@ -6,6 +6,7 @@
 #include "src/http/utils.h"
 #include "src/i18n/i18n.h"
 #include "src/db/db.h"
+#include "src/core/webc_template.h"
 
 // Cookie + hashing constants. Passwords are stored as "<salt>$<hex>" where
 // hex = sha256(salt || password) - the 0005_auth migration seeds the demo
@@ -414,8 +415,8 @@ bool perm_gate(Serve_Context *sc) {
     String_Builder content = {0};
     sb_append_cstr(&content,
         "<div class=\"min-h-screen flex items-center justify-center"
-        " bg-base\">"
-        "<div class=\"w-full max-w-sm bg-mantle border border-surface0\">"
+        " bg-base px-4 sm:px-6 lg:px-8 py-6\">"
+        "<div class=\"w-full bg-mantle border border-surface0\">"
         "<div class=\"bg-red text-onbase px-3 py-2 flex items-center"
         " justify-between\">"
         "<span class=\"text-sm font-semibold\">403 · Access restricted</span>"
@@ -454,66 +455,14 @@ static bool next_safe(String_View target) {
         && target.data[1] != '/' && target.data[1] != '\\';
 }
 
+// Sign-in page: display/auth/login.h.tt (error banner + next round-trip
+// are code state -> template, per the design rule in wiki/templates.md).
 static void render_login(Serve_Context *sc, String_View next, const char *err) {
+    const char *nexts = next.count
+        ? temp_sprintf("%.*s", (int) next.count, next.data) : "";
     String_Builder content = {0};
-    sb_append_cstr(&content,
-        "<div class=\"min-h-screen flex items-center justify-center"
-        " bg-base\">"
-        "<form method=\"POST\" action=\"/login\" data-login-form"
-        " class=\"w-full max-w-xs bg-mantle border border-surface0\">"
-        "<div class=\"bg-text text-onbase px-3 py-2\">"
-        "<div class=\"text-sm font-semibold\">");
-    sb_append_html_escaped(&content, tr("auth.title", "កត់ឈ្មោះចូល"));
-    sb_append_cstr(&content, "</div>"
-        "<div class=\"text-xs text-onbase/70\">POS Admin</div></div>"
-        "<div class=\"px-3 py-3 flex flex-col gap-3\">");
-    if (err && err[0]) {
-        sb_append_cstr(&content,
-            "<div data-login-error class=\"bg-red/10 border-l-2"
-            " border-red text-red px-2 py-1.5 text-xs\">");
-        sb_append_html_escaped(&content, err);
-        sb_append_cstr(&content, "</div>");
-    }
-    sb_append_cstr(&content,
-        "<label class=\"text-xs text-subtext0\">");
-    sb_append_html_escaped(&content,
-                           tr("auth.label_username", "ឈ្មោះអ្នកប្រើ"));
-    sb_append_cstr(&content,
-        "</label>"
-        "<input name=\"username\" autocomplete=\"username\" required"
-        " class=\"border border-surface0 bg-base text-text px-2 py-1.5"
-        " text-sm w-full\">"
-        "<label class=\"text-xs text-subtext0\">");
-    sb_append_html_escaped(&content,
-                           tr("auth.label_password", "ពាក្យសម្ងាត់"));
-    sb_append_cstr(&content,
-        "</label>"
-        "<input name=\"password\" type=\"password\" autocomplete=\"current-password\""
-        " required"
-        " class=\"border border-surface0 bg-base text-text px-2 py-1.5"
-        " text-sm w-full\">"
-        "<input type=\"hidden\" name=\"next\" value=\"");
-    sb_append_html_escaped(&content, next.count ? temp_sprintf("%.*s", (int) next.count, next.data) : "");
-    sb_append_cstr(&content,
-        "\">"
-        "<button type=\"submit\" class=\"bg-blue text-onbase"
-        " hover:brightness-90"
-        " px-2 py-1.5 text-sm w-full\">");
-    sb_append_html_escaped(&content, tr("auth.submit", "ចូល"));
-    sb_append_cstr(&content,
-        "</button>"
-        "<a href=\"/\" class=\"text-xs text-blue hover:underline"
-        " text-center\">");
-    sb_append_html_escaped(&content,
-                           tr("auth.back", "ត្រឡប់ទៅហាង"));
-    sb_append_cstr(&content, "</a>"
-        "<a href=\"/signup\" class=\"text-xs text-blue hover:underline"
-        " text-center\">");
-    sb_append_html_escaped(&content,
-                           tr("auth.signup_link", "បង្កើតគណនីថ្មី"));
-    sb_append_cstr(&content, "</a>"
-        "</div></form></div>");
-
+    String_Builder *sb = &content;
+#include "build/h_to_html/auth/login.h"
     sc->body.count = 0;
     String_View title = sv_from_cstr(tr("auth.page_title", "ចូលគណនី"));
     render_page_shell(sc, title, sb_to_sv(content));
@@ -733,61 +682,12 @@ static const Signup_Field signup_fields[] = {
       "password", "new-password", 6 },
 };
 
+// Signup page: display/auth/signup.h.tt (field loop + error banner are
+// code state -> template, per the design rule in wiki/templates.md).
 static void render_signup(Serve_Context *sc, const char *err) {
     String_Builder content = {0};
-    sb_append_cstr(&content,
-        "<div class=\"min-h-screen flex items-center justify-center"
-        " bg-base\">"
-        "<form method=\"POST\" action=\"/signup\" data-signup-form"
-        " class=\"w-full max-w-sm bg-mantle border border-surface0\">"
-        "<div class=\"bg-text text-onbase px-3 py-2\">"
-        "<div class=\"text-sm font-semibold\">");
-    sb_append_html_escaped(&content, tr("auth.signup_title", "បង្កើតគណនីថ្មី"));
-    sb_append_cstr(&content, "</div>"
-        "<div class=\"text-xs text-onbase/70\">POS Admin</div></div>"
-        "<div class=\"px-3 py-3 flex flex-col gap-3\">");
-    if (err && err[0]) {
-        sb_append_cstr(&content,
-            "<div data-signup-error class=\"bg-red/10 border-l-2"
-            " border-red text-red px-2 py-1.5 text-xs\">");
-        sb_append_html_escaped(&content, err);
-        sb_append_cstr(&content, "</div>");
-    }
-    for (size_t i = 0; i < ARRAY_LEN(signup_fields); ++i) {
-        const Signup_Field *f = &signup_fields[i];
-        sb_append_cstr(&content, "<label class=\"text-xs text-subtext0\">");
-        sb_append_html_escaped(&content, tr(f->trk, f->def));
-        sb_append_cstr(&content, "</label>"
-            "<input name=\"");
-        sb_append_cstr(&content, f->input);
-        sb_append_cstr(&content, "\" type=\"");
-        sb_append_cstr(&content, f->type);
-        sb_append_cstr(&content, "\" autocomplete=\"");
-        sb_append_cstr(&content, f->ac);
-        sb_append_cstr(&content, "\" required");
-        if (f->min_len > 0) {
-            sb_appendf(&content, " minlength=\"%d\"", f->min_len);
-        }
-        sb_append_cstr(&content,
-            " class=\"border border-surface0 bg-base text-text px-2"
-            " py-1.5 text-sm w-full\">");
-    }
-    sb_append_cstr(&content,
-        "<button type=\"submit\" class=\"bg-blue text-onbase"
-        " hover:brightness-90 px-2 py-1.5 text-sm w-full\">");
-    sb_append_html_escaped(&content, tr("auth.su_submit", "បង្កើតគណនី"));
-    sb_append_cstr(&content, "</button>"
-        "<a href=\"/login\" class=\"text-xs text-blue hover:underline"
-        " text-center\">");
-    sb_append_html_escaped(&content,
-                           tr("auth.su_have", "មានគណនីហើយ? ចូល"));
-    sb_append_cstr(&content, "</a>"
-        "<a href=\"/\" class=\"text-xs text-blue hover:underline"
-        " text-center\">");
-    sb_append_html_escaped(&content, tr("auth.back", "ត្រឡប់ទៅហាង"));
-    sb_append_cstr(&content, "</a>"
-        "</div></form></div>");
-
+    String_Builder *sb = &content;
+#include "build/h_to_html/auth/signup.h"
     sc->body.count = 0;
     String_View title = sv_from_cstr(tr("auth.signup_title", "បង្កើតគណនីថ្មី"));
     render_page_shell(sc, title, sb_to_sv(content));
@@ -1011,35 +911,23 @@ void serve_auth_logout(Serve_Context *sc) {
 
 #define ACCT_MAX 16  // accounts shown on the switcher (deduped per user)
 
-static void render_accounts(Serve_Context *sc, const char *rows_html) {
-    String_Builder content = {0};
-    sb_append_cstr(&content,
-        "<div class=\"min-h-screen bg-base py-6\">"
-        "<div class=\"max-w-lg mx-auto bg-mantle border border-surface0\">"
-        "<div class=\"bg-text text-onbase px-3 py-2 flex items-center"
-        " justify-between\">"
-        "<div><div class=\"text-sm font-semibold\">");
-    sb_append_html_escaped(&content, tr("auth.acct_title", "គណនី"));
-    sb_append_cstr(&content, "</div>"
-        "<div class=\"text-xs text-onbase/70\">");
-    sb_append_html_escaped(&content,
-        tr("auth.acct_sub", "ចូលហើយក្នុងកម្មវិធីនេះ"));
-    sb_append_cstr(&content, "</div></div>"
-        "<a href=\"/\" class=\"text-xs text-onbase/80 hover:underline\">"
-        "Store</a></div>"
-        "<ul class=\"divide-y divide-surface0\">");
-    sb_append_cstr(&content, rows_html ? rows_html : "");
-    sb_append_cstr(&content,
-        "</ul>"
-        "<div class=\"p-3 flex items-center justify-between text-xs\">"
-        "<a href=\"/login?next=/accounts\" class=\"text-blue hover:underline\">");
-    sb_append_html_escaped(&content,
-        tr("auth.acct_add", "បន្ថែមគណនី"));
-    sb_append_cstr(&content, "</a>"
-        "<a href=\"/logout\" class=\"text-red hover:underline\">");
-    sb_append_html_escaped(&content, tr("shop.logout_link", "ចេញ"));
-    sb_append_cstr(&content, "</a></div></div></div>");
+// One switcher row for display/auth/accounts.h.tt: the SQL text is copied
+// out before finalize so the template renders stable storage.
+typedef struct {
+    char sid[40];
+    char name[64];
+    char mail[96];
+    char type[64];
+    bool is_me;
+} Acct_Row;
 
+// /accounts switcher shell: display/auth/accounts.h.tt (current-vs-switch
+// row state is code state -> template, per the design rule in
+// wiki/templates.md).
+static void render_accounts(Serve_Context *sc, const Acct_Row *accts, size_t naccts) {
+    String_Builder content = {0};
+    String_Builder *sb = &content;
+#include "build/h_to_html/auth/accounts.h"
     sc->body.count = 0;
     render_page_shell(sc, sv_from_cstr(tr("auth.acct_title", "គណនី")),
                       sb_to_sv(content));
@@ -1059,7 +947,8 @@ void serve_auth_accounts(Serve_Context *sc) {
     char my_sid[40] = {0}, group[40] = {0};
     active_session(db, sc, my_sid, sizeof(my_sid), group, sizeof(group));
 
-    String_Builder rows = {0};
+    Acct_Row accts[ACCT_MAX];
+    size_t naccts = 0;
     char seen[ACCT_MAX][64];
     size_t nseen = 0;
     if (group[0]) {
@@ -1103,64 +992,19 @@ void serve_auth_accounts(Serve_Context *sc) {
                 if (dup) continue;
                 snprintf(seen[nseen++], sizeof(seen[0]), "%s", uid);
 
-                bool is_me = strcmp(sid, my_sid) == 0;
-                const char *initial = (name && name[0]) ? name : "?";
-                sb_append_cstr(&rows, "<li class=\"flex items-center gap-3"
-                    " px-3 py-2.5\">");
-                sb_append_cstr(&rows,
-                    "<span class=\"h-9 w-9 rounded-full bg-surface1"
-                    " text-subtext0 inline-flex items-center justify-center"
-                    " text-sm font-semibold shrink-0\">");
-                sb_append_html_escaped(&rows, initial[0] ? temp_sprintf("%c", initial[0]) : "?");
-                sb_append_cstr(&rows, "</span>"
-                    "<div class=\"min-w-0 flex-1\">"
-                    "<div class=\"text-sm text-text truncate\">");
-                sb_append_html_escaped(&rows, (name && name[0]) ? name : "");
-                sb_append_cstr(&rows, "</div>"
-                    "<div class=\"text-xs text-subtext0 truncate\">");
-                sb_append_html_escaped(&rows, (mail && mail[0]) ? mail : "");
-                if (type && type[0]) {
-                    sb_append_cstr(&rows, " · ");
-                    sb_append_html_escaped(&rows, type);
-                }
-                sb_append_cstr(&rows, "</div></div>");
-                if (is_me) {
-                    sb_append_cstr(&rows,
-                        "<span class=\"text-xs text-blue border border-blue/40"
-                        " px-2 py-1 whitespace-nowrap\">");
-                    sb_append_html_escaped(&rows,
-                        tr("auth.acct_current", "ឥឡូវនេះ"));
-                    sb_append_cstr(&rows, "</span>");
-                } else {
-                    sb_append_cstr(&rows,
-                        "<form method=\"POST\" action=\"/switch\""
-                        " class=\"flex items-center gap-1.5\">"
-                        "<input type=\"hidden\" name=\"sid\" value=\"");
-                    sb_append_html_escaped(&rows, sid);
-                    sb_append_cstr(&rows, "\">"
-                        "<input type=\"hidden\" name=\"next\""
-                        " value=\"/accounts\">"
-                        "<button name=\"op\" value=\"switch\""
-                        " class=\"text-xs bg-blue text-onbase px-2 py-1\">");
-                    sb_append_html_escaped(&rows,
-                        tr("auth.acct_switch", "ប្តូរ"));
-                    sb_append_cstr(&rows, "</button>"
-                        "<button name=\"op\" value=\"remove\""
-                        " class=\"text-xs text-red border border-surface0"
-                        " px-2 py-1\">");
-                    sb_append_html_escaped(&rows,
-                        tr("auth.acct_remove", "លុប"));
-                    sb_append_cstr(&rows, "</button></form>");
-                }
-                sb_append_cstr(&rows, "</li>");
+                if (naccts >= ACCT_MAX) break;
+                Acct_Row *ar = &accts[naccts++];
+                snprintf(ar->sid,  sizeof ar->sid,  "%s", sid);
+                snprintf(ar->name, sizeof ar->name, "%s", name ? name : "");
+                snprintf(ar->mail, sizeof ar->mail, "%s", mail ? mail : "");
+                snprintf(ar->type, sizeof ar->type, "%s", type ? type : "");
+                ar->is_me = strcmp(sid, my_sid) == 0;
             }
         }
         sql_finalize(&st);
     }
     db_close(db);
-    sb_append_null(&rows);
-    render_accounts(sc, rows.items);
-    sb_free(rows);
+    render_accounts(sc, accts, naccts);
 }
 
 void serve_auth_switch(Serve_Context *sc) {

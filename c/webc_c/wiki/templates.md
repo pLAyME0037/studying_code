@@ -178,6 +178,25 @@ symbol table and no lookup at runtime.
 both the full page and the bare pagination store that
 `js/PaginationSwitcher.js` fetches to flip pages client-side.
 
+## When to template vs inline — the design rule
+
+Not every line of markup earns a `.tt` file. The rule:
+
+- **HTML driven by code state, or HTML you expect to modify → template.**
+  Anything that changes with data, flags or input — forms with error
+  banners, pages rendering DB rows, anything with a conditional or a loop —
+  lives in `display/**/*.h.tt`. The auth pages
+  (`display/auth/login|signup|accounts.h.tt`), the POS sale finder
+  (`display/pos/sale.h.tt`) and every CRUD page are templates.
+- **Mostly static HTML → inline is fine.** Web status pages (403 from
+  `perm_gate`, `serve_error`'s 404/500) and small ~10–15 line fragments
+  whose shape never changes stay as `sb_append_cstr` calls next to the code
+  that serves them.
+
+Companion layout rule: pages don't clamp their width — content renders at
+`width: auto` inside the shell's padded `<main>` (the standalone auth pages
+pad the viewport instead), so `max-w-*` belongs only to the storefront shell.
+
 ## Rules
 
 1. **Never edit `build/h_to_html/`.** It is a build output; change
