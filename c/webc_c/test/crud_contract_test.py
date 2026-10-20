@@ -271,6 +271,12 @@ def main():
             continue
         html = body.decode()
         a, inner = find_form(html, "create")
+        if a is not None and a.get("data-md-kind") != "master":
+            # Child add-row forms also post data-md-op="create" (kind
+            # child); a master page whose own add form is gone (orders:
+            # rows come from the sale flow) is exercised like a
+            # read-only page.
+            a, inner = None, None
         if a is None:
             print(f"SKIP: {page} (read-only master, no create form)")
             continue

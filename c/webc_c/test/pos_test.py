@@ -15,6 +15,7 @@ import re
 import sqlite3
 import sys
 import time
+import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from testlib import Client, Checker  # noqa: E402
@@ -291,15 +292,23 @@ def main():
     html = body.decode()
     t.chk("live view hides deleted province",
           (st, f'data-row-id="{rid}"' not in html), (200, True))
-    # Phase 16 task 1: the Live/Trash tab strip sits above the add card on
-    # every soft-delete page - Live is active here and Trash carries the
-    # same count the database has.
+    # Phase 16 task 1 + the data query tab: the view strip sits above the
+    # add card on every master page -- Data query is the default active
+    # tab and carries the ?q/?qcol search form, Live is a ?live=1 tab,
+    # and Trash holds the same count the database has.
     n_del = db_row(
         "SELECT COUNT(*) FROM provinces WHERE deleted_at IS NOT NULL")[0]
-    t.chk("tab strip: Live active + Trash count = db",
-          ('bg-blue text-onbase">Live' in html
+    t.chk("tab strip: Data query default + search form + Trash count = db",
+          ('bg-blue text-onbase">Data query' in html
+           and "?live=1" in html
+           and 'id="md-query-form"' in html
            and f"data-trash-total>{n_del}<" in html
            and "?deleted=1" in html), True)
+    st, body, _ = c.get("/pos/provinces?live=1")
+    live_html = body.decode()
+    t.chk("live tab activates on ?live=1 (search form gone)",
+          (st, 'bg-blue text-onbase">Live' in live_html,
+           'id="md-query-form"' not in live_html), (200, True, True))
     st, body, _ = c.get("/pos/provinces?deleted=1")
     html = body.decode()
     row, _ = row_and_edit(html, rid)
@@ -830,6 +839,50 @@ def main():
           db_row("SELECT order_status_dict_id, total_amount FROM orders "
                  "WHERE id = ?", (oid,)),
           ("DELIVERED", 105.0))
+
+    # ---- data query tab: ?q search (all columns / scoped / FK label) ----
+    dl_label = db_row("SELECT label FROM dictionaries "
+                      "WHERE id = 'DELIVERED'")[0]
+    st, body, _ = c.get("/pos/orders?q=" + urllib.parse.quote(dl_label))
+    html = body.decode()
+    n_dl = db_row("SELECT COUNT(*) FROM orders "
+                  "WHERE order_status_dict_id = 'DELIVERED' "
+                  "AND deleted_at IS NULL")[0]
+    t.chk("data query: FK label search finds only DELIVERED orders",
+          (html.count('id="md-m-orders-') == n_dl and n_dl >= 1), True)
+    t.chk("data query: search bar keeps the typed query",
+          ('value="' + dl_label + '"' in html), True)
+    st, body, _ = c.get("/pos/orders?live=1")
+    live_html = body.decode()
+    t.chk("orders has no Live tab; ?live=1 falls back to Data query",
+          (st, "Plain list of live rows" not in live_html,
+           'bg-blue text-onbase">Data query' in live_html),
+          (200, True, True))
+    st, body, _ = c.get("/pos/orders")
+    html = body.decode()
+    t.chk("orders: query default, no add form, trash tab intact",
+          ('bg-blue text-onbase">Data query' in html
+           and "Add Orders" not in html
+           and "?deleted=1" in html), True)
+    st, body, _ = c.get("/pos/products?q=SD-P-00")
+    html = body.decode()
+    n_sku = db_row("SELECT COUNT(*) FROM products "
+                   "WHERE deleted_at IS NULL AND sku LIKE 'SD-P-00%'")[0]
+    t.chk("data query: keyword narrows the products list",
+          (html.count('id="md-m-products-') == n_sku and n_sku >= 1), True)
+    st, body, _ = c.get("/pos/products?q=SD-P-0")
+    html = body.decode()
+    n_all = db_row("SELECT COUNT(*) FROM products "
+                   "WHERE deleted_at IS NULL AND sku LIKE 'SD-P-0%'")[0]
+    t.chk("data query: pager links keep the query",
+          (html.count('id="md-m-products-') == 20 and n_all > 20
+           and "q=SD-P-0" in html), True)
+    st, body, _ = c.get("/pos/products?q=no-such-thing-zzz&qcol=name")
+    t.chk("data query: scoped no-match shows the empty list",
+          'No Products yet.' in body.decode(), True)
+    st, body, _ = c.get("/pos/products?q=no-such-thing-zzz&qcol=not_a_col")
+    t.chk("data query: unknown scope falls back to all columns",
+          'No Products yet.' in body.decode(), True)
 
     # ---- order children: items, payments, deliveries ---------------------
     st, _, _ = c.post_urlencoded(

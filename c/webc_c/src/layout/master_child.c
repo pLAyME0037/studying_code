@@ -191,19 +191,130 @@ static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCo
     return true;
 }
 
-// Soft-delete visibility filter for a table with a deleted_at column.
-// Live view hides the trash; ?deleted=1 shows ONLY the trash.
-static const char *md_soft_where(int soft_delete, bool show_deleted) {
-    if (!soft_delete) return "";
-    return show_deleted ? " WHERE deleted_at IS NOT NULL"
-                        : " WHERE deleted_at IS NULL";
+// ---- data query (the Data query tab's search) ---------------------------
+
+// A column the search may cover: every displayed column; hidden internals
+// (deleted_at ...) never appear in the scope dropdown. A composite cell
+// counts as ONE scope matching any of its parts.
+static bool md_col_queryable(const MD_Column *col) {
+    return col && !col->hidden;
+}
+
+// ?q / ?qcol resolved against this page's config: LIKE '%pattern%' over
+// the scoped column, or over every displayed column when col == NULL.
+typedef struct {
+    const MD_Column *col;      /* scoped column; NULL = all columns */
+    String_View      pattern;  /* "%text%" -- bound to every LIKE */
+    int              nbinds;   /* out: LIKE placeholders emitted */
+} MD_Search;
+
+// An empty q leaves pattern empty; a bare "%" is never built, so count > 1
+// (the surrounding percents) is the "searching" test.
+static bool md_search_on(const MD_Search *s) {
+    return s && s->pattern.count > 1;
+}
+
+// Positional placeholders: $1..$N on postgres, ? elsewhere (bind indexes
+// stay 1-based in every driver).
+static const char *md_ph(db_t *db, int *n) {
+    ++*n;
+    return db->lang == SQL_POSTGRES ? temp_sprintf("$%d", *n) : "?";
+}
+
+// CAST keeps LIKE type-safe on numeric (and any) columns; mysql spells it
+// AS CHAR, sqlite/postgres AS TEXT.
+static void md_append_like_cast(String_Builder *sb, db_t *db, const char *expr) {
+    sb_append_cstr(sb, "CAST(");
+    sb_append_cstr(sb, expr);
+    sb_append_cstr(sb, db->lang == SQL_MYSQL
+                          ? " AS CHAR) LIKE "
+                          : " AS TEXT) LIKE ");
+}
+
+// The whole WHERE for one master view: the soft-delete scope plus the
+// Data query search -- LIKE over the scoped column (or every displayed
+// one) and, for FK columns, over the label the cell shows (correlated
+// EXISTS, so "PAID" finds its orders without a join). Returns "" or
+// " WHERE ..."; nbinds counts LIKE placeholders: bind the same pattern to
+// 1..nbinds right after sql_prepare (md_bind_search).
+static const char *md_where(db_t *db, const MD_MasterConfig *config,
+                            bool show_deleted, MD_Search *search,
+                            int *nbinds)
+{
+    if (search) search->nbinds = 0;
+    String_Builder sb = {0};
+    const char *joiner = " WHERE ";
+    if (config->soft_delete) {
+        sb_append_cstr(&sb, show_deleted ? " WHERE deleted_at IS NOT NULL"
+                                         : " WHERE deleted_at IS NULL");
+        joiner = " AND ";
+    }
+    if (md_search_on(search)) {
+        String_Builder cond = {0};
+        int n = 0;
+        for (size_t ci = 0; ci < config->column_count; ++ci) {
+            const MD_Column *col = &config->columns[ci];
+            if (!md_col_queryable(col)) continue;
+            if (search->col && search->col != col) continue;
+            if (cond.count) sb_append_cstr(&cond, " OR ");
+            if (col->cell) {
+                for (size_t p = 0; p < col->cell->part_count; ++p) {
+                    if (p) sb_append_cstr(&cond, " OR ");
+                    md_append_like_cast(&cond, db, col->cell->parts[p]);
+                    sb_append_cstr(&cond, md_ph(db, &n));
+                }
+            } else if (col->type == COL_TYPE_FK_SELECT
+                       && col->fk_table && col->fk_label) {
+                sb_append_cstr(&cond, "(");
+                md_append_like_cast(&cond, db, col->name);
+                sb_append_cstr(&cond, md_ph(db, &n));
+                sb_append_cstr(&cond, " OR EXISTS (SELECT 1 FROM ");
+                sb_append_cstr(&cond, col->fk_table);
+                sb_append_cstr(&cond, " mdq WHERE mdq.id = ");
+                sb_append_cstr(&cond, config->table);
+                sb_append_cstr(&cond, ".");
+                sb_append_cstr(&cond, col->name);
+                sb_append_cstr(&cond, " AND ");
+                md_append_like_cast(&cond, db,
+                                    temp_sprintf("mdq.%s", col->fk_label));
+                sb_append_cstr(&cond, md_ph(db, &n));
+                sb_append_cstr(&cond, "))");
+            } else {
+                md_append_like_cast(&cond, db, col->name);
+                sb_append_cstr(&cond, md_ph(db, &n));
+            }
+        }
+        if (cond.count) {
+            sb_append_cstr(&sb, joiner);
+            sb_append_cstr(&sb, "(");
+            sb_append_buf(&sb, cond.items, cond.count);
+            sb_append_cstr(&sb, ")");
+        }
+        if (search) search->nbinds = n;
+        if (nbinds) *nbinds = n;
+        sb_free(cond);
+    }
+    sb_append_null(&sb);
+    char *out = temp_strdup(sb.items);
+    sb_free(sb);
+    return out;
+}
+
+// Bind the LIKE pattern to 1..nbinds (the same value in every slot).
+static bool md_bind_search(sql_stmt *stmt, const MD_Search *search,
+                           int nbinds) {
+    for (int b = 1; b <= nbinds; ++b) {
+        if (!sql_bind(stmt, b, SQL_SV(search->pattern))) return false;
+    }
+    return true;
 }
 
 static bool md_load_master_with_children(db_t                  *db,
                                          const MD_MasterConfig *config,
                                          MD_MasterRows         *rows,
                                          const Page_Info       *slice,
-                                         bool                   show_deleted)
+                                         bool                   show_deleted,
+                                         MD_Search             *search)
 {
     String_Builder cl = {0};
     sb_append_cstr(&cl, config->id_column);
@@ -227,13 +338,19 @@ static bool md_load_master_with_children(db_t                  *db,
     // created_at; views are never master lists. Child lists are always
     // loaded in full (they are bounded per master and the template
     // windows them); only the master list takes a window.
+    int nbinds = 0;
     char *sql = temp_sprintf("SELECT %s FROM %s%s ORDER BY %s DESC%s;",
-            cl.items, config->table, md_soft_where(config->soft_delete, show_deleted),
+            cl.items, config->table,
+            md_where(db, config, show_deleted, search, &nbinds),
             "created_at",
             slice ? temp_sprintf(" LIMIT %zu OFFSET %zu", slice->per_page, slice->offset)
                   : "");
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
+        return false;
+    }
+    if (!md_bind_search(&stmt, search, nbinds)) {
+        sql_finalize(&stmt);
         return false;
     }
     Sql_Step ret;
@@ -285,13 +402,17 @@ static bool md_load_master_with_children(db_t                  *db,
 // Total master rows (drives the pager; the window itself is applied by
 // md_load_master_with_children's LIMIT/OFFSET).
 static bool md_count_masters(db_t *db, const MD_MasterConfig *config,
-                             bool show_deleted, size_t *out) {
+                             bool show_deleted, MD_Search *search,
+                             size_t *out) {
+    int nbinds = 0;
+    const char *where = md_where(db, config, show_deleted, search, &nbinds);
     char *sql = temp_sprintf("SELECT count(*) FROM %s%s;",
-            config->table, md_soft_where(config->soft_delete, show_deleted));
+            config->table, where);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) return false;
     bool ok = false;
-    if (sql_step(&stmt) == SQL_ROW) {
+    if (md_bind_search(&stmt, search, nbinds)
+        && sql_step(&stmt) == SQL_ROW) {
         *out = (size_t)sql_column_int64(&stmt, 0);
         ok = true;
     } else {
@@ -310,25 +431,65 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     // ?fragment=all: load everything, render the bare pagination store
     // (no header/footer) -- the payload js/PaginationSwitcher.js caches.
     bool fragment = page_fragment_requested(sc->query_string);
-    // ?deleted=1 on a soft_delete page: the trash view (restorable rows).
-    // Declared here so every template branch below sees the same flag.
+    // The view strip is three tabs: Data query (the default -- its search
+    // bar drives the list), ?live=1 (plain browse, hidden when the table
+    // is never a directly-filled list) and ?deleted=1 on a soft_delete
+    // page: the trash view (restorable rows).
     String_View del_sv = {0};
     bool show_deleted = config->soft_delete
         && form_find(sc->query_string, "deleted", &del_sv)
         && sv_eq(del_sv, sv_from_cstr("1"));
+    String_View live_sv = {0};
+    bool show_live = config->soft_delete && !config->no_live
+        && !show_deleted
+        && form_find(sc->query_string, "live", &live_sv)
+        && sv_eq(live_sv, sv_from_cstr("1"));
+    bool show_query = !show_deleted && !show_live;
+    // Data query search: ?q=<text> LIKE-matches across every displayed
+    // column, or the single column named by ?qcol=<column name>. qcol is
+    // validated against this page's config (never interpolated from the
+    // URL); q is bound. An unknown scope falls back to all columns.
+    String_View q = sv_from_cstr(""), qcol_sv = sv_from_cstr("");
+    form_find(sc->query_string, "q", &q);
+    form_find(sc->query_string, "qcol", &qcol_sv);
+    if (q.count > 100) q.count = 100;
+    const char *q_text = q.count
+        ? temp_sprintf("%.*s", (int)q.count, q.data) : "";
+    const char *qcol_name = "";
+    MD_Search search = {0};
+    if (q.count > 0) {
+        String_Builder pat = {0};
+        sb_append_cstr(&pat, "%");
+        sb_append_buf(&pat, q.data, q.count);
+        sb_append_cstr(&pat, "%");
+        sb_append_null(&pat);
+        search.pattern = sv_from_cstr(temp_strdup(pat.items));
+        sb_free(pat);
+        for (size_t ci = 0; ci < config->column_count; ++ci) {
+            const MD_Column *col = &config->columns[ci];
+            if (col->name && md_col_queryable(col)
+                && sv_eq(qcol_sv, sv_from_cstr(col->name))) {
+                search.col = col;
+                qcol_name = col->name;
+                break;
+            }
+        }
+    }
     Page_Info page_info = {0};                    // master list window
     page_info_parse(sc->query_string, "page", &page_info);
     bool windowed = !fragment;
-    if (windowed && !md_count_masters(db, config, show_deleted, &page_info.total)) {
+    if (windowed && !md_count_masters(db, config, show_deleted, &search,
+                                      &page_info.total)) {
         db_close(db);
         serve_error(sc, 500);
         return;
     }
     if (windowed) page_info_finish(&page_info, page_info.total);
-    // Live/Trash tab strip (soft_delete pages): the badge counts the rows
-    // sitting in the trash (?deleted=1), so deleted data stays findable.
+    // View strip badge: the trash total (never narrowed by the search).
     size_t trash_total = 0;
-    if (config->soft_delete) md_count_masters(db, config, true, &trash_total);
+    if (config->soft_delete) {
+        md_count_masters(db, config, true, NULL, &trash_total);
+    }
     // Child tabs share one page key per table (?notes_page=N for every
     // master); totals are per master and computed in the template.
     size_t child_slot_count = config->children_count ? config->children_count : 1;
@@ -342,7 +503,7 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     MD_FormCols form_cols = {0};
     bool ok = md_load_master_with_children(db, config, rows,
                                            windowed ? &page_info : NULL,
-                                           show_deleted)
+                                           show_deleted, &search)
         && md_form_cols_load(db, config, &form_cols);
     if (ok) {
         for (size_t i = 0; i < config->column_count; ++i) {

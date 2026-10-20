@@ -533,6 +533,38 @@ vanilla JS only.
   (http 99 / pos 350 / shop 118 / role 47 / crud_contract 156 /
   mysql 40 / https 6).
 
+## Phase 17 — Data query tab on master pages (suite 869 PASS)
+- The master_child view strip is now THREE tabs on every master page:
+  Data query (DEFAULT -- href to the page opens it; its GET search form
+  ?q=<text> + ?qcol=<column name> filters the list server-side), Live
+  (?live=1, plain browse) and Trash (?deleted=1). Pager links keep q/qcol
+  (page_href passes pairs verbatim) and the JS pager prefetch
+  (location.search + fragment=all) filters too. Non-soft_delete pages
+  get the strip with just Data query.
+- Engine (md_where in src/layout/master_child.c): soft-delete scope +
+  search, LIKE '%q%' over every displayed column (hidden internals
+  excluded; a composite cell = ONE scope over all its parts; NUM
+  columns CAST AS TEXT/CHAR per dialect; FK columns also match the
+  joined label via correlated EXISTS, so a status/category/customer
+  name finds its rows). qcol is validated against the config (never
+  interpolated), unknown scope falls back to all columns; q is capped
+  at 100 chars and bound ($1..$N postgres / ? elsewhere). The Trash
+  badge count is never narrowed by the search.
+- MD_MasterConfig.no_live / no_create: /pos/orders hides the Live tab
+  and the generic add form (orders come from the sale/checkout flow,
+  not hand-fill; ?live=1 falls back to Data query, edit/delete/child
+  tabs unchanged). crud_contract skips orders like a read-only page --
+  its create-form scraper now ignores data-md-kind="child" add-row
+  forms (they also post data-md-op="create").
+- Template: strip + search form in display/component/master_child.h.tt
+  (labelled like the /pos/sale finder: scope dropdown + keyword box +
+  clear link); a tiny inline script debounces typing (400ms submit),
+  submits on scope change and refocuses the query after reload.
+- Tests: pos_test +9 (strip re-contract, ?live=1 view, FK-label search,
+  keyword/scope/no-match/unknown-scope, pager keeps q). Suite: 869 PASS
+  (http 120 / pos 366 / shop 118 / role 48 / crud_contract 170 /
+  mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

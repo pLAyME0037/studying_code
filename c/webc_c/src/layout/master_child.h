@@ -115,7 +115,13 @@ typedef struct {
                                  ?deleted=1 shows the trash with a restore
                                  button; child tabs hide their own deleted rows */
     int          read_only;   /* hides add/edit/delete UI; the module simply
-                                 registers no write routes for this page */
+                                 * registers no write routes for this page */
+    int          no_live;     /* hides the Live tab: the table is never a
+                                 * directly-filled list (?live=1 falls back
+                                 * to the Data query view) -- /pos/orders */
+    int          no_create;   /* hides the generic add form only: rows are
+                                 * created upstream (orders come from the
+                                 * sale/checkout flow), edit/delete stay */
 } MD_MasterConfig;
 
 /* column + resolved FK dropdown options for the generic create form */
