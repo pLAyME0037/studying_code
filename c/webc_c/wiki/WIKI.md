@@ -643,6 +643,28 @@ vanilla JS only.
   (http 120 / pos 372 / shop 118 / role 48 / crud_contract 170 /
   mysql 41 / https 6).
 
+## Phase 21 - Filter row: dropdowns for lookups, main-part placeholders
+## (suite 879 PASS)
+- The Actions cell of the filter row no longer carries the
+  all-columns box -- only the submit button and the clear link stay
+  (legacy ?q without ?qcol still filters, it just has no echo box).
+- Lookup columns (COL_TYPE_FK_SELECT: category, type, role, status
+  ...) filter via a <select> whose options are the same FK choices
+  the add form loads (labels are the query values -- they hit the
+  fk_label EXISTS path the engine already covers); the matching
+  option re-selects after reload. The debounce script gained a
+  'change' listener for selects and only calls setSelectionRange on
+  INPUT boxes (it throws on <select>).
+- Composite cells (Codes, Prices ...) already query their main part
+  (col->name == parts[0]); the placeholder now names that part
+  (md_cell_part_label: "SKU", "Base") instead of repeating the
+  column label, so it is clear what is being queried.
+- Tests: orders pins reworked (status dropdown offers the DELIVERED
+  label; dropdown value filters and stays selected), + FK columns
+  are dropdowns with no all-box, + composite placeholders on
+  products. Suite: 879 PASS (http 120 / pos 376 / shop 118 /
+  role 48 / crud_contract 170 / mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

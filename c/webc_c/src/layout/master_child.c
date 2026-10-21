@@ -461,15 +461,17 @@ static bool md_count_masters(db_t *db, const MD_MasterConfig *config,
 }
 
 // The per-column filter row: the first <tr> inside the master table's
-// <thead>, one search input under each displayed column (+ the legacy
-// all-columns box in the last cell with the submit/clear controls).
-// display/component/md_child_query_row.h.tt renders it; the inputs post
-// into the empty #md-query-form anchor (form attribute) as ?q_<col>=
-// <text>, one ANDed term per filled box (md_where).
+// header row. Lookup columns (COL_TYPE_FK_SELECT) get a <select> of the
+// same choices the add form offers (labels are the query values); plain
+// columns get a search input; a composite cell queries its main part
+// (col->name == parts[0]) and the placeholder names that part. The last
+// cell is submit + clear only -- no box. Inputs post into the empty
+// #md-query-form anchor (form attribute) as ?q_<col>=<text>, one ANDed
+// term per filled box (md_where).
 static void md_query_row(String_Builder *sb, const MD_MasterConfig *config,
-                         const char *md_path, String_View query,
-                         const char *q_text, const char *qcol_name,
-                         bool search_active) {
+                         const MD_FormCols *form_cols, const char *md_path,
+                         String_View query, const char *q_text,
+                         const char *qcol_name, bool search_active) {
 #define OUT(buf, size) sb_append_buf(sb, buf, size);
 #define STR(s) sb_append_cstr(sb, s);
 #define ESCAPED(s) sb_append_html_escaped(sb, s ? s : "");

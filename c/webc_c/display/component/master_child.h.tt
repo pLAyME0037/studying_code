@@ -26,19 +26,21 @@
         if (!boxes.length) return;
         var f = document.getElementById('md-query-form');
         var timer;
+        function kick() {
+            clearTimeout(timer);
+            timer = setTimeout(function () { f.submit(); }, 400);
+        }
         for (var i = 0; i < boxes.length; ++i) {
-            (function (box) {
-                box.addEventListener('input', function () {
-                    clearTimeout(timer);
-                    timer = setTimeout(function () { f.submit(); }, 400);
-                });
-            })(boxes[i]);
+            boxes[i].addEventListener('input', kick);
+            boxes[i].addEventListener('change', kick);
         }
         for (var j = 0; j < boxes.length; ++j) {
             if (boxes[j].value) {
                 boxes[j].focus();
-                boxes[j].setSelectionRange(boxes[j].value.length,
-                                           boxes[j].value.length);
+                if (boxes[j].tagName === 'INPUT') {
+                    boxes[j].setSelectionRange(boxes[j].value.length,
+                                               boxes[j].value.length);
+                }
                 break;
             }
         }
@@ -151,7 +153,7 @@
                         Actions
                     </th>
                 </tr>
-                ({ md_query_row(sb, config, md_path, sc->query_string, q_text, qcol_name, search.term_count > 0); })
+                ({ md_query_row(sb, config, &form_cols, md_path, sc->query_string, q_text, qcol_name, search.term_count > 0); })
             </thead>
             <tbody id="({ STR(page_container); })" class="divide-y divide-gray-200 dark:divide-gray-700">
 ({ } })

@@ -7,22 +7,35 @@
            form_find(query, temp_sprintf("q_%s", fcol->name), &cbox);
            String_View shown = cbox.count ? cbox
                : (qcol_name[0] && strcmp(qcol_name, fcol->name) == 0
-                  ? sv_from_cstr(q_text) : sv_from_cstr("")); })
+                  ? sv_from_cstr(q_text) : sv_from_cstr(""));
+           const char *shown_s = shown.count
+               ? temp_sprintf("%.*s", (int)shown.count, shown.data) : ""; })
+        ({ if (fcol->type == COL_TYPE_FK_SELECT) { })
+        <select name="q_({ STR(fcol->name); })" form="md-query-form"
+                data-md-qbox aria-label="Filter ({ ESCAPED(fcol->label); })"
+                class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+            <option value="">({ ESCAPED(fcol->label); })</option>
+            ({ for (size_t fi = 0; fi < form_cols->count; ++fi) { })
+            ({ if (form_cols->items[fi].col == fcol) { })
+            ({ for (size_t o = 0; o < form_cols->items[fi].count; ++o) { })
+            <option value="({ ESCAPED(form_cols->items[fi].items[o].label); })"({ if (shown_s[0] && strcmp(form_cols->items[fi].items[o].label, shown_s) == 0) { }) selected({ } })>({ ESCAPED(form_cols->items[fi].items[o].label); })</option>
+            ({ } })
+            ({ } })
+            ({ } })
+        </select>
+        ({ } else { })
         <input type="search" name="q_({ STR(fcol->name); })"
                form="md-query-form" data-md-qbox
-               value="({ ESCAPED(temp_sprintf("%.*s", (int)shown.count, shown.data)); })"
-               placeholder="({ ESCAPED(fcol->label); })"
+               value="({ ESCAPED(shown_s); })"
+               placeholder="({ if (fcol->cell && fcol->cell->part_count > 1) { })({ ESCAPED(md_cell_part_label(fcol->cell, 0)); })({ } else { })({ ESCAPED(fcol->label); })({ } })"
                aria-label="Search ({ ESCAPED(fcol->label); })"
                class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        ({ } })
         ({ } })
     </td>
     ({ } })
     <td class="pl-3 py-1">
-        <div class="flex items-center gap-1">
-            <input type="search" name="q" form="md-query-form" data-md-qbox
-                   value="({ ESCAPED(qcol_name[0] ? "" : q_text); })"
-                   placeholder="All..." aria-label="Search all columns"
-                   class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white min-w-0">
+        <div class="flex items-center gap-1 justify-end">
             <button type="submit" form="md-query-form"
                     title="Search" aria-label="Search"
                     class="shrink-0 text-gray-500 hover:text-gray-900 dark:hover:text-white">

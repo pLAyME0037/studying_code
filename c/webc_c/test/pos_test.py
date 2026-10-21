@@ -559,6 +559,25 @@ def main():
            ("base_price", "cost_price", "tax_rate")],
           [12.5, 7.0, 10.0])
 
+    # Phase 21: lookup columns filter via dropdowns (the label is the
+    # query value), composite cells query their main part (the
+    # placeholder names it), and the Actions cell carries no box.
+    st, body, _ = c.get("/pos/products")
+    fhtml = body.decode()
+    t.chk("filter row: FK columns are dropdowns, actions cell has no box",
+          ('<select name="q_category_id"' in fhtml
+           and '<select name="q_product_type_dict_id"' in fhtml
+           and '<input type="search" name="q"' not in fhtml), True)
+    t.chk("filter row: composite cells name the main part in the placeholder",
+          ('placeholder="SKU"' in fhtml and 'placeholder="Base"' in fhtml),
+          True)
+    st, body, _ = c.get("/pos/products?q_category_id="
+                        + urllib.parse.quote("Kid Renamed"))
+    fhtml = body.decode()
+    t.chk("filter row: dropdown value filters and stays selected",
+          (fhtml.count('id="md-m-products-') == 1
+           and '<option value="Kid Renamed" selected>' in fhtml), True)
+
     st, _, _ = c.post_urlencoded(
         f"/pos/products/{pid}/update?redirect=/pos/products",
         {"name": "Test Product XL", "sku": "POS-SKU-1", "barcode": "4444",
@@ -867,7 +886,7 @@ def main():
                  "WHERE id = ?", (oid,)),
           ("DELIVERED", 105.0))
 
-    # ---- data query tab: ?q search (all columns / scoped / FK label) ----
+    # ---- table search: ?q all columns / ?q_<col> dropdown + scoped -----
     dl_label = db_row("SELECT label FROM dictionaries "
                       "WHERE id = 'DELIVERED'")[0]
     st, body, _ = c.get("/pos/orders?q=" + urllib.parse.quote(dl_label))
@@ -875,10 +894,16 @@ def main():
     n_dl = db_row("SELECT COUNT(*) FROM orders "
                   "WHERE order_status_dict_id = 'DELIVERED' "
                   "AND deleted_at IS NULL")[0]
-    t.chk("data query: FK label search finds only DELIVERED orders",
+    t.chk("search: FK label query (no scope) finds only DELIVERED orders",
           (html.count('id="md-m-orders-') == n_dl and n_dl >= 1), True)
-    t.chk("data query: search bar keeps the typed query",
-          ('value="' + dl_label + '"' in html), True)
+    t.chk("search: status dropdown offers the DELIVERED label",
+          ('<option value="' + dl_label + '">' in html), True)
+    st, body, _ = c.get("/pos/orders?q_order_status_dict_id="
+                        + urllib.parse.quote(dl_label))
+    html = body.decode()
+    t.chk("search: dropdown value filters and stays selected",
+          (html.count('id="md-m-orders-') == n_dl
+           and '<option value="' + dl_label + '" selected>' in html), True)
     st, body, _ = c.get("/pos/orders?live=1")
     live_html = body.decode()
     t.chk("orders has no Live tab; ?live=1 is the plain list + filter row",
