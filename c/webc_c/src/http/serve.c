@@ -484,7 +484,12 @@ void http_render_response(Serve_Context *sc,
     sb_append_cstr(response, temp_sprintf("HTTP/1.1 %d %s\r\n", status_code, http_reason_phrase_by_status_code(status_code)));
     sb_append_cstr(response, temp_sprintf("Content-Type: %s\r\n", content_type));
     if (sc->set_cookie) sb_append_cstr(response, temp_sprintf("Set-Cookie: %s\r\n", sc->set_cookie));
-    sb_append_cstr(response, "Last-Modified: "WEBC_BUILD_TIME"\r\n");
+    // Every response here is dynamic (session, DB, per-user data): never
+    // let the browser store it. The old `Last-Modified: WEBC_BUILD_TIME`
+    // stamp made browsers heuristically cache pages (10% of the binary's
+    // age), so the CRUD fetch's POST -> 303 -> GET chain got a stale
+    // cache hit and swapped an OLD table into #mc-root.
+    sb_append_cstr(response, "Cache-Control: no-store\r\n");
     sb_append_cstr(response, temp_sprintf("Content-Length: %zu\r\n", body.count));
     sb_append_cstr(response, "Connection: close\r\n");
     sb_append_cstr(response, "\r\n");
@@ -503,7 +508,8 @@ void http_render_response_attachment(Serve_Context *sc,
     sb_append_cstr(response, temp_sprintf("Content-Type: %s\r\n", content_type));
     sb_append_cstr(response, temp_sprintf("Content-Disposition: attachment; filename=\"%s\"\r\n", filename));
     if (sc->set_cookie) sb_append_cstr(response, temp_sprintf("Set-Cookie: %s\r\n", sc->set_cookie));
-    sb_append_cstr(response, "Last-Modified: "WEBC_BUILD_TIME"\r\n");
+    // User data; same no-store contract as http_render_response.
+    sb_append_cstr(response, "Cache-Control: no-store\r\n");
     sb_append_cstr(response, temp_sprintf("Content-Length: %zu\r\n", body.count));
     sb_append_cstr(response, "Connection: close\r\n");
     sb_append_cstr(response, "\r\n");

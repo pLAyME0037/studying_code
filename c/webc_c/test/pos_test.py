@@ -292,6 +292,16 @@ def main():
     html = body.decode()
     t.chk("live view hides deleted province",
           (st, f'data-row-id="{rid}"' not in html), (200, True))
+    # Phase 22: every response is Cache-Control: no-store. The old
+    # Last-Modified: WEBC_BUILD_TIME stamp made browsers heuristically
+    # cache pages (10% of the binary's age), so the CRUD fetch's
+    # POST -> 302 -> GET chain got a stale cache hit and swapped an
+    # OLD table into #mc-root (updates/deletes only appeared after a
+    # manual reload or route change).
+    st, hdr, _, _ = c.req_full("GET", "/pos/provinces")
+    t.chk("list page: no-store and no Last-Modified",
+          (st, hdr.get("Cache-Control"), "Last-Modified" in hdr),
+          (200, "no-store", False))
     # Phase 16 task 1 + the Phase 20 filter row: the view strip is Live +
     # Trash, and the per-column filter row (one input per column + an
     # all-columns box, ?q_<col>/?q per filled box) sits in the table's

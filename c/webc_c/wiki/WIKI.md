@@ -643,8 +643,7 @@ vanilla JS only.
   (http 120 / pos 372 / shop 118 / role 48 / crud_contract 170 /
   mysql 41 / https 6).
 
-## Phase 21 - Filter row: dropdowns for lookups, main-part placeholders
-## (suite 879 PASS)
+## Phase 21 - Filter row: dropdowns for lookups, main-part placeholders (suite 879 PASS)
 - The Actions cell of the filter row no longer carries the
   all-columns box -- only the submit button and the clear link stay
   (legacy ?q without ?qcol still filters, it just has no echo box).
@@ -664,6 +663,24 @@ vanilla JS only.
   are dropdowns with no all-box, + composite placeholders on
   products. Suite: 879 PASS (http 120 / pos 376 / shop 118 /
   role 48 / crud_contract 170 / mysql 41 / https 6).
+
+## Phase 22 - Cache-Control: no-store fixes stale table after CRUD (suite 880 PASS)
+- Root cause of "the table only updates after a manual reload or
+  route change": every response carried
+  `Last-Modified: WEBC_BUILD_TIME` with no Cache-Control, so browsers
+  applied RFC 9111 heuristic freshness (10% of the binary's age --
+  hours for a days-old build). The CRUD fetch follows the server's
+  normal POST -> 302 -> GET chain, that GET hit the heuristic-fresh
+  cache entry, and mdSwap() swapped the STALE page's #mc-root back
+  into the DOM: edits/deletes never appeared until a real reload.
+- Fix: http_render_response (+ _attachment) now send
+  `Cache-Control: no-store` and drop the bogus Last-Modified stamp
+  (every response is dynamic: session, DB, per-user data; static
+  assets are bundle-embedded). ListExpandSwitcher's fetch also passes
+  cache: 'no-store' as belt and braces.
+- Tests: + header pin (no-store, no Last-Modified on a list page).
+  Suite: 880 PASS (http 120 / pos 377 / shop 118 / role 48 /
+  crud_contract 170 / mysql 41 / https 6).
 
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.

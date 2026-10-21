@@ -177,7 +177,11 @@ async function mdHandleSubmit(e, form) {
         // 3. POST via fetch; browser follows the server's normal 302 PRG
         let res;
         try {
-            res = await fetch(form.action, { method: 'POST', body: new FormData(form) });
+            res = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                cache: 'no-store', // never swap in a cached page
+            });
         } catch (err) {
             form.submit(); // native PRG; mdReveal() runs after the redirect
             return;
