@@ -292,28 +292,52 @@ def main():
     html = body.decode()
     t.chk("live view hides deleted province",
           (st, f'data-row-id="{rid}"' not in html), (200, True))
-    # Phase 16 task 1 + the Phase 19 search row: the view strip is Live +
-    # Trash, and a dedicated slim search row (the ?q/?qcol GET form) sits
-    # above the table on every master page; Trash holds the same count the
-    # database has.
+    # Phase 16 task 1 + the Phase 20 filter row: the view strip is Live +
+    # Trash, and the per-column filter row (one input per column + an
+    # all-columns box, ?q_<col>/?q per filled box) sits in the table's
+    # first <thead> row on every master page; Trash holds the same count
+    # the database has.
     n_del = db_row(
         "SELECT COUNT(*) FROM provinces WHERE deleted_at IS NOT NULL")[0]
-    t.chk("tab strip Live+Trash + search row + Trash count = db",
+    t.chk("tab strip Live+Trash + filter row + Trash count = db",
           ('bg-blue text-onbase">Live' in html
            and "Data query" not in html
-           and 'id="md-query-form"' in html
+           and 'data-md-qbox' in html
            and f"data-trash-total>{n_del}<" in html
            and "?deleted=1" in html), True)
     st, body, _ = c.get("/pos/provinces?live=1")
     live_html = body.decode()
-    t.chk("?live=1 is the plain list (Live active, search row stays)",
+    t.chk("?live=1 is the plain list (Live active, filter row stays)",
           (st, 'bg-blue text-onbase">Live' in live_html,
-           'id="md-query-form"' in live_html), (200, True, True))
+           'data-md-qbox' in live_html), (200, True, True))
+    # Phase 20: per-column filter boxes -- each filled box is its own
+    # ANDed ?q_<col> term; the legacy ?q + ?qcol pair fills the matching
+    # column's box (an unknown/empty scope fills the all-columns box).
+    st, body, _ = c.get("/pos/provinces?q_name_en=Takeo")
+    fhtml = body.decode()
+    t.chk("filter row: column box queries its column, keeps its value",
+          (fhtml.count("data-row-id=") == 1
+           and 'name="q_name_en"' in fhtml
+           and 'value="Takeo"' in fhtml
+           and "Clear the search" in fhtml), True)
+    kh = urllib.parse.quote(
+        db_row("SELECT name_kh FROM provinces WHERE name_en = 'Takeo'")[0])
+    st, body, _ = c.get("/pos/provinces?q_name_en=Takeo&q_name_kh=" + kh)
+    t.chk("filter row: two boxes AND (matching pair keeps the row)",
+          body.decode().count("data-row-id=") == 1, True)
+    st, body, _ = c.get("/pos/provinces?q_name_en=Takeo&q_name_kh="
+                        + urllib.parse.quote("NO-SUCH-KHMER-ZZZ"))
+    t.chk("filter row: two boxes AND (conflict empties the list)",
+          'No Provinces yet.' in body.decode(), True)
+    st, body, _ = c.get("/pos/provinces?q=Takeo&qcol=name_en")
+    t.chk("legacy ?q+?qcol fills that column's filter box",
+          (body.decode().count("data-row-id=") == 1
+           and 'value="Takeo"' in body.decode()), True)
     st, body, _ = c.get("/pos/provinces?deleted=1")
     html = body.decode()
     row, _ = row_and_edit(html, rid)
     t.chk("trash view shows deleted province", bool(row), True)
-    t.chk("trash view keeps the search row", 'id="md-query-form"' in html, True)
+    t.chk("trash view keeps the filter row", 'data-md-qbox' in html, True)
     t.chk("trash rows tinted", "hover:bg-red-100" in html, True)
     t.chk("trash row has restore button", 'data-md-op="restore"' in row, True)
     t.chk("trash tab active on the trash view",
@@ -352,8 +376,8 @@ def main():
           (st, 'data-md-op="create"' in html, 'master-edit-btn' in html,
            'data-md-op="delete"' in html, 'data-trash-total' in html),
           (200, False, False, False, False))
-    t.chk("villages still get the dedicated search row",
-          'id="md-query-form"' in html, True)
+    t.chk("villages still get the filter row",
+          'data-md-qbox' in html, True)
     t.chk("villages seed rows + pager",
           (html.count('<tr class="hover:'),
            'data-pg-container="mc-tbody"' in html), (20, True))
@@ -857,16 +881,16 @@ def main():
           ('value="' + dl_label + '"' in html), True)
     st, body, _ = c.get("/pos/orders?live=1")
     live_html = body.decode()
-    t.chk("orders has no Live tab; ?live=1 is the plain list + search row",
+    t.chk("orders has no Live tab; ?live=1 is the plain list + filter row",
           (st, "Plain list of live rows" not in live_html,
            "Data query" not in live_html,
-           'id="md-query-form"' in live_html),
+           'data-md-qbox' in live_html),
           (200, True, True, True))
     st, body, _ = c.get("/pos/orders")
     html = body.decode()
-    t.chk("orders: plain default, search row, no add form, trash tab intact",
+    t.chk("orders: plain default, filter row, no add form, trash tab intact",
           ('data-trash-total' in html
-           and 'id="md-query-form"' in html
+           and 'data-md-qbox' in html
            and "Add Orders" not in html
            and "?deleted=1" in html), True)
     st, body, _ = c.get("/pos/products?q=SD-P-00")

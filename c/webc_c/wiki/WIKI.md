@@ -617,6 +617,32 @@ vanilla JS only.
   871 PASS (http 120 / pos 368 / shop 118 / role 48 / crud_contract
   170 / mysql 41 / https 6).
 
+## Phase 20 - Per-column filter row inside the table (suite 875 PASS)
+- The Phase 19 search row moves INSIDE the master table as its first
+  header-row <tr>: one search input under every displayed column +
+  an all-columns box in the last cell (with the submit button and the
+  clear link). Per-column inputs submit ?q_<col>=<text> -- one ANDed
+  term per filled box (MD_Search is now a term list capped at 8;
+  md_where emits one parenthesized group per term, md_bind_search
+  binds each term's pattern to the slots it owns). The legacy
+  ?q + ?qcol pair still works as a single term (empty/unknown scope
+  = all columns) and lands in the matching column's box (or the
+  all-columns box), so old links and tests keep their values.
+- Markup: filter inputs carry form="md-query-form" and post into an
+  empty anchor form (the #md-query-form id survives); the debounce
+  script (400ms, refocus first non-empty box) watches [data-md-qbox].
+  The row lives in the table header, so PaginationSwitcher's tbody
+  swaps never touch it; the trash-badge count ignores the filter
+  (NULL search) as before.
+- Gotcha: never write "<th..." (any th tag name) inside an HTML
+  comment -- pos_test's th_count regex treats the comment text as an
+  earlier opener and counts +1 on every page.
+- Tests: +4 pins (column box queries its column and keeps its value;
+  two boxes AND: matching pair keeps the row / conflict empties the
+  list; legacy ?q+?qcol fills that column's box). Suite: 875 PASS
+  (http 120 / pos 372 / shop 118 / role 48 / crud_contract 170 /
+  mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

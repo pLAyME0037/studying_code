@@ -105,7 +105,7 @@ static bool create_product(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))    return_defer(false);
     if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))  return_defer(false);  // name
     if (!sql_bind(&stmt, 2, SQL_SV(fields[1])))  return_defer(false);  // sku
     if (!sql_bind(&stmt, 3, pos_sv(fields[2])))  return_defer(false);  // barcode
@@ -177,7 +177,8 @@ static bool soft_delete_product(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE products "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE products SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE products SET deleted_at = UTC_TIMESTAMP() "
+                         "WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE products SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

@@ -1,47 +1,37 @@
-<form id="md-query-form" method="GET" action="({ STR(md_path); })"
-      data-md-query="1"
-      class="mb-2 flex flex-wrap items-center gap-1.5">
-    <label for="md-query-q"
-           class="text-xs font-medium text-gray-500 dark:text-gray-400">Search</label>
-    <select id="md-query-col" name="qcol" aria-label="Search column"
-            class="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-        <option value="">All columns</option>
-        ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
-        ({ if (config->columns[ci].name && md_col_queryable(&config->columns[ci])) { })
-        <option value="({ STR(config->columns[ci].name); })"({ if (qcol_name[0] && strcmp(qcol_name, config->columns[ci].name) == 0) { })selected({ } })>({ ESCAPED(config->columns[ci].label); })</option>
+<tr class="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+    ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
+    ({ const MD_Column *fcol = &config->columns[ci]; })
+    <td class="pl-3 py-1">
+        ({ if (fcol->name && md_col_queryable(fcol)) { })
+        ({ String_View cbox = sv_from_cstr("");
+           form_find(query, temp_sprintf("q_%s", fcol->name), &cbox);
+           String_View shown = cbox.count ? cbox
+               : (qcol_name[0] && strcmp(qcol_name, fcol->name) == 0
+                  ? sv_from_cstr(q_text) : sv_from_cstr("")); })
+        <input type="search" name="q_({ STR(fcol->name); })"
+               form="md-query-form" data-md-qbox
+               value="({ ESCAPED(temp_sprintf("%.*s", (int)shown.count, shown.data)); })"
+               placeholder="({ ESCAPED(fcol->label); })"
+               aria-label="Search ({ ESCAPED(fcol->label); })"
+               class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
         ({ } })
-        ({ } })
-    </select>
-    <input id="md-query-q" type="search" name="q"
-           value="({ ESCAPED(q_text); })"
-           placeholder="Search ({ ESCAPED(config->title); })..."
-           class="px-1 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white flex-1 min-w-[140px]">
-    <button type="submit"
-            class="px-2 py-1 text-xs font-medium text-gray-500 hover:text-gray-900 dark:hover:text-white border-b-2 border-gray-300 dark:border-gray-600 hover:border-b-blue-700">
-        Search
-    </button>
-    ({ if (q.count > 0) { })
-    <a href="({ STR(md_path); })"
-       title="Clear the search"
-       class="px-1.5 py-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">&#10005;</a>
+    </td>
     ({ } })
-</form>
-<script>
-(function () {
-    var f = document.getElementById('md-query-form');
-    if (!f) return;
-    var box = f.querySelector('input[name="q"]');
-    var timer;
-    box.addEventListener('input', function () {
-        clearTimeout(timer);
-        timer = setTimeout(function () { f.submit(); }, 400);
-    });
-    f.querySelector('select[name="qcol"]').addEventListener('change', function () {
-        f.submit();
-    });
-    if (box.value) {
-        box.focus();
-        box.setSelectionRange(box.value.length, box.value.length);
-    }
-})();
-</script>
+    <td class="pl-3 py-1">
+        <div class="flex items-center gap-1">
+            <input type="search" name="q" form="md-query-form" data-md-qbox
+                   value="({ ESCAPED(qcol_name[0] ? "" : q_text); })"
+                   placeholder="All..." aria-label="Search all columns"
+                   class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white min-w-0">
+            <button type="submit" form="md-query-form"
+                    title="Search" aria-label="Search"
+                    class="shrink-0 text-gray-500 hover:text-gray-900 dark:hover:text-white">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+            </button>
+            ({ if (search_active) { })
+            <a href="({ STR(md_path); })" title="Clear the search"
+               class="shrink-0 px-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">&#10005;</a>
+            ({ } })
+        </div>
+    </td>
+</tr>

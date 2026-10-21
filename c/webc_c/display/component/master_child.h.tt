@@ -16,7 +16,34 @@
            class="px-2 py-1.5 font-medium ({ if (show_deleted) { })bg-red text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Trash (<span data-trash-total>({ INT(trash_total); })</span>)</a>
     </div>
     ({ } })
-    ({ md_query_row(sb, config, md_path, q, q_text, qcol_name); })
+    <!-- The per-column filter row lives inside the table's header row;
+         its inputs post into this empty anchor form via the form
+         attribute. -->
+    <form id="md-query-form" method="GET" action="({ STR(md_path); })"></form>
+    <script>
+    (function () {
+        var boxes = document.querySelectorAll('[data-md-qbox]');
+        if (!boxes.length) return;
+        var f = document.getElementById('md-query-form');
+        var timer;
+        for (var i = 0; i < boxes.length; ++i) {
+            (function (box) {
+                box.addEventListener('input', function () {
+                    clearTimeout(timer);
+                    timer = setTimeout(function () { f.submit(); }, 400);
+                });
+            })(boxes[i]);
+        }
+        for (var j = 0; j < boxes.length; ++j) {
+            if (boxes[j].value) {
+                boxes[j].focus();
+                boxes[j].setSelectionRange(boxes[j].value.length,
+                                           boxes[j].value.length);
+                break;
+            }
+        }
+    })();
+    </script>
 ({ if (show_deleted) { })
     <div class="mb-3 px-2 py-1 flex justify-between items-center text-sm bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
         <span>Deleted rows &mdash; restore to bring them back, or leave them here.</span>
@@ -124,6 +151,7 @@
                         Actions
                     </th>
                 </tr>
+                ({ md_query_row(sb, config, md_path, sc->query_string, q_text, qcol_name, search.term_count > 0); })
             </thead>
             <tbody id="({ STR(page_container); })" class="divide-y divide-gray-200 dark:divide-gray-700">
 ({ } })
@@ -246,7 +274,7 @@
                                         ({ } })
                                     </div>
                                 ({ } else { })
-                                    <div class="flex flex-col gap-1 min-w-[140px]">
+                                    <div class="flex flex-col gap-1 min-w-35">
                                         <label class="text-xs text-gray-500 dark:text-gray-400">
                                             ({ ESCAPED(config->columns[ci].label); })
                                         </label>

@@ -200,18 +200,43 @@ static bool md_col_queryable(const MD_Column *col) {
     return col && !col->hidden;
 }
 
-// ?q / ?qcol resolved against this page's config: LIKE '%pattern%' over
-// the scoped column, or over every displayed column when col == NULL.
+#define MD_MAX_SEARCH_TERMS 8
+
+// One filter term: LIKE '%pattern%' over one queryable column (col), or
+// over every displayed column when col == NULL. The per-column filter
+// row submits ?q_<col>=<text> -- one term per filled box, ANDed; the
+// legacy ?q + ?qcol pair is a single term whose col is NULL when the
+// scope is empty or unknown (all-columns fallback).
 typedef struct {
     const MD_Column *col;      /* scoped column; NULL = all columns */
-    String_View      pattern;  /* "%text%" -- bound to every LIKE */
-    int              nbinds;   /* out: LIKE placeholders emitted */
+    String_View      pattern;  /* "%text%" -- bound to this term's LIKEs */
+    int              nbinds;   /* out: LIKE placeholders this term owns */
+} MD_SearchTerm;
+
+typedef struct {
+    MD_SearchTerm terms[MD_MAX_SEARCH_TERMS];
+    size_t        term_count;
 } MD_Search;
 
-// An empty q leaves pattern empty; a bare "%" is never built, so count > 1
-// (the surrounding percents) is the "searching" test.
+// Append one ANDed term; the pattern is capped at 100 chars and never
+// stored empty, so term_count > 0 is the "searching" test.
+static void md_search_add(MD_Search *search, const MD_Column *col,
+                          String_View pattern) {
+    if (!pattern.count || search->term_count >= MD_MAX_SEARCH_TERMS) return;
+    if (pattern.count > 100) pattern.count = 100;
+    String_Builder pat = {0};
+    sb_append_cstr(&pat, "%");
+    sb_append_buf(&pat, pattern.data, pattern.count);
+    sb_append_cstr(&pat, "%");
+    sb_append_null(&pat);
+    MD_SearchTerm *t = &search->terms[search->term_count++];
+    t->col = col;
+    t->pattern = sv_from_cstr(temp_strdup(pat.items));
+    sb_free(pat);
+}
+
 static bool md_search_on(const MD_Search *s) {
-    return s && s->pattern.count > 1;
+    return s && s->term_count > 0;
 }
 
 // Positional placeholders: $1..$N on postgres, ? elsewhere (bind indexes
@@ -232,16 +257,17 @@ static void md_append_like_cast(String_Builder *sb, db_t *db, const char *expr) 
 }
 
 // The whole WHERE for one master view: the soft-delete scope plus the
-// Data query search -- LIKE over the scoped column (or every displayed
-// one) and, for FK columns, over the label the cell shows (correlated
-// EXISTS, so "PAID" finds its orders without a join). Returns "" or
-// " WHERE ..."; nbinds counts LIKE placeholders: bind the same pattern to
-// 1..nbinds right after sql_prepare (md_bind_search).
+// table search -- each search term ANDed as its own parenthesized group
+// (LIKE over the scoped column, or every displayed one, and for FK
+// columns over the label the cell shows: a correlated EXISTS, so "PAID"
+// finds its orders without a join). Returns "" or " WHERE ..."; nbinds
+// counts LIKE placeholders: bind each term's pattern to the slots it
+// owns right after sql_prepare (md_bind_search).
 static const char *md_where(db_t *db, const MD_MasterConfig *config,
                             bool show_deleted, MD_Search *search,
                             int *nbinds)
 {
-    if (search) search->nbinds = 0;
+    if (nbinds) *nbinds = 0;
     String_Builder sb = {0};
     const char *joiner = " WHERE ";
     if (config->soft_delete) {
@@ -250,49 +276,53 @@ static const char *md_where(db_t *db, const MD_MasterConfig *config,
         joiner = " AND ";
     }
     if (md_search_on(search)) {
-        String_Builder cond = {0};
-        int n = 0;
-        for (size_t ci = 0; ci < config->column_count; ++ci) {
-            const MD_Column *col = &config->columns[ci];
-            if (!md_col_queryable(col)) continue;
-            if (search->col && search->col != col) continue;
-            if (cond.count) sb_append_cstr(&cond, " OR ");
-            if (col->cell) {
-                for (size_t p = 0; p < col->cell->part_count; ++p) {
-                    if (p) sb_append_cstr(&cond, " OR ");
-                    md_append_like_cast(&cond, db, col->cell->parts[p]);
+        for (size_t t = 0; t < search->term_count; ++t) {
+            const MD_SearchTerm *term = &search->terms[t];
+            String_Builder cond = {0};
+            int n = 0;
+            for (size_t ci = 0; ci < config->column_count; ++ci) {
+                const MD_Column *col = &config->columns[ci];
+                if (!md_col_queryable(col)) continue;
+                if (term->col && term->col != col) continue;
+                if (cond.count) sb_append_cstr(&cond, " OR ");
+                if (col->cell) {
+                    for (size_t p = 0; p < col->cell->part_count; ++p) {
+                        if (p) sb_append_cstr(&cond, " OR ");
+                        md_append_like_cast(&cond, db, col->cell->parts[p]);
+                        sb_append_cstr(&cond, md_ph(db, &n));
+                    }
+                } else if (col->type == COL_TYPE_FK_SELECT
+                           && col->fk_table && col->fk_label) {
+                    sb_append_cstr(&cond, "(");
+                    md_append_like_cast(&cond, db, col->name);
+                    sb_append_cstr(&cond, md_ph(db, &n));
+                    sb_append_cstr(&cond, " OR EXISTS (SELECT 1 FROM ");
+                    sb_append_cstr(&cond, col->fk_table);
+                    sb_append_cstr(&cond, " mdq WHERE mdq.id = ");
+                    sb_append_cstr(&cond, config->table);
+                    sb_append_cstr(&cond, ".");
+                    sb_append_cstr(&cond, col->name);
+                    sb_append_cstr(&cond, " AND ");
+                    md_append_like_cast(&cond, db,
+                                        temp_sprintf("mdq.%s", col->fk_label));
+                    sb_append_cstr(&cond, md_ph(db, &n));
+                    sb_append_cstr(&cond, "))");
+                } else {
+                    md_append_like_cast(&cond, db, col->name);
                     sb_append_cstr(&cond, md_ph(db, &n));
                 }
-            } else if (col->type == COL_TYPE_FK_SELECT
-                       && col->fk_table && col->fk_label) {
-                sb_append_cstr(&cond, "(");
-                md_append_like_cast(&cond, db, col->name);
-                sb_append_cstr(&cond, md_ph(db, &n));
-                sb_append_cstr(&cond, " OR EXISTS (SELECT 1 FROM ");
-                sb_append_cstr(&cond, col->fk_table);
-                sb_append_cstr(&cond, " mdq WHERE mdq.id = ");
-                sb_append_cstr(&cond, config->table);
-                sb_append_cstr(&cond, ".");
-                sb_append_cstr(&cond, col->name);
-                sb_append_cstr(&cond, " AND ");
-                md_append_like_cast(&cond, db,
-                                    temp_sprintf("mdq.%s", col->fk_label));
-                sb_append_cstr(&cond, md_ph(db, &n));
-                sb_append_cstr(&cond, "))");
-            } else {
-                md_append_like_cast(&cond, db, col->name);
-                sb_append_cstr(&cond, md_ph(db, &n));
             }
+            if (cond.count) {
+                sb_append_cstr(&sb, joiner);
+                sb_append_cstr(&sb, "(");
+                sb_append_buf(&sb, cond.items, cond.count);
+                sb_append_cstr(&sb, ")");
+                joiner = " AND ";
+            }
+            search->terms[t].nbinds = n;
+            if (nbinds) *nbinds += n;
+            sb_free(cond);
         }
-        if (cond.count) {
-            sb_append_cstr(&sb, joiner);
-            sb_append_cstr(&sb, "(");
-            sb_append_buf(&sb, cond.items, cond.count);
-            sb_append_cstr(&sb, ")");
-        }
-        if (search) search->nbinds = n;
-        if (nbinds) *nbinds = n;
-        sb_free(cond);
     }
     sb_append_null(&sb);
     char *out = temp_strdup(sb.items);
@@ -300,11 +330,19 @@ static const char *md_where(db_t *db, const MD_MasterConfig *config,
     return out;
 }
 
-// Bind the LIKE pattern to 1..nbinds (the same value in every slot).
+// Bind each term's pattern to the LIKE slots it owns (md_where emits the
+// terms' placeholders in order, so the slots run consecutively per term).
+// A NULL search (the trash-badge count ignores the filter) has no slots.
 static bool md_bind_search(sql_stmt *stmt, const MD_Search *search,
                            int nbinds) {
-    for (int b = 1; b <= nbinds; ++b) {
-        if (!sql_bind(stmt, b, SQL_SV(search->pattern))) return false;
+    if (!search) return true;
+    int slot = 1;
+    for (size_t t = 0; t < search->term_count && slot <= nbinds; ++t) {
+        for (int b = 0; b < search->terms[t].nbinds && slot <= nbinds;
+             ++b, ++slot) {
+            if (!sql_bind(stmt, slot, SQL_SV(search->terms[t].pattern)))
+                return false;
+        }
     }
     return true;
 }
@@ -422,13 +460,16 @@ static bool md_count_masters(db_t *db, const MD_MasterConfig *config,
     return ok;
 }
 
-// The dedicated search row above the master table (a slim GET form, not a
-// tab card): scope dropdown + keyword box + clear link, with a debounce
-// script. display/component/md_child_query_row.h.tt renders it; ?q/?qcol
-// narrow whichever view is active (Live or Trash) via md_where.
+// The per-column filter row: the first <tr> inside the master table's
+// <thead>, one search input under each displayed column (+ the legacy
+// all-columns box in the last cell with the submit/clear controls).
+// display/component/md_child_query_row.h.tt renders it; the inputs post
+// into the empty #md-query-form anchor (form attribute) as ?q_<col>=
+// <text>, one ANDed term per filled box (md_where).
 static void md_query_row(String_Builder *sb, const MD_MasterConfig *config,
-                         const char *md_path, String_View q,
-                         const char *q_text, const char *qcol_name) {
+                         const char *md_path, String_View query,
+                         const char *q_text, const char *qcol_name,
+                         bool search_active) {
 #define OUT(buf, size) sb_append_buf(sb, buf, size);
 #define STR(s) sb_append_cstr(sb, s);
 #define ESCAPED(s) sb_append_html_escaped(sb, s ? s : "");
@@ -450,16 +491,17 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     // The view strip is Live + Trash on a soft_delete page (?deleted=1 =
     // the trash view; no_live hides Live on tables that are never a
     // directly-filled list, and non-soft_delete pages get no strip). The
-    // dedicated search row above the table (?q text, ?qcol scope) filters
-    // whichever view is active.
+    // per-column filter row in the table's <thead> (?q_<col> per filled
+    // box) filters whichever view is active.
     String_View del_sv = {0};
     bool show_deleted = config->soft_delete
         && form_find(sc->query_string, "deleted", &del_sv)
         && sv_eq(del_sv, sv_from_cstr("1"));
-    // Table search: ?q=<text> LIKE-matches across every displayed
-    // column, or the single column named by ?qcol=<column name>. qcol is
-    // validated against this page's config (never interpolated from the
-    // URL); q is bound. An unknown scope falls back to all columns.
+    // Table search: the per-column filter row submits ?q_<col>=<text>
+    // per filled box (one ANDed term each); the legacy ?q + ?qcol pair
+    // still works as one term. Columns come from this page's config
+    // (never interpolated from the URL); every pattern is bound. A qcol
+    // that is empty or unknown searches every displayed column.
     String_View q = sv_from_cstr(""), qcol_sv = sv_from_cstr("");
     form_find(sc->query_string, "q", &q);
     form_find(sc->query_string, "qcol", &qcol_sv);
@@ -469,22 +511,24 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     const char *qcol_name = "";
     MD_Search search = {0};
     if (q.count > 0) {
-        String_Builder pat = {0};
-        sb_append_cstr(&pat, "%");
-        sb_append_buf(&pat, q.data, q.count);
-        sb_append_cstr(&pat, "%");
-        sb_append_null(&pat);
-        search.pattern = sv_from_cstr(temp_strdup(pat.items));
-        sb_free(pat);
+        const MD_Column *legacy_col = NULL;
         for (size_t ci = 0; ci < config->column_count; ++ci) {
             const MD_Column *col = &config->columns[ci];
             if (col->name && md_col_queryable(col)
                 && sv_eq(qcol_sv, sv_from_cstr(col->name))) {
-                search.col = col;
+                legacy_col = col;
                 qcol_name = col->name;
                 break;
             }
         }
+        md_search_add(&search, legacy_col, q);
+    }
+    for (size_t ci = 0; ci < config->column_count; ++ci) {
+        const MD_Column *col = &config->columns[ci];
+        if (!col->name || !md_col_queryable(col)) continue;
+        String_View cv = sv_from_cstr("");
+        if (form_find(sc->query_string, temp_sprintf("q_%s", col->name), &cv))
+            md_search_add(&search, col, cv);
     }
     Page_Info page_info = {0};                    // master list window
     page_info_parse(sc->query_string, "page", &page_info);
