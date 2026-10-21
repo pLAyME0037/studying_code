@@ -196,36 +196,47 @@ static const char *report_shop_name(void) {
     return name && name[0] ? name : "ហាង POS";
 }
 
-// Append a decimal string with thousands separators in the integer part and,
+// Format a decimal string with thousands separators in the integer part and,
 // for money, exactly two decimals. Non-numeric input (blank, a stray label)
-// is emitted verbatim so a mistyped column type never eats data. The fraction
-// is preserved as-is for NUM (SUM can be fractional) but pinned to 2 for MONEY.
-static void sb_append_number(String_Builder *sb, const char *v, bool money) {
-    if (!v || !v[0]) { 
-		sb_append_cstr(sb, money ? "0.00" : "0"); 
-		return; 
-	}
+// is emitted escaped so a mistyped column type never eats data. The fraction
+// is preserved as-is for NUM (SUM can be fractional) but pinned to 2 for
+// MONEY. Returns a temp-arena string that is safe to print unescaped.
+static const char *report_format_number(const char *v, bool money) {
+    if (!v || !v[0]) return money ? "0.00" : "0";
     const char *p = v;
     bool neg = false;
     if (*p == '-') { neg = true; ++p; }
     const char *dot = strchr(p, '.');
     size_t int_len = dot ? (size_t)(dot - p) : strlen(p);
-    // Guard: anything that is not digits (or one dot) is passed through raw.
+    // Guard: anything that is not digits (or one dot) passes through escaped.
+    bool plain = true;
     for (size_t i = 0; i < int_len; ++i) {
-        if (p[i] < '0' || p[i] > '9') { sb_append_html_escaped(sb, v); return; }
+        if (p[i] < '0' || p[i] > '9') { plain = false; break; }
     }
-    if (neg) sb_append_cstr(sb, "-");
-    for (size_t i = 0; i < int_len; ++i) {
-        if (i > 0 && (int_len - i) % 3 == 0) sb_append_cstr(sb, ",");
-        sb_append_buf(sb, p + i, 1);
+    String_Builder sb = {0};
+    if (!plain) {
+        sb_append_html_escaped(&sb, v);
+    } else {
+        if (neg) sb_append_cstr(&sb, "-");
+        for (size_t i = 0; i < int_len; ++i) {
+            if (i > 0 && (int_len - i) % 3 == 0) sb_append_cstr(&sb, ",");
+            sb_append_buf(&sb, p + i, 1);
+        }
+        if (money) {
+            // Always two decimals: the DB stores "3990.0" (one digit) and
+            // money must print 3,990.00 -- pad a short fraction with '0',
+            // truncate a long one past the second digit.
+            const char *f = dot ? dot + 1 : "";
+            sb_appendf(&sb, ".%c%c", f[0] ? f[0] : '0', f[1] ? f[1] : '0');
+        } else if (dot) {
+            sb_append_cstr(&sb, ".");
+            sb_append_cstr(&sb, dot + 1);
+        }
     }
-    if (money) {
-        // Always two decimals: the DB stores "3990.0" (one digit) and money
-        // must print 3,990.00 -- pad a short fraction with '0', truncate a
-        // long one past the second digit.
-        const char *f = dot ? dot + 1 : "";
-        sb_appendf(sb, ".%c%c", f[0] ? f[0] : '0', f[1] ? f[1] : '0');
-    } else if (dot) { sb_append_cstr(sb, "."); sb_append_cstr(sb, dot + 1); }
+    sb_append_null(&sb);
+    const char *r = temp_strdup(sb.items ? sb.items : "");
+    sb_free(sb);
+    return r;
 }
 
 // Column type for result column `ci`; extra columns beyond the declared list
@@ -245,10 +256,9 @@ static Report_Col_Type report_col_type(const Report_Def *rep, int ci) {
 // (live page numbers) repeats per page and nothing doubles up on page 1.
 // =========================================================================
 
-#define REPORT_KINGDOM_1 "ព្រះរាជាណាចក្រកម្ពុជា"
-#define REPORT_KINGDOM_2 "ជាតិ សាសនា ព្រះមហាក្សត្រ"
-#define REPORT_MEMO_FROM "ពី ក្រុមបច្ចេកទេស"
-#define REPORT_MEMO_TO   "ទៅ ខណះគ្រប់គ្រង"
+// The Cambodian letterhead strings (Kingdom motto, memo from/to, report
+// titles) live in display/report/*.h.tt -- design rule: copy the user may
+// change belongs to a template, not to C.
 #define REPORT_LOGO_PATH "resource/image/user1.png"
 
 // Append `n` bytes of `s` as base64. The logo is embedded as a data: URI so
@@ -269,52 +279,34 @@ static void sb_append_base64(String_Builder *sb, const unsigned char *s,
     }
 }
 
-// Embed the shop logo as a base64 data: URI (type sniffed from magic bytes --
-// user1.png is really a JPEG). Returns false if unreadable, in which case no
-// <img> is emitted (the shop name still prints).
-static bool report_append_logo(String_Builder *out) {
+// Load the shop logo and sniff its MIME from magic bytes (user1.png is really
+// a JPEG). Fills `b64` (raw base64) and `*mime`. Returns false if unreadable,
+// in which case the letterhead template emits no <img> (the shop name still
+// prints).
+static bool report_logo_data(String_Builder *b64, const char **mime) {
     String_Builder img = {0};
     if (!read_entire_file(REPORT_LOGO_PATH, &img)) { sb_free(img); return false; }
-    const char *mime = "image/png";
-    if (img.count >= 4 && (unsigned char)img.items[0] == 0x89
-        && img.items[1] == 'P')
-        mime = "image/png";
-    else if (img.count >= 2 && (unsigned char)img.items[0] == 0xFF
-             && (unsigned char)img.items[1] == 0xD8)
-        mime = "image/jpeg";
-    sb_appendf(out, "<img src=\"data:%s;base64,", mime);
-    sb_append_base64(out, (const unsigned char *)img.items, img.count);
-    sb_append_cstr(out, "\" width=\"54\" height=\"54\">");
+    *mime = "image/png";
+    if (img.count >= 2 && (unsigned char)img.items[0] == 0xFF
+        && (unsigned char)img.items[1] == 0xD8)
+        *mime = "image/jpeg";
+    sb_append_base64(b64, (const unsigned char *)img.items, img.count);
     sb_free(img);
     return true;
 }
 
-// Emit the letterhead + report title at the top of the body (page 1).
+// Emit the letterhead + report title at the top of the body (page 1). The
+// markup and the Cambodian copy live in display/report/letterhead.h.tt
+// (design rule: state-driven HTML belongs to a template); this host feeds it
+// the logo bytes, the shop name and the report title.
 static void report_append_letterhead(String_Builder *out, const Report_Def *rep) {
-    // Kingdom motto, centered, in the formal Khmer face.
-    sb_append_cstr(out, "<p align=\"center\" style=\"font-family:'Khmer OS Muol';"
-                       " margin:0\">");
-    sb_append_html_escaped(out, REPORT_KINGDOM_1);
-    sb_append_cstr(out, "</p><p align=\"center\" style=\"font-family:'Khmer OS Muol';"
-                       " margin:0\">");
-    sb_append_html_escaped(out, REPORT_KINGDOM_2);
-    sb_append_cstr(out, "</p>");
-    // Logo + shop name (left) | memo from/to (right), one borderless row.
-    sb_append_cstr(out, "<table width=\"100%\" border=\"0\" cellspacing=\"0\" "
-                        "cellpadding=\"0\"><tr>");
-    sb_append_cstr(out, "<td align=\"left\" width=\"55%\">");
-    report_append_logo(out);
-    sb_append_cstr(out, " ");
-    sb_append_html_escaped(out, report_shop_name());
-    sb_append_cstr(out, "</td><td align=\"right\" width=\"45%\">");
-    sb_append_html_escaped(out, REPORT_MEMO_FROM);
-    sb_append_cstr(out, "<br>");
-    sb_append_html_escaped(out, REPORT_MEMO_TO);
-    sb_append_cstr(out, "</td></tr></table>");
-    // Report title, centered + bold.
-    sb_append_cstr(out, "<p align=\"center\" style=\"margin:8px 0\"><b>");
-    sb_append_html_escaped(out, rep->khmer_title);
-    sb_append_cstr(out, "</b></p>");
+#define OUT(buf, size) sb_append_buf(out, buf, size);
+#define STR(x) sb_append_cstr(out, (x) ? (x) : "");
+#define ESCAPED(x) sb_append_html_escaped(out, (x) ? (x) : "");
+#include "build/h_to_html/report/letterhead.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 }
 
 bool report_build_html(const Report_Def *rep, String_Builder *out,
@@ -322,12 +314,19 @@ bool report_build_html(const Report_Def *rep, String_Builder *out,
     db_t *db = open_webc_db();
     if (!db) return false;
 
-    String_Builder rows = {0};
     size_t n_rows = 0;
     int ncols = 0;
     bool ok = true;
-    // Running totals for numeric columns (index into a ncols-sized array).
     bool has_num = false;
+    // Markup-free result collection: one formatted value string per cell
+    // (flat nrows*ncols), per-column numeric flags, and the bold footer
+    // row's formatted totals. The document markup itself lives in
+    // display/report/doc.h.tt (design rule: state-driven HTML belongs to a
+    // template).
+    struct { const char **items; size_t count, capacity; } cells = {0};
+    bool *is_num = NULL;
+    double *totals = NULL;
+    const char **totals_str = NULL;
 
     sql_stmt stmt = {0};
     if (!sql_prepare(db, rep->sql, &stmt)) {
@@ -336,11 +335,12 @@ bool report_build_html(const Report_Def *rep, String_Builder *out,
     }
     ncols = sql_col_count(&stmt);
     {
-        // ncols is fixed once the statement is prepared; size the totals on
+        // ncols is fixed once the statement is prepared; size the columns on
         // the stack-free heap so a wide result cannot overflow a VLA.
-        double *totals = calloc((size_t)ncols, sizeof *totals);
-        bool *is_num = calloc((size_t)ncols, sizeof *is_num);
-        if (!totals || !is_num) { free(totals); free(is_num); ok = false; goto done; }
+        is_num = calloc((size_t)ncols, sizeof *is_num);
+        totals = calloc((size_t)ncols, sizeof *totals);
+        totals_str = calloc((size_t)ncols, sizeof *totals_str);
+        if (!is_num || !totals || !totals_str) { ok = false; goto done; }
         for (int ci = 0; ci < ncols; ++ci) {
             Report_Col_Type t = report_col_type(rep, ci);
             is_num[ci] = (t == REPORT_COL_NUM || t == REPORT_COL_MONEY);
@@ -348,123 +348,74 @@ bool report_build_html(const Report_Def *rep, String_Builder *out,
         }
 
         while (sql_step(&stmt) == SQL_ROW) {
-            // Zebra via a presentational bgcolor (CSS nth-child does not
-            // survive the html->FODT import).
-            sb_append_cstr(&rows, (n_rows % 2) ? "<tr bgcolor=\"#f3f4f6\">"
-                                               : "<tr>");
             for (int ci = 0; ci < ncols; ++ci) {
                 const char *v = sql_col_text(&stmt, ci);
                 Report_Col_Type t = report_col_type(rep, ci);
                 if (t == REPORT_COL_DATE) {
                     // Human date ("05 Oct 2026, 11:56") whether the stamp is
                     // date-only or carries a time; left-aligned like prose.
-                    sb_append_cstr(&rows, "<td>");
-                    sb_append_html_escaped(&rows, md_date_human(v ? v : ""));
-                    sb_append_cstr(&rows, "</td>");
+                    da_append(&cells, temp_strdup(md_date_human(v ? v : "")));
                 } else if (is_num[ci]) {
-                    double d = v ? atof(v) : 0.0;
-                    totals[ci] += d;
-                    sb_append_cstr(&rows, "<td class=\"num\">");
-                    sb_append_number(&rows, v, t == REPORT_COL_MONEY);
-                    sb_append_cstr(&rows, "</td>");
+                    totals[ci] += v ? atof(v) : 0.0;
+                    da_append(&cells,
+                              report_format_number(v, t == REPORT_COL_MONEY));
                 } else {
-                    sb_append_cstr(&rows, "<td>");
-                    sb_append_html_escaped(&rows, v ? v : "");
-                    sb_append_cstr(&rows, "</td>");
+                    da_append(&cells, temp_strdup(v ? v : ""));
                 }
             }
-            sb_append_cstr(&rows, "</tr>\n");
             ++n_rows;
         }
         sql_finalize(&stmt);
 
         // A bold totals row reads the sum of every numeric column (money to 2
-        // decimals); text/date cells in that row stay empty.
+        // decimals); text/date cells in that row stay empty (the template
+        // places the "Total" label in the first non-numeric column).
         if (has_num && n_rows > 0) {
-            sb_append_cstr(&rows, "<tr bgcolor=\"#e5e7eb\">");
-            bool label_placed = false;
             for (int ci = 0; ci < ncols; ++ci) {
-                if (!is_num[ci]) {
-                    // First non-numeric column carries the "Total" label so the
-                    // row is self-describing without an extra legend.
-                    if (!label_placed) {
-                        sb_append_cstr(&rows,
-                            "<td><b>សរុប</b></td>");
-                        label_placed = true;
-                    } else {
-                        sb_append_cstr(&rows, "<td></td>");
-                    }
-                    continue;
-                }
+                if (!is_num[ci]) continue;
                 char buf[64];
-                if (report_col_type(rep, ci) == REPORT_COL_MONEY)
+                bool money = (report_col_type(rep, ci) == REPORT_COL_MONEY);
+                if (money)
                     snprintf(buf, sizeof buf, "%.2f", totals[ci]);
                 else if (totals[ci] == (double)(long long)totals[ci])
                     snprintf(buf, sizeof buf, "%lld", (long long)totals[ci]);
                 else
                     snprintf(buf, sizeof buf, "%.2f", totals[ci]);
-                sb_append_cstr(&rows, "<td class=\"num\"><b>");
-                sb_append_number(&rows, buf,
-                                 report_col_type(rep, ci) == REPORT_COL_MONEY);
-                sb_append_cstr(&rows, "</b></td>");
+                totals_str[ci] = report_format_number(buf, money);
             }
-            sb_append_cstr(&rows, "</tr>\n");
         }
-        free(totals);
-        free(is_num);
     }
 
-    {
-        sb_append_cstr(out, "<!DOCTYPE html>\n<html lang=\"km\">"
-                            "<head><meta charset=\"utf-8\">");
-        sb_append_cstr(out, "<title>");
-        sb_append_html_escaped(out, rep->khmer_title);
-        sb_append_cstr(out, "</title><style>");
-        sb_append_cstr(out, REPORT_CSS);
-        sb_append_cstr(out, "</style></head><body>");
-
-        // Cambodian official letterhead (page 1): Kingdom + logo + shop name
-        // + memo from/to, then the report title. The date+row-count imprint
-        // is carried by the repeating page-style header, so no separate meta
-        // line here (it would double up on page 1).
-        report_append_letterhead(out, rep);
-
-        // Table only. The column-header row lives in <tbody> -- NOT <thead>
-        // -- so LibreOffice prints it once at the top instead of repeating it
-        // on every page. Grid/dark-header/zebra are presentational attributes
-        // (CSS backgrounds + borders do not survive the html->FODT import).
-
-        sb_append_cstr(out, "<table border=\"1\" cellpadding=\"1\" "
-                            "cellspacing=\"0\" width=\"100%\"><tbody><tr>");
-        for (int ci = 0; ci < ncols; ++ci) {
-            const char *label = (size_t)ci < rep->header_count ? rep->headers[ci] 
-                                                               : NULL;
-            Report_Col_Type t = report_col_type(rep, ci);
-            // Numeric column headers align with their right-aligned cells.
-            bool num = (t == REPORT_COL_NUM || t == REPORT_COL_MONEY);
-            sb_append_cstr(out, num ? "<th bgcolor=\"#1f2937\" class=\"num\">"
-                                    : "<th bgcolor=\"#1f2937\">");
-            sb_append_cstr(out, "<font color=\"#ffffff\">");
-            if (label) sb_append_html_escaped(out, label);
-            else sb_appendf(out, "%d", ci + 1);
-            sb_append_cstr(out, "</font></th>");
-        }
-        sb_append_cstr(out, "</tr>");
-        sb_append_sv(out, sb_to_sv(rows));
-        sb_append_cstr(out, "</tbody></table>");
-
-        sb_append_cstr(out, "</body></html>");
-        // report_convert() runs strlen() on this buffer, and a String_Builder
-        // is NOT NUL-terminated by default -- without this the read runs past
-        // the allocation into whatever heap follows (it once dragged geo
-        // migration SQL into the last page).
-        sb_append_null(out);
-    }
+    // The whole document: head + A4/CSS, the Cambodian letterhead (page 1),
+    // the table shell with its header row (in <tbody>, NOT <thead> -- so
+    // LibreOffice prints it once instead of repeating it per page), the zebra
+    // data rows and the bold totals row. Zebra/grid/dark-header are
+    // presentational bgcolor attributes because CSS backgrounds + borders do
+    // not survive the html->FODT import.
+#define OUT(buf, size) sb_append_buf(out, buf, size);
+#define STR(x) sb_append_cstr(out, (x) ? (x) : "");
+#define INT(x) sb_appendf(out, "%d", (x));
+#define ESCAPED(x) sb_append_html_escaped(out, (x) ? (x) : "");
+#define CELL(ri, ci) (cells.items[(size_t)(ri) * (size_t)ncols + (size_t)(ci)])
+#include "build/h_to_html/report/doc.h"
+#undef OUT
+#undef STR
+#undef INT
+#undef ESCAPED
+#undef CELL
+    // report_convert() runs strlen() on this buffer, and a String_Builder
+    // is NOT NUL-terminated by default -- without this the read runs past
+    // the allocation into whatever heap follows (it once dragged geo
+    // migration SQL into the last page).
+    sb_append_null(out);
 
     if (n_rows_out) *n_rows_out = n_rows;
 
 done:
-    sb_free(rows);
+    free(cells.items);
+    free(is_num);
+    free(totals);
+    free(totals_str);
     db_close(db);
     return ok;
 }
@@ -812,41 +763,16 @@ void serve_reports_index(Serve_Context *sc) {
     sb->count = 0;
     render_page_header(sb, "Reports", "/reports");
 
-    sb_append_cstr(sb,
-        "<section class=\"px-4 py-3 max-w-5xl\">"
-        "<p class=\"text-xs text-gray-500 dark:text-gray-400 mb-2\">"
-        "ឯកសារ PDF/DOCX បង្កើតតាមរយៈ LibreOffice · A4 · ភាសាខ្មែរ</p>"
-        "<table class=\"w-full text-sm border border-gray-200 "
-        "dark:border-gray-700\">"
-        "<thead><tr class=\"bg-slate-100 dark:bg-slate-800 text-xs "
-        "uppercase tracking-wide text-slate-500\">"
-        "<th class=\"px-2 py-1.5 text-left\">របាយការណ៍</th>"
-        "<th class=\"px-2 py-1.5 text-left\">ID</th>"
-        "<th class=\"px-2 py-1.5 text-left\">ទម្រង់</th>"
-        "</tr></thead><tbody>");
-    for (size_t i = 0; i < report_registry_count; ++i) {
-        const Report_Def *rep = &report_registry[i];
-        sb_append_cstr(sb,
-            "<tr class=\"border-t border-gray-200 dark:border-gray-700 "
-            "hover:bg-gray-50 dark:hover:bg-gray-800/60\">"
-            "<td class=\"px-2 py-1.5\">");
-        sb_append_html_escaped(sb, rep->khmer_title);
-        sb_append_cstr(sb, "</td><td class=\"px-2 py-1.5 font-mono "
-                           "text-xs\">");
-        sb_append_cstr(sb, rep->id);
-        sb_append_cstr(sb, "</td><td class=\"px-2 py-1.5\">"
-                           "<a class=\"text-indigo-600 hover:underline "
-                           "font-medium\" href=\"/reports/");
-        sb_append_cstr(sb, rep->id);
-        sb_append_cstr(sb,
-            ".pdf\">PDF</a>"
-            "<span class=\"text-gray-300 dark:text-gray-600 mx-1\">·</span>"
-            "<a class=\"text-indigo-600 hover:underline font-medium\" "
-            "href=\"/reports/");
-        sb_append_cstr(sb, rep->id);
-        sb_append_cstr(sb, ".docx\">DOCX</a></td></tr>");
-    }
-    sb_append_cstr(sb, "</tbody></table></section>");
+    // The list markup lives in display/report/index.h.tt (design rule:
+    // state-driven HTML belongs to a template); this host feeds it the
+    // registry of reports.
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define STR(x) sb_append_cstr(sb, (x) ? (x) : "");
+#define ESCAPED(x) sb_append_html_escaped(sb, (x) ? (x) : "");
+#include "build/h_to_html/report/index.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 
     render_page_footer(sb);
     http_render_response(sc, 200, "text/html", sb_to_sv(*sb));

@@ -565,6 +565,38 @@ vanilla JS only.
   (http 120 / pos 366 / shop 118 / role 48 / crud_contract 170 /
   mysql 41 / https 6).
 
+## Phase 18 - Inline-HTML migration to display/**.tt (suite 869 PASS)
+- Remaining state-driven inline HTML moved out of src/ into templates
+  (design rule: markup the user/code state changes lives in display/,
+  only the 403/404/500 status shells stay inline):
+  - src/helper/cells.c -> display/component/cell_{stack,avatar,activity}.h.tt
+    (renderers are thin hosts; computed rank/ring/status_cls/initial
+    stay in C; cell_append_value deleted, inlined as an if/else).
+  - src/i18n/i18n.c -> display/i18n/lang_form.h.tt (Lang_Row decl
+    island, selected conditional, noscript fallback).
+  - src/report/report.c -> display/report/{letterhead,doc,index}.h.tt.
+    report_build_html now collects markup-free data (formatted cell
+    values da-array, is_num flags, formatted totals) and the whole
+    A4 document (Kingdom letterhead, <tbody> header row, zebra rows,
+    bold totals) renders from doc.h.tt; Cambodian copy moved from C
+    defines into the templates; report_append_logo split into
+    report_logo_data (bytes+MIME only, magic-byte JPEG sniff) with the
+    data-URI <img> in the template; sb_append_number -> report_format_number.
+  - src/shop/{shop,cart,checkout}.c -> display/shop/{chrome_start,chrome_end,
+    index,product,cart,checkout,order}.h.tt (shared chrome, catalog with
+    chip-data array + grid + pager, detail, cart table, checkout form,
+    confirmation with collected Order_Line array). e-shop workflow
+    untouched - only markup moved; storefront keeps max-w-5xl.
+- ESCAPED macro: unguarded (x) in shop hosts (arrays would trip
+  -Waddress); NULL-guarded variants where args can be NULL.
+- css/output.css: superset only (tailwind also scans display/*.tt now).
+- Verification: byte-identical output against the same-DB snapshots for
+  every migrated page (dashboard, 5 pos pages, storefront, cart,
+  product, checkout, order, search, reports); report PDF/DOCX embed the
+  letterhead, logo media, zebra/totals/header fills. Suite: 869 PASS
+  (http 120 / pos 366 / shop 118 / role 48 / crud_contract 170 /
+  mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

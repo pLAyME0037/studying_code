@@ -79,11 +79,9 @@ const char *md_cell_part_label(const MD_Cell *cell, size_t part) {
     return cell->parts[part];
 }
 
-static void cell_append_value(String_Builder *sb, const char *v) {
-    if (v && *v) sb_append_html_escaped(sb, v);
-    else sb_append_cstr(sb, "&nbsp;");
-}
-
+// The markup of each style lives in display/component/cell_*.h.tt (design
+// rule: state-driven HTML belongs to a template); this file keeps the data
+// prep (values, rings, initials) and hosts the template.
 static void cell_render_stack(String_Builder *sb, const MD_Cell *cell,
                               char *const *values, size_t slot)
 {
@@ -95,14 +93,13 @@ static void cell_render_stack(String_Builder *sb, const MD_Cell *cell,
         "text-gray-400 dark:text-gray-500",
     };
     const size_t n = sizeof(rank) / sizeof(rank[0]);
-    sb_append_cstr(sb, "<div class=\"flex flex-col leading-tight\">");
-    for (size_t p = 0; p < cell->part_count; ++p) {
-        sb_append_cstr(sb, temp_sprintf("<span class=\"text-xs %s\">",
-                                        rank[p < n ? p : n - 1]));
-        cell_append_value(sb, values[slot + p]);
-        sb_append_cstr(sb, "</span>");
-    }
-    sb_append_cstr(sb, "</div>");
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define STR(s) sb_append_cstr(sb, s);
+#define ESCAPED(s) sb_append_html_escaped(sb, s ? s : "");
+#include "build/h_to_html/component/cell_stack.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 }
 
 // Status -> Catppuccin accent (blue / peach / red) for the avatar ring and
@@ -130,54 +127,29 @@ static void cell_render_avatar(String_Builder *sb, const MD_Cell *cell,
 
     // 40px rounded picture, ringed by account status at a glance.
     const char *ring = accent ? temp_sprintf("ring-2 ring-%s", accent) : "";
-    sb_append_cstr(sb, "<div class=\"flex items-center gap-2\">");
-    if (img[0]) {
-        sb_append_cstr(sb, "<img src=\"");
-        sb_append_html_escaped(sb, img);
-        sb_append_cstr(sb, temp_sprintf(
-            "\" alt=\"\" loading=\"lazy\""
-            " class=\"h-10 w-10 rounded-full object-cover shrink-0 %s\">",
-            ring));
-    } else {
-        // Initials circle (first UTF-8 char of the name) instead of a
-        // gray box: a missing picture still reads as a person.
-        char initial[8] = {0};
-        if (name[0]) {
-            const unsigned char *p = (const unsigned char *) name;
-            size_t n = 1;
-            if ((p[0] & 0xE0) == 0xC0)      n = 2;
-            else if ((p[0] & 0xF0) == 0xE0) n = 3;
-            else if ((p[0] & 0xF8) == 0xF0) n = 4;
-            else if (p[0] & 0x80)           n = 1;   // invalid lead byte
-            memcpy(initial, name, n < sizeof(initial) ? n : sizeof(initial) - 1);
-        }
-        sb_append_cstr(sb, temp_sprintf(
-            "<span class=\"h-10 w-10 rounded-full shrink-0 inline-flex"
-            " items-center justify-center text-sm font-semibold"
-            " bg-surface1 text-subtext0 %s\">", ring));
-        if (initial[0]) sb_append_html_escaped(sb, initial);
-        else            sb_append_cstr(sb, "?");
-        sb_append_cstr(sb, "</span>");
+    const char *status_cls = accent ? temp_sprintf("text-%s", accent)
+                                    : "text-overlay0";
+    // Initials circle (first UTF-8 char of the name) instead of a gray
+    // box: a missing picture still reads as a person.
+    char initial_buf[8] = {0};
+    const char *initial = initial_buf;
+    if (!img[0] && name[0]) {
+        const unsigned char *p = (const unsigned char *) name;
+        size_t n = 1;
+        if ((p[0] & 0xE0) == 0xC0)      n = 2;
+        else if ((p[0] & 0xF0) == 0xE0) n = 3;
+        else if ((p[0] & 0xF8) == 0xF0) n = 4;
+        else if (p[0] & 0x80)           n = 1;   // invalid lead byte
+        memcpy(initial_buf, name,
+               n < sizeof(initial_buf) ? n : sizeof(initial_buf) - 1);
     }
-    sb_append_cstr(sb, "<div class=\"flex flex-col leading-tight min-w-0\">");
-    sb_append_cstr(sb,
-        "<span class=\"text-sm font-medium text-gray-900 dark:text-gray-100\">");
-    cell_append_value(sb, name);
-    sb_append_cstr(sb, "</span>");
-    if (cell->part_count > 2) {
-        sb_append_cstr(sb,
-            "<span class=\"text-xs text-gray-500 dark:text-gray-400\">");
-        cell_append_value(sb, sub);
-        sb_append_cstr(sb, "</span>");
-    }
-    if (cell->part_count > 3) {
-        sb_append_cstr(sb, temp_sprintf(
-            "<span class=\"text-[10px] font-semibold uppercase tracking-wide %s\">",
-            accent ? temp_sprintf("text-%s", accent) : "text-overlay0"));
-        cell_append_value(sb, status);
-        sb_append_cstr(sb, "</span>");
-    }
-    sb_append_cstr(sb, "</div></div>");
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define STR(s) sb_append_cstr(sb, s);
+#define ESCAPED(s) sb_append_html_escaped(sb, s ? s : "");
+#include "build/h_to_html/component/cell_avatar.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 }
 
 // created/updated/deleted stamps: human dates, color-ranked, and a red
@@ -190,31 +162,14 @@ static void cell_render_activity(String_Builder *sb, const MD_Cell *cell,
                         ? values[slot + 1] : "";
     const char *deleted = cell->part_count > 2 && values[slot + 2]
                         ? values[slot + 2] : "";
-    sb_append_cstr(sb, "<div class=\"flex flex-col leading-tight text-xs\">");
-    bool wrote = false;
-    if (created && *created) {
-        wrote = true;
-        sb_append_cstr(sb, "<span class=\"text-overlay0\">Joined "
-                           "<span class=\"text-text font-medium\">");
-        sb_append_cstr(sb, md_date_human(created));
-        sb_append_cstr(sb, "</span></span>");
-    }
-    if (updated && *updated && (!created || strcmp(updated, created) != 0)) {
-        wrote = true;
-        sb_append_cstr(sb, "<span class=\"text-overlay0\">Edited "
-                           "<span class=\"text-subtext0\">");
-        sb_append_cstr(sb, md_date_human(updated));
-        sb_append_cstr(sb, "</span></span>");
-    }
-    if (deleted && *deleted) {
-        wrote = true;
-        sb_append_cstr(sb, "<span class=\"text-red font-semibold\">DELETED "
-                           "<span class=\"font-normal\">");
-        sb_append_cstr(sb, md_date_human(deleted));
-        sb_append_cstr(sb, "</span></span>");
-    }
-    if (!wrote) sb_append_cstr(sb, "&nbsp;");
-    sb_append_cstr(sb, "</div>");
+    bool wrote = (created && *created)
+        || (updated && *updated && (!created || strcmp(updated, created) != 0))
+        || (deleted && *deleted);
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define STR(s) sb_append_cstr(sb, s);
+#include "build/h_to_html/component/cell_activity.h"
+#undef OUT
+#undef STR
 }
 
 const char *md_cell_render(const MD_Cell *cell, char *const *values, size_t slot) {

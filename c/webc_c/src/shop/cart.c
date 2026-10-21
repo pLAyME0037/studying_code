@@ -144,109 +144,16 @@ void serve_shop_cart(Serve_Context *sc) {
 
     String_Builder content = {0};
     shop_chrome_start(&content, sc, "/cart");
-    sb_append_cstr(&content,
-        "<div class=\"bg-mantle border border-surface0\">"
-        "<div class=\"bg-text text-onbase px-3 py-2 flex items-center"
-        " justify-between\"><span class=\"text-sm font-semibold\">");
-    sb_append_html_escaped(&content, tr("cart.title", "រទេះទំនិញ"));
-    sb_append_cstr(&content,
-        "</span>"
-        "<a href=\"/\" class=\"text-xs text-onbase/70 hover:text-onbase\">");
-    sb_append_html_escaped(&content, tr("cart.continue", "បន្តទិញ"));
-    sb_append_cstr(&content, "</a></div>");
 
-    if (cart.count == 0) {
-        sb_append_cstr(&content,
-            "<div class=\"text-center px-3 py-8\">"
-            "<div class=\"text-overlay0 text-sm\">");
-        sb_append_html_escaped(&content,
-                               tr("cart.empty", "រទេះទំនិញទំនេរ"));
-        sb_append_cstr(&content,
-            "</div>"
-            "<a href=\"/\" class=\"text-xs text-blue hover:underline\">");
-        sb_append_html_escaped(&content,
-                               tr("cart.view_products", "មើលផលិតផល"));
-        sb_append_cstr(&content, "</a></div>");
-    } else {
-        for (size_t i = 0; i < cart.count; ++i) {
-            Shop_Cart_Item *it = &cart.items[i];
-            if (!it->valid) continue;
-            sb_append_cstr(&content,
-                "<div data-cart-row class=\"px-3 py-2 border-b"
-                " border-surface0 flex items-center gap-3\">"
-                "<div class=\"flex-1 min-w-0\">"
-                "<div class=\"text-sm font-medium text-text truncate\">");
-            sb_append_html_escaped(&content, it->name);
-            sb_append_cstr(&content,
-                "</div><div class=\"text-xs text-overlay0\">");
-            sb_append_html_escaped(&content, it->sku);
-            sb_append_cstr(&content, " · ");
-            sb_append_cstr(&content, shop_money(it->price));
-            if ((double) it->qty > it->stock) {
-                sb_append_cstr(&content,
-                    " · <span class=\"text-red\">");
-                sb_append_html_escaped(&content,
-                                       tr("cart.low_stock",
-                                          "ស្តុកមិនគ្រប់គ្រាន់"));
-                sb_append_cstr(&content, "</span>");
-            }
-            sb_append_cstr(&content,
-                "</div></div>"
-                "<form method=\"POST\" action=\"/cart/update\""
-                " class=\"flex items-center gap-1\">"
-                "<input type=\"hidden\" name=\"product_id\" value=\"");
-            sb_append_html_escaped(&content, it->id);
-            sb_append_cstr(&content,
-                "\"><input type=\"hidden\" name=\"redirect\" value=\"/cart\">"
-                "<input type=\"number\" name=\"qty\" value=\"");
-            sb_appendf(&content, "%d", it->qty);
-            sb_append_cstr(&content,
-                "\" min=\"0\" class=\"border border-surface0 bg-mantle"
-                " text-text px-1 py-1.5"
-                " text-sm w-16\">"
-                "<button class=\"border border-surface0 px-2 py-1.5 text-xs"
-                " bg-mantle text-subtext0 hover:bg-surface0\">");
-            sb_append_html_escaped(&content, tr("cart.edit", "កែ"));
-            sb_append_cstr(&content, "</button>"
-                "</form>"
-                "<div class=\"text-sm w-24 text-right font-medium\">");
-            sb_append_cstr(&content, shop_money(it->price * it->qty));
-            sb_append_cstr(&content,
-                "</div>"
-                "<form method=\"POST\" action=\"/cart/remove\">"
-                "<input type=\"hidden\" name=\"product_id\" value=\"");
-            sb_append_html_escaped(&content, it->id);
-            sb_append_cstr(&content,
-                "\"><button class=\"text-red text-xs hover:underline\">");
-            sb_append_html_escaped(&content, tr("cart.remove", "លុប"));
-            sb_append_cstr(&content, "</button></form></div>");
-        }
-        sb_append_cstr(&content,
-            "<div class=\"px-3 py-2 flex items-center justify-between"
-            " bg-surface0/50 border-t border-surface0\">"
-            "<span class=\"text-sm font-semibold text-text\">");
-        sb_append_html_escaped(&content, tr("cart.subtotal", "សរុប"));
-        sb_append_cstr(&content,
-            "</span>"
-            "<span class=\"text-sm font-semibold text-text\">");
-        sb_append_cstr(&content, shop_money(cart.subtotal));
-        sb_append_cstr(&content,
-            "</span></div>"
-            "<div class=\"px-3 py-2 flex items-center justify-end gap-2"
-            " border-t border-surface0\">"
-            "<a href=\"/\" class=\"border border-surface0 px-2 py-1.5"
-            " text-sm bg-mantle text-text hover:bg-surface0\">");
-        sb_append_html_escaped(&content, tr("cart.continue", "បន្តទិញ"));
-        sb_append_cstr(&content,
-            "</a>"
-            "<a href=\"/checkout\" class=\"bg-blue text-onbase"
-            " hover:brightness-90"
-            " px-2 py-1.5 text-sm\">");
-        sb_append_html_escaped(&content, tr("cart.checkout", "បង់ប្រាក់"));
-        sb_append_cstr(&content, "</a>"
-            "</div>");
-    }
-    sb_append_cstr(&content, "</div>");
+    // Cart body: display/shop/cart.h.tt (design rule: state-driven HTML
+    // belongs to a template).
+#define OUT(buf, size) sb_append_buf(&content, buf, size);
+#define STR(x) sb_append_cstr(&content, (x) ? (x) : "");
+#define ESCAPED(x) sb_append_html_escaped(&content, (x));
+#include "build/h_to_html/shop/cart.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 
     shop_chrome_end(&content);
     shop_render(sc, 200, tr("cart.title", "រទេះទំនិញ"), &content);

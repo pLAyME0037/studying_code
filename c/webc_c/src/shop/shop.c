@@ -67,6 +67,9 @@ static const char *shop_name(void) {
     return name && name[0] ? name : "ហាង POS";
 }
 
+// The storefront chrome markup lives in display/shop/chrome_start.h.tt
+// (design rule: state-driven HTML belongs to a template); this host feeds it
+// the language-form return path and the session state.
 void shop_chrome_start(String_Builder *sb, Serve_Context *sc,
                        const char *active) {
     (void) active;  // nav has no active states beyond the home link
@@ -75,34 +78,6 @@ void shop_chrome_start(String_Builder *sb, Serve_Context *sc,
         ? temp_sprintf("%.*s?%.*s", (int) sc->uri.count, sc->uri.data,
                        (int) sc->query_string.count, sc->query_string.data)
         : temp_sprintf("%.*s", (int) sc->uri.count, sc->uri.data);
-    sb_append_cstr(sb,
-        "<div class=\"min-h-screen flex flex-col bg-base\">"
-        "<header class=\"bg-mantle border-b border-surface0\">"
-        "<div class=\"max-w-5xl mx-auto px-3 py-2 flex items-center"
-        " gap-2 flex-wrap\">"
-        "<a href=\"/\" class=\"font-bold text-text whitespace-nowrap\">");
-    sb_append_html_escaped(sb, shop_name());
-    sb_append_cstr(sb,
-        "</a>"
-        "<form method=\"GET\" action=\"/\" class=\"flex items-center gap-1 flex-1\">"
-        "<input name=\"q\" placeholder=\"");
-    sb_append_html_escaped(sb, tr("shop.search.placeholder",
-                                  "ស្វែងរកផលិតផល..."));
-    sb_append_cstr(sb,
-        "\""
-        " class=\"border border-surface0 bg-mantle text-text px-2 py-1.5"
-        " text-sm flex-1 min-w-0\">"
-        "<button class=\"bg-blue text-onbase hover:brightness-90 px-2"
-        " py-1.5 text-sm whitespace-nowrap\">");
-    sb_append_html_escaped(sb, tr("shop.search.button", "ស្វែងរក"));
-    sb_append_cstr(sb, "</button>"
-        "</form>"
-        "<a href=\"/cart\" class=\"text-sm text-text border border-surface0"
-        " px-2 py-1.5 whitespace-nowrap\">");
-    sb_append_html_escaped(sb, tr("shop.cart_link", "រទេះ"));
-    sb_append_cstr(sb, " (");
-    sb_appendf(sb, "%zu", cart_entry_count(sc));
-    sb_append_cstr(sb, ")</a>");
     // Phase 16 signup: anonymous = admin entry + sign in + sign up;
     // signed-in = identity + logout, and only ADMIN keeps the staff
     // dashboard link (CUSTOMER sessions belong on the storefront).
@@ -110,74 +85,21 @@ void shop_chrome_start(String_Builder *sb, Serve_Context *sc,
     bool signed_in = au && au->id;
     bool is_admin = signed_in && au->user_type
         && strcmp(au->user_type, "ADMIN") == 0;
-    if (!signed_in || is_admin) {
-        sb_append_cstr(sb,
-            "<a href=\"/dashboard\" class=\"text-sm text-blue"
-            " whitespace-nowrap\">");
-        sb_append_html_escaped(sb, tr("shop.admin_link", "ផ្ទៃគ្រប់គ្រង"));
-        sb_append_cstr(sb, "</a>");
-    }
-    if (signed_in) {
-        sb_append_cstr(sb,
-            "<span class=\"text-sm text-text px-1 whitespace-nowrap\">");
-        sb_append_html_escaped(sb, au->name && au->name[0] ? au->name : au->id);
-        sb_append_cstr(sb, "</span>"
-            "<a href=\"/accounts\" class=\"text-sm text-blue px-1"
-            " whitespace-nowrap\">");
-        sb_append_html_escaped(sb, tr("shop.accounts_link", "គណនី"));
-        sb_append_cstr(sb, "</a>"
-            "<a href=\"/logout\" class=\"text-sm text-text border"
-            " border-surface0 px-2 py-1.5 whitespace-nowrap\">");
-        sb_append_html_escaped(sb, tr("shop.logout_link", "ចេញ"));
-        sb_append_cstr(sb, "</a>");
-    } else {
-        sb_append_cstr(sb,
-            "<a href=\"/login\" class=\"text-sm text-text border"
-            " border-surface0 px-2 py-1.5 whitespace-nowrap\">");
-        sb_append_html_escaped(sb, tr("shop.signin_link", "ចូល"));
-        sb_append_cstr(sb, "</a>"
-            "<a href=\"/signup\" class=\"text-sm bg-blue text-onbase"
-            " px-2 py-1.5 whitespace-nowrap\">");
-        sb_append_html_escaped(sb, tr("shop.signup_link", "ចុះឈ្មោះ"));
-        sb_append_cstr(sb, "</a>");
-    }
-    sb_append_cstr(sb,
-        // Phase 12 theme: three buttons driving js/themeSwitcher.js
-        // (no JS -> they stay inert, the default light theme holds).
-        "<div class=\"flex items-center gap-0.5 text-xs\" data-theme-switch>"
-        "<button type=\"button\" data-set-theme=\"light\" title=\"");
-    sb_append_html_escaped(sb, tr("shop.theme_light", "ស្រាល"));
-    sb_append_cstr(sb, "\""
-        " onclick=\"window.themeController.setTheme('light')\""
-        " class=\"px-1.5 py-1 border border-surface0"
-        " text-subtext0 hover:bg-surface0\">&#9788;</button>"
-        "<button type=\"button\" data-set-theme=\"dark\" title=\"");
-    sb_append_html_escaped(sb, tr("shop.theme_dark", "ងងឹត"));
-    sb_append_cstr(sb, "\""
-        " onclick=\"window.themeController.setTheme('dark')\""
-        " class=\"px-1.5 py-1 border border-surface0"
-        " text-subtext0 hover:bg-surface0\">&#9790;</button>"
-        "<button type=\"button\" data-set-theme=\"device\" title=\"");
-    sb_append_html_escaped(sb, tr("shop.theme_auto", "ស្វ័យប្រវត្តិ"));
-    sb_append_cstr(sb, "\""
-        " onclick=\"window.themeController.setTheme('device')\""
-        " class=\"px-1.5 py-1 border border-surface0"
-        " text-subtext0 hover:bg-surface0\">&#9680;</button>"
-        "</div>");
-    sb_append_cstr(sb, i18n_lang_form_html(back));
-    sb_append_cstr(sb,
-        "</div></header>"
-        "<main class=\"max-w-5xl mx-auto w-full px-3 py-3 flex flex-col gap-3\">");
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define STR(x) sb_append_cstr(sb, (x) ? (x) : "");
+#define ESCAPED(x) sb_append_html_escaped(sb, (x));
+#include "build/h_to_html/shop/chrome_start.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 }
 
 void shop_chrome_end(String_Builder *sb) {
-    sb_append_cstr(sb,
-        "</main>"
-        "<footer class=\"bg-mantle border-t border-surface0 mt-auto\">"
-        "<div class=\"max-w-5xl mx-auto px-3 py-2 text-xs text-overlay0\">");
-    sb_append_html_escaped(sb, tr("shop.footer", "POS · ហាងលក់រាយ"));
-    sb_append_cstr(sb, "</div>"
-        "</footer></div>");
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define ESCAPED(x) sb_append_html_escaped(sb, (x));
+#include "build/h_to_html/shop/chrome_end.h"
+#undef OUT
+#undef ESCAPED
 }
 
 void shop_render(Serve_Context *sc, int status, const char *title,
@@ -200,6 +122,13 @@ typedef struct {
     double price;
     double stock;
 } Shop_Row;
+
+// Category chip (data only; markup lives in display/shop/index.h.tt).
+typedef struct {
+    char   id[40];
+    char   name[160];
+    bool   on;
+} Shop_Chip;
 
 static double sql_col_double(sql_stmt *stmt, int col) {
     const char *v = sql_col_text(stmt, col);
@@ -286,8 +215,8 @@ void serve_shop_index(Serve_Context *sc) {
     db_t *db = open_webc_db();
     if (!db) { serve_error(sc, 500); return; }
 
-    // Category chips.
-    String_Builder cats = {0};
+    // Category chips (data only; the markup lives in the template).
+    struct { Shop_Chip *items; size_t count, capacity; } chips = {0};
     {
         sql_stmt stmt = {0};
         if (sql_prepare(db, cat_sql, &stmt)) {
@@ -295,18 +224,12 @@ void serve_shop_index(Serve_Context *sc) {
                 const char *cid = sql_col_text(&stmt, 0);
                 const char *cname = sql_col_text(&stmt, 1);
                 if (!cid || !cname) continue;
-                bool on = cat.count == strlen(cid)
+                Shop_Chip ch = {0};
+                snprintf(ch.id, sizeof(ch.id), "%s", cid);
+                snprintf(ch.name, sizeof(ch.name), "%s", cname);
+                ch.on = cat.count == strlen(cid)
                     && memcmp(cat.data, cid, cat.count) == 0;
-                sb_append_cstr(&cats, "<a href=\"");
-                sb_append_html_escaped(&cats,
-                    shop_list_query(sv_from_cstr(cid), q, 1));
-                sb_append_cstr(&cats, on
-                    ? "\" class=\"px-2 py-1.5 text-xs border border-blue"
-                      " bg-blue text-onbase\">"
-                    : "\" class=\"px-2 py-1.5 text-xs border border-surface0"
-                      " bg-mantle text-subtext0 hover:border-surface1\">");
-                sb_append_html_escaped(&cats, cname);
-                sb_append_cstr(&cats, "</a>");
+                da_append(&chips, ch);
             }
             sql_finalize(&stmt);
         }
@@ -367,140 +290,20 @@ void serve_shop_index(Serve_Context *sc) {
     String_Builder content = {0};
     shop_chrome_start(&content, sc, "/");
 
-    // Filter bar: chips + active query indicator.
-    sb_append_cstr(&content,
-        "<div class=\"flex items-center gap-1 flex-wrap\">");
-    {
-        bool on = cat.count == 0;
-        sb_append_cstr(&content, "<a href=\"");
-        sb_append_html_escaped(&content, shop_list_query(sv_from_cstr(""), q, 1));
-        sb_append_cstr(&content, on
-            ? "\" class=\"px-2 py-1.5 text-xs border border-text"
-              " bg-text text-onbase\">"
-            : "\" class=\"px-2 py-1.5 text-xs border border-surface0"
-              " bg-mantle text-subtext0 hover:border-surface1\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.all", "ទាំងអស់"));
-        sb_append_cstr(&content, "</a>");
-    }
-    sb_append_buf(&content, cats.items, cats.count);
-    if (q.count > 0) {
-        sb_append_cstr(&content,
-            "<span class=\"text-xs text-overlay0 px-1\">");
-        sb_append_html_escaped(&content, tr("shop.results_for",
-                                            "លទ្ធផលសម្រាប់"));
-        sb_append_cstr(&content, " \"");
-        sb_append_html_escaped(&content,
-            temp_sprintf("%.*s", (int) q.count, q.data));
-        sb_append_cstr(&content, "\"</span>");
-    }
-    sb_append_cstr(&content, "</div>");
-
-    // Grid.
-    if (row_count == 0) {
-        sb_append_cstr(&content,
-            "<div class=\"bg-mantle border border-surface0 text-center"
-            " px-3 py-8\"><div class=\"text-overlay0 text-sm\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.no_products", "មិនមានផលិតផលទេ"));
-        sb_append_cstr(&content, "</div>"
-            "<a href=\"/\" class=\"text-xs text-blue hover:underline\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.clear_filters", "លុបតម្រង"));
-        sb_append_cstr(&content, "</a></div>");
-    } else {
-        sb_append_cstr(&content, "<div class=\"grid grid-cols-2 md:grid-cols-4"
-                                 " gap-3\">");
-        for (size_t i = 0; i < row_count; ++i) {
-            Shop_Row *r = &rows[i];
-            bool out = r->stock <= 0;
-            sb_append_cstr(&content, "<div class=\"bg-mantle border"
-                                     " border-surface0 flex flex-col\">");
-            sb_append_cstr(&content, "<a href=\"/product/");
-            sb_append_html_escaped(&content, r->id);
-            sb_append_cstr(&content,
-                "\" class=\"bg-blue/10 h-24 flex items-center justify-center"
-                " text-blue font-bold text-3xl\">");
-            sb_append_first_glyph(&content, r->name);
-            sb_append_cstr(&content, "</a>"
-                "<div class=\"px-2 py-2 flex flex-col gap-1 flex-1\">"
-                "<a href=\"/product/");
-            sb_append_html_escaped(&content, r->id);
-            sb_append_cstr(&content,
-                "\" class=\"text-sm font-medium text-text"
-                " hover:text-blue leading-snug\">");
-            sb_append_html_escaped(&content, r->name);
-            sb_append_cstr(&content, "</a>"
-                "<div class=\"text-xs text-overlay0 truncate\">");
-            sb_append_html_escaped(&content, r->sku);
-            sb_append_cstr(&content, " · ");
-            sb_append_html_escaped(&content, r->cat);
-            sb_append_cstr(&content, "</div>"
-                "<div class=\"text-sm font-semibold text-blue\">");
-            sb_append_cstr(&content, shop_money(r->price));
-            sb_append_cstr(&content, "</div>"
-                "<div class=\"text-xs ");
-            if (out) {
-                sb_append_cstr(&content, "text-red\">");
-                sb_append_html_escaped(&content,
-                                       tr("shop.out_of_stock", "អស់ពីរាក់"));
-            } else {
-                sb_append_cstr(&content, "text-green\">");
-                sb_append_html_escaped(&content,
-                                       tr("shop.in_stock", "នៅសល់: "));
-                sb_appendf(&content, "%.0f", r->stock);
-            }
-            sb_append_cstr(&content, "</div></div>"
-                "<form method=\"POST\" action=\"/cart/add\" class=\"border-t"
-                " border-surface0 p-1\">"
-                "<input type=\"hidden\" name=\"product_id\" value=\"");
-            sb_append_html_escaped(&content, r->id);
-            sb_append_cstr(&content,
-                "\"><input type=\"hidden\" name=\"redirect\" value=\"/");
-            sb_append_cstr(&content,
-                "\"><button class=\"w-full bg-blue text-onbase"
-                " hover:brightness-90 px-2 py-1.5 text-sm"
-                " disabled:bg-surface0 disabled:text-overlay0\"");
-            if (out) sb_append_cstr(&content, " disabled");
-            sb_append_cstr(&content, ">");
-            sb_append_html_escaped(&content,
-                                   tr("shop.add_to_cart", "ដាក់ក្នុងរទេះ"));
-            sb_append_cstr(&content, "</button></form></div>");
-        }
-        sb_append_cstr(&content, "</div>");
-    }
-
-    // Pager.
-    if (pages > 1) {
-        sb_append_cstr(&content,
-            "<div class=\"flex items-center justify-center gap-2 text-sm\">");
-        if (page > 1) {
-            sb_append_cstr(&content, "<a href=\"");
-            sb_append_html_escaped(&content,
-                shop_list_query(cat, q, page - 1));
-            sb_append_cstr(&content,
-                "\" class=\"px-2 py-1.5 border border-surface0"
-                " bg-mantle\">«</a>");
-        }
-        sb_appendf(&content,
-                   "<span class=\"text-overlay0\">%s</span>",
-                   temp_sprintf(tr("shop.pager", "ទំព័រ %d/%d"),
-                                page, pages));
-        if (page < pages) {
-            sb_append_cstr(&content, "<a href=\"");
-            sb_append_html_escaped(&content,
-                shop_list_query(cat, q, page + 1));
-            sb_append_cstr(&content,
-                "\" class=\"px-2 py-1.5 border border-surface0"
-                " bg-mantle\">»</a>");
-        }
-        sb_append_cstr(&content, "</div>");
-    }
+    // Filter bar, product grid and pager: display/shop/index.h.tt (design
+    // rule: state-driven HTML belongs to a template).
+#define OUT(buf, size) sb_append_buf(&content, buf, size);
+#define STR(x) sb_append_cstr(&content, (x) ? (x) : "");
+#define ESCAPED(x) sb_append_html_escaped(&content, (x));
+#include "build/h_to_html/shop/index.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
 
     shop_chrome_end(&content);
     shop_render(sc, 200, tr("shop.title_products", "ផលិតផល"), &content);
     sb_free(content);
-    sb_free(cats);
+    da_free(chips);
 }
 
 // ---------------------------------------------------------------------------
@@ -545,99 +348,21 @@ void serve_shop_product(Serve_Context *sc) {
 
     int stock_i = (int) stock;
     bool out = stock_i <= 0;
+    const char *id_s = temp_sprintf("%.*s", (int) id.raw.count, id.raw.data);
 
     String_Builder content = {0};
     shop_chrome_start(&content, sc, "/");
-    sb_append_cstr(&content,
-        "<div class=\"bg-mantle border border-surface0 flex flex-col"
-        " md:flex-row\">"
-        "<div class=\"bg-blue/10 md:w-64 h-40 flex items-center justify-center"
-        " text-blue font-bold text-5xl\">");
-    sb_append_first_glyph(&content, name);
-    sb_append_cstr(&content,
-        "</div>"
-        "<div class=\"flex-1 px-3 py-3 flex flex-col gap-2\">"
-        "<div class=\"text-xs text-overlay0\">SKU: ");
-    sb_append_html_escaped(&content, sku);
-    sb_append_cstr(&content, " · ");
-    sb_append_html_escaped(&content, cat);
-    sb_append_cstr(&content,
-        "</div>"
-        "<h1 class=\"text-xl font-semibold text-text\">");
-    sb_append_html_escaped(&content, name);
-    sb_append_cstr(&content,
-        "</h1>"
-        "<div class=\"text-2xl font-bold text-blue\">");
-    sb_append_cstr(&content, shop_money(price));
-    sb_append_cstr(&content,
-        "</div>"
-        "<div class=\"text-sm ");
-    if (out) {
-        sb_append_cstr(&content, "text-red\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.out_of_stock", "អស់ពីរាក់"));
-    } else {
-        sb_append_cstr(&content, "text-green\">");
-        sb_append_html_escaped(&content, tr("shop.in_stock", "នៅសល់: "));
-        sb_appendf(&content, "%d", stock_i);
-    }
-    sb_append_cstr(&content, "</div>");
 
-    if (out) {
-        sb_append_cstr(&content,
-            "<div class=\"bg-red/10 border-l-2 border-red text-red"
-            " px-2 py-1.5 text-xs\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.out_notice",
-                                  "ផលិតផលនេះអស់ពីរាក់"));
-        sb_append_cstr(&content, "</div>");
-    } else {
-        sb_append_cstr(&content,
-            "<div class=\"flex items-center gap-2\">"
-            "<form method=\"POST\" action=\"/cart/add\" class=\"flex items-center"
-            " gap-2\">"
-            "<input type=\"hidden\" name=\"product_id\" value=\"");
-        sb_append_html_escaped(&content, temp_sprintf("%.*s", (int) id.raw.count,
-                                                      id.raw.data));
-        sb_append_cstr(&content,
-            "\"><input type=\"hidden\" name=\"redirect\" value=\"/product/");
-        sb_append_html_escaped(&content, temp_sprintf("%.*s", (int) id.raw.count,
-                                                      id.raw.data));
-        sb_append_cstr(&content,
-            "\">"
-            "<input type=\"number\" name=\"qty\" value=\"1\" min=\"1\" max=\"");
-        sb_appendf(&content, "%d", stock_i);
-        sb_append_cstr(&content,
-            "\" class=\"border border-surface0 bg-mantle text-text"
-            " px-2 py-1.5 text-sm w-20\">"
-            "<button class=\"bg-blue text-onbase hover:brightness-90 px-2"
-            " py-1.5 text-sm\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.add_to_cart", "ដាក់ក្នុងរទេះ"));
-        sb_append_cstr(&content, "</button>"
-            "</form>"
-            "<form method=\"POST\" action=\"/cart/buynow\""
-            " class=\"flex items-center gap-2\">"
-            "<input type=\"hidden\" name=\"product_id\" value=\"");
-        sb_append_html_escaped(&content, temp_sprintf("%.*s", (int) id.raw.count,
-                                                      id.raw.data));
-        sb_append_cstr(&content,
-            "\">"
-            "<button class=\"bg-mauve text-onbase hover:brightness-90 px-2"
-            " py-1.5 text-sm\">");
-        sb_append_html_escaped(&content,
-                               tr("shop.buy_now", "ទិញឥឡូវនេះ"));
-        sb_append_cstr(&content, "</button>"
-            "</form>"
-            "</div>");
-    }
-    sb_append_cstr(&content,
-        "<a href=\"/\" class=\"text-xs text-blue hover:underline"
-        " mt-1\">");
-    sb_append_html_escaped(&content,
-                           tr("shop.back_list", "« ត្រឡប់ទៅបញ្ជីផលិតផល"));
-    sb_append_cstr(&content, "</a>"
-        "</div></div>");
+    // Detail panel: display/shop/product.h.tt (design rule: state-driven
+    // HTML belongs to a template).
+#define OUT(buf, size) sb_append_buf(&content, buf, size);
+#define STR(x) sb_append_cstr(&content, (x) ? (x) : "");
+#define ESCAPED(x) sb_append_html_escaped(&content, (x));
+#include "build/h_to_html/shop/product.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
+
     shop_chrome_end(&content);
     shop_render(sc, 200, name, &content);
     sb_free(content);

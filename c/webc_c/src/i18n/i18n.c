@@ -195,39 +195,19 @@ const char *tr(const char *key, const char *fallback) {
     return fallback;
 }
 
+// The switcher markup lives in display/i18n/lang_form.h.tt (design rule:
+// state-driven HTML belongs to a template); this host feeds it the resolved
+// language list.
 const char *i18n_lang_form_html(const char *back) {
     i18n_resolve();
     if (g_i18n.nlangs < 2) return "";
 
     String_Builder sb = {0};
-    sb_append_cstr(&sb,
-        "<form method=\"GET\" action=\"/lang\" data-lang-form"
-        " class=\"flex items-center gap-1\">"
-        "<input type=\"hidden\" name=\"back\" value=\"");
-    if (back && back[0]) sb_append_html_escaped(&sb, back);
-    sb_append_cstr(&sb,
-        "\">"
-        "<select name=\"code\" onchange=\"this.form.submit()\""
-        " aria-label=\"Language\" class=\"border border-surface0 bg-mantle"
-        " text-text px-1 py-1.5 text-xs\">");
-    for (size_t i = 0; i < g_i18n.nlangs; ++i) {
-        Lang_Row *L = &g_i18n.langs[i];
-        sb_append_cstr(&sb, "<option value=\"");
-        sb_append_html_escaped(&sb, L->code);
-        if (strcmp(L->code, g_i18n.active) == 0) {
-            sb_append_cstr(&sb, "\" selected>");
-        } else {
-            sb_append_cstr(&sb, "\">");
-        }
-        sb_append_html_escaped(&sb, L->name[0] ? L->name : L->code);
-        sb_append_cstr(&sb, "</option>");
-    }
-    sb_append_cstr(&sb,
-        "</select>"
-        // No-JS fallback: the onchange above never fires, so keep a button.
-        "<noscript><button type=\"submit\" class=\"border border-surface0"
-        " bg-mantle text-text px-1 py-1.5 text-xs\">&#8629;</button>"
-        "</noscript></form>");
+#define OUT(buf, size) sb_append_buf(&sb, buf, size);
+#define ESCAPED(x) sb_append_html_escaped(&sb, (x) ? (x) : "");
+#include "build/h_to_html/i18n/lang_form.h"
+#undef OUT
+#undef ESCAPED
     sb_append_null(&sb);
     const char *html = temp_strdup(sb.items ? sb.items : "");
     sb_free(sb);
