@@ -302,8 +302,8 @@ void serve_pos_orders(Serve_Context *sc) {
         .children_count = ARRAY_LEN(children),
         .soft_delete    = 1,
         // Orders are never a directly-filled list: rows come from the
-        // sale/checkout flow, so the Data query tab is the only live
-        // view (?live=1 falls back to it) and the add form stays hidden.
+        // sale/checkout flow, so the search row is the practical view
+        // and the add form stays hidden.
         .no_live        = 1,
         .no_create      = 1,
     };

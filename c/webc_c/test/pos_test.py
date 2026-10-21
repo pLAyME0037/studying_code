@@ -292,27 +292,28 @@ def main():
     html = body.decode()
     t.chk("live view hides deleted province",
           (st, f'data-row-id="{rid}"' not in html), (200, True))
-    # Phase 16 task 1 + the data query tab: the view strip sits above the
-    # add card on every master page -- Data query is the default active
-    # tab and carries the ?q/?qcol search form, Live is a ?live=1 tab,
-    # and Trash holds the same count the database has.
+    # Phase 16 task 1 + the Phase 19 search row: the view strip is Live +
+    # Trash, and a dedicated slim search row (the ?q/?qcol GET form) sits
+    # above the table on every master page; Trash holds the same count the
+    # database has.
     n_del = db_row(
         "SELECT COUNT(*) FROM provinces WHERE deleted_at IS NOT NULL")[0]
-    t.chk("tab strip: Data query default + search form + Trash count = db",
-          ('bg-blue text-onbase">Data query' in html
-           and "?live=1" in html
+    t.chk("tab strip Live+Trash + search row + Trash count = db",
+          ('bg-blue text-onbase">Live' in html
+           and "Data query" not in html
            and 'id="md-query-form"' in html
            and f"data-trash-total>{n_del}<" in html
            and "?deleted=1" in html), True)
     st, body, _ = c.get("/pos/provinces?live=1")
     live_html = body.decode()
-    t.chk("live tab activates on ?live=1 (search form gone)",
+    t.chk("?live=1 is the plain list (Live active, search row stays)",
           (st, 'bg-blue text-onbase">Live' in live_html,
-           'id="md-query-form"' not in live_html), (200, True, True))
+           'id="md-query-form"' in live_html), (200, True, True))
     st, body, _ = c.get("/pos/provinces?deleted=1")
     html = body.decode()
     row, _ = row_and_edit(html, rid)
     t.chk("trash view shows deleted province", bool(row), True)
+    t.chk("trash view keeps the search row", 'id="md-query-form"' in html, True)
     t.chk("trash rows tinted", "hover:bg-red-100" in html, True)
     t.chk("trash row has restore button", 'data-md-op="restore"' in row, True)
     t.chk("trash tab active on the trash view",
@@ -351,6 +352,8 @@ def main():
           (st, 'data-md-op="create"' in html, 'master-edit-btn' in html,
            'data-md-op="delete"' in html, 'data-trash-total' in html),
           (200, False, False, False, False))
+    t.chk("villages still get the dedicated search row",
+          'id="md-query-form"' in html, True)
     t.chk("villages seed rows + pager",
           (html.count('<tr class="hover:'),
            'data-pg-container="mc-tbody"' in html), (20, True))
@@ -854,14 +857,16 @@ def main():
           ('value="' + dl_label + '"' in html), True)
     st, body, _ = c.get("/pos/orders?live=1")
     live_html = body.decode()
-    t.chk("orders has no Live tab; ?live=1 falls back to Data query",
+    t.chk("orders has no Live tab; ?live=1 is the plain list + search row",
           (st, "Plain list of live rows" not in live_html,
-           'bg-blue text-onbase">Data query' in live_html),
-          (200, True, True))
+           "Data query" not in live_html,
+           'id="md-query-form"' in live_html),
+          (200, True, True, True))
     st, body, _ = c.get("/pos/orders")
     html = body.decode()
-    t.chk("orders: query default, no add form, trash tab intact",
-          ('bg-blue text-onbase">Data query' in html
+    t.chk("orders: plain default, search row, no add form, trash tab intact",
+          ('data-trash-total' in html
+           and 'id="md-query-form"' in html
            and "Add Orders" not in html
            and "?deleted=1" in html), True)
     st, body, _ = c.get("/pos/products?q=SD-P-00")

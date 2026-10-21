@@ -1,74 +1,22 @@
 ({ if (!fragment) { })
 <div id="mc-root" class="max-w-full mx-auto">
-    <!-- View strip: Data query is the default tab; its GET search form
-         (?q text, ?qcol scope) filters the master list server-side.
-         Live/Trash follow soft_delete; orders hides Live and the add
-         form (MD_MasterConfig.no_live/no_create: rows come from sales). -->
+    <!-- View strip: Live + Trash on soft_delete pages. The dedicated
+         search row below it (?q text, ?qcol scope) filters whichever
+         view is active. orders hides Live + the add form
+         (MD_MasterConfig.no_live/no_create: rows come from sales). -->
+    ({ if (config->soft_delete) { })
     <div class="mb-2 inline-flex text-sm border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700">
+        ({ if (!config->no_live) { })
         <a href="({ STR(md_path); })"
-           title="Search this table"
-           class="px-2 py-1.5 font-medium ({ if (!show_deleted && !show_live) { })bg-blue text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Data query</a>
-        ({ if (config->soft_delete && !config->no_live) { })
-        <a href="({ STR(md_path); })?live=1"
            title="Plain list of live rows"
-           class="px-2 py-1.5 font-medium ({ if (show_live) { })bg-blue text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Live</a>
+           class="px-2 py-1.5 font-medium ({ if (!show_deleted) { })bg-blue text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Live</a>
         ({ } })
-        ({ if (config->soft_delete) { })
         <a href="({ STR(md_path); })?deleted=1"
            title="Soft-deleted rows - restore or leave them here"
            class="px-2 py-1.5 font-medium ({ if (show_deleted) { })bg-red text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Trash (<span data-trash-total>({ INT(trash_total); })</span>)</a>
-        ({ } })
     </div>
-    ({ if (show_query) { })
-    <form id="md-query-form" method="GET" action="({ STR(md_path); })"
-          data-md-query="1"
-          class="mb-2 flex flex-wrap items-center gap-2 px-2 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-        <label for="md-query-q" class="text-sm font-medium text-gray-600 dark:text-gray-300">Search</label>
-        <select id="md-query-col" name="qcol" aria-label="Search column"
-                class="px-1.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-            <option value="">All columns</option>
-            ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
-                ({ if (config->columns[ci].name && md_col_queryable(&config->columns[ci])) { })
-                <option value="({ STR(config->columns[ci].name); })"({ if (qcol_name[0] && strcmp(qcol_name, config->columns[ci].name) == 0) { })selected({ } })>
-                    ({ ESCAPED(config->columns[ci].label); })
-                </option>
-                ({ } })
-            ({ } })
-        </select>
-        <input id="md-query-q" type="search" name="q"
-               value="({ ESCAPED(q_text); })"
-               placeholder="Search ({ ESCAPED(config->title); })..."
-               class="px-1.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white flex-1 min-w-[140px]">
-        <button type="submit"
-                class="px-2 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 text-sky-900 dark:text-sky-200 border-b-3 border-b-sky-200 hover:border-b-blue-700 font-medium">
-            Search
-        </button>
-        ({ if (q.count > 0) { })
-        <a href="({ STR(md_path); })"
-           title="Clear the search"
-           class="px-2 py-1.5 text-sm text-subtext0 hover:text-text hover:bg-surface0 border border-gray-200 dark:border-gray-700">&#10005;</a>
-        ({ } })
-    </form>
-    <script>
-    (function () {
-        var f = document.getElementById('md-query-form');
-        if (!f) return;
-        var box = f.querySelector('input[name="q"]');
-        var timer;
-        box.addEventListener('input', function () {
-            clearTimeout(timer);
-            timer = setTimeout(function () { f.submit(); }, 400);
-        });
-        f.querySelector('select[name="qcol"]').addEventListener('change', function () {
-            f.submit();
-        });
-        if (box.value) {
-            box.focus();
-            box.setSelectionRange(box.value.length, box.value.length);
-        }
-    })();
-    </script>
     ({ } })
+    ({ md_query_row(sb, config, md_path, q, q_text, qcol_name); })
 ({ if (show_deleted) { })
     <div class="mb-3 px-2 py-1 flex justify-between items-center text-sm bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
         <span>Deleted rows &mdash; restore to bring them back, or leave them here.</span>

@@ -597,6 +597,26 @@ vanilla JS only.
   (http 120 / pos 366 / shop 118 / role 48 / crud_contract 170 /
   mysql 41 / https 6).
 
+## Phase 19 - Search row replaces the Data query tab (suite 871 PASS)
+- Phase 17's "Data query" tab -- a whole tab card whose body was the
+  table-search form -- is reverted: the view strip is back to Live +
+  Trash on soft_delete pages (Live hidden by no_live; no strip on
+  non-soft_delete pages), default = plain list, ?live=1 accepted as
+  the same plain view.
+- Search is now a dedicated slim ROW above the table, on every master
+  page and in every view (Live or Trash, read_only pages included),
+  rendered from its own template
+  display/component/md_child_query_row.h.tt (host md_query_row in
+  src/layout/master_child.c, called from master_child.h.tt).
+  Contract unchanged: GET ?q text + ?qcol scope, scope dropdown,
+  400ms debounce + refocus, clear link; the md_where engine and the
+  pager q/qcol propagation are untouched, so ?q also narrows the
+  Trash view now.
+- Tests: strip pins reworked (?live=1 pins, orders pins), + trash-view
+  keeps the search row, + villages (read_only) gets the row. Suite:
+  871 PASS (http 120 / pos 368 / shop 118 / role 48 / crud_contract
+  170 / mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

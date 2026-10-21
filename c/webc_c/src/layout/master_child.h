@@ -117,8 +117,8 @@ typedef struct {
     int          read_only;   /* hides add/edit/delete UI; the module simply
                                  * registers no write routes for this page */
     int          no_live;     /* hides the Live tab: the table is never a
-                                 * directly-filled list (?live=1 falls back
-                                 * to the Data query view) -- /pos/orders */
+                                 * directly-filled list (rows arrive from
+                                 * another flow, e.g. sales) -- /pos/orders */
     int          no_create;   /* hides the generic add form only: rows are
                                  * created upstream (orders come from the
                                  * sale/checkout flow), edit/delete stay */

@@ -422,6 +422,22 @@ static bool md_count_masters(db_t *db, const MD_MasterConfig *config,
     return ok;
 }
 
+// The dedicated search row above the master table (a slim GET form, not a
+// tab card): scope dropdown + keyword box + clear link, with a debounce
+// script. display/component/md_child_query_row.h.tt renders it; ?q/?qcol
+// narrow whichever view is active (Live or Trash) via md_where.
+static void md_query_row(String_Builder *sb, const MD_MasterConfig *config,
+                         const char *md_path, String_View q,
+                         const char *q_text, const char *qcol_name) {
+#define OUT(buf, size) sb_append_buf(sb, buf, size);
+#define STR(s) sb_append_cstr(sb, s);
+#define ESCAPED(s) sb_append_html_escaped(sb, s ? s : "");
+#include "build/h_to_html/component/md_child_query_row.h"
+#undef OUT
+#undef STR
+#undef ESCAPED
+}
+
 void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     db_t *db = open_webc_db();
     if (!db) {
@@ -431,21 +447,16 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     // ?fragment=all: load everything, render the bare pagination store
     // (no header/footer) -- the payload js/PaginationSwitcher.js caches.
     bool fragment = page_fragment_requested(sc->query_string);
-    // The view strip is three tabs: Data query (the default -- its search
-    // bar drives the list), ?live=1 (plain browse, hidden when the table
-    // is never a directly-filled list) and ?deleted=1 on a soft_delete
-    // page: the trash view (restorable rows).
+    // The view strip is Live + Trash on a soft_delete page (?deleted=1 =
+    // the trash view; no_live hides Live on tables that are never a
+    // directly-filled list, and non-soft_delete pages get no strip). The
+    // dedicated search row above the table (?q text, ?qcol scope) filters
+    // whichever view is active.
     String_View del_sv = {0};
     bool show_deleted = config->soft_delete
         && form_find(sc->query_string, "deleted", &del_sv)
         && sv_eq(del_sv, sv_from_cstr("1"));
-    String_View live_sv = {0};
-    bool show_live = config->soft_delete && !config->no_live
-        && !show_deleted
-        && form_find(sc->query_string, "live", &live_sv)
-        && sv_eq(live_sv, sv_from_cstr("1"));
-    bool show_query = !show_deleted && !show_live;
-    // Data query search: ?q=<text> LIKE-matches across every displayed
+    // Table search: ?q=<text> LIKE-matches across every displayed
     // column, or the single column named by ?qcol=<column name>. qcol is
     // validated against this page's config (never interpolated from the
     // URL); q is bound. An unknown scope falls back to all columns.
