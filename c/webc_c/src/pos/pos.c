@@ -265,10 +265,10 @@ SERVE_SOFT_DELETE(pos_users, pos_user)
 // edit/delete UI, and the module registers only the GET route.
 
 MD_Column md_dictionaries_columns[] = {
-    { .name = "category",   .label = "Category",   .type = COL_TYPE_TEXT, .nullable = false },
-    { .name = "code",       .label = "Code",       .type = COL_TYPE_TEXT, .nullable = false },
-    { .name = "label",      .label = "Label",      .type = COL_TYPE_TEXT, .nullable = false },
-    { .name = "sort_order", .label = "Sort",       .type = COL_TYPE_NUM,  .nullable = false },
+    { .name = "category",   .label = "Category", .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "code",       .label = "Code",     .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "label",      .label = "Label",    .type = COL_TYPE_TEXT, .nullable = false },
+    { .name = "sort_order", .label = "Sort",     .type = COL_TYPE_NUM,  .nullable = false },
 };
 const size_t md_dictionaries_columns_count = ARRAY_LEN(md_dictionaries_columns);
 
@@ -284,3 +284,6 @@ void serve_pos_dictionaries(Serve_Context *sc) {
     };
     serve_master_child(sc, &config);
 }
+// SERVE_CREATE(pos_users, pos_user, usr_fields, usr_opt_fields)
+// SERVE_UPDATE(pos_users, pos_user, usr_fields, usr_opt_fields)
+// SERVE_SOFT_DELETE(pos_users, pos_user)

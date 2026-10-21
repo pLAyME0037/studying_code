@@ -97,6 +97,14 @@ db_t       *db_open(sql_lang_t lang, const char *dsn);
 void        db_close(db_t *db);
 const char *db_errmsg(db_t *db);
 
+// True when a driver error message captured right after a failed statement
+// is a UNIQUE/primary-key rejection (sqlite: "UNIQUE constraint failed:
+// table.column", mysql: "Duplicate entry ... for key ...", postgres:
+// "duplicate key value violates unique constraint ..."). Read the message
+// (and call this) BEFORE sql_txn_rollback: a successful rollback resets the
+// connection's last-error state on sqlite/mysql.
+bool db_msg_is_unique(const char *msg);
+
 const Sql_Driver *sql_driver_for(sql_lang_t lang); // NULL when not built
 
 // Creates `path` and every missing parent directory (mkdir(2) is not

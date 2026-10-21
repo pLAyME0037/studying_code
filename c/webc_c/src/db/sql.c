@@ -56,6 +56,13 @@ const char *db_errmsg(db_t *db) {
     return db->drv->errmsg(db);
 }
 
+bool db_msg_is_unique(const char *msg) {
+    if (!msg) return false;
+    return strstr(msg, "UNIQUE constraint failed") != NULL ||  // sqlite
+           strstr(msg, "Duplicate entry") != NULL ||           // mysql
+           strstr(msg, "duplicate key value") != NULL;         // postgres
+}
+
 const Sql_Driver *sql_driver_for(sql_lang_t lang) {
     switch (lang) {
     case SQL_SQLITE:

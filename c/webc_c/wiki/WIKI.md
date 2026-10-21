@@ -682,6 +682,26 @@ vanilla JS only.
   Suite: 880 PASS (http 120 / pos 377 / shop 118 / role 48 /
   crud_contract 170 / mysql 41 / https 6).
 
+## Phase 23 - Duplicate unique values -> 409 with a reason (suite 881 PASS)
+- A UNIQUE rejection (duplicate code/sku/pair ...) surfaced as a generic
+  HTTP 500 "Request failed" banner -- e.g. creating a category with an
+  existing cat_code. A user mistake, not a crash.
+- SERVE_CREATE/SERVE_UPDATE copy the driver message BEFORE the rollback
+  (a successful rollback resets sqlite/mysql last-error state), detect
+  the dialect's unique wording via db_msg_is_unique() (sqlite
+  "UNIQUE constraint failed", mysql "Duplicate entry", postgres
+  "duplicate key value"), and answer 409 text/plain with
+  "A <singular> with the same unique value already exists. (<driver msg>)".
+- mdBanner (ListExpandSwitcher) takes an optional reason: the fetch
+  error path shows a plain-text response body as the banner text, so the
+  user reads WHAT collided instead of "HTTP 500"; styled HTML error
+  pages keep the generic message (only Content-Type: text/plain is
+  surfaced).
+- Tests: duplicate cat_code pin (409 + reason in body); the three former
+  duplicate->500 pins (deliveries / role_permissions / translations)
+  flipped to 409. Suite: 881 PASS (http 120 / pos 378 / shop 118 /
+  role 48 / crud_contract 170 / mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

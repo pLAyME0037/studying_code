@@ -159,11 +159,27 @@
         }                                                                 \
                                                                           \
         bool ok = create_##singular(db, values, field_count);             \
+        /* Copy + judge the driver message BEFORE the rollback -- a       \
+         * successful rollback resets sqlite/mysql last-error state. */   \
+        const char *dbmsg = ok ? NULL : temp_sprintf("%s", db_errmsg(db)); \
+        bool dup = db_msg_is_unique(dbmsg);                               \
         if (ok) { sql_txn_commit(db); }                                   \
         else    { sql_txn_rollback(db); }                                 \
         db_close(db);                                                     \
                                                                           \
-        if (!ok) { serve_error(sc, 500); return; }                        \
+        if (!ok) {                                                        \
+            /* A duplicate unique value (code, sku, pair ...) is a user   \
+             * mistake, not a crash: 409 + plain reason, which the JS     \
+             * banner shows instead of "HTTP 500". */                     \
+            if (dup) {                                                    \
+                http_render_response(sc, 409, "text/plain", sv_from_cstr( \
+                    temp_sprintf(                                         \
+                    "A %s with the same unique value already exists. (%s)",\
+                    #singular, dbmsg)));                                  \
+                return;                                                   \
+            }                                                             \
+            serve_error(sc, 500); return;                                 \
+        }                                                                 \
         http_render_redirect(sc, 302,                                     \
                              http_redirect_target(sc, "/" #plural));      \
     }
@@ -232,11 +248,24 @@
             return;                                                       \
         }                                                                 \
         bool ok = update_##singular(db, values, field_count, id.raw);     \
+        /* Same contract as SERVE_CREATE: judge the message before the    \
+         * rollback wipes the driver's last-error state. */               \
+        const char *dbmsg = ok ? NULL : temp_sprintf("%s", db_errmsg(db)); \
+        bool dup = db_msg_is_unique(dbmsg);                               \
         if (ok) { sql_txn_commit(db); }                                   \
         else    { sql_txn_rollback(db); }                                 \
         db_close(db);                                                     \
                                                                           \
-        if (!ok) { serve_error(sc, 500); return; }                        \
+        if (!ok) {                                                        \
+            if (dup) {                                                    \
+                http_render_response(sc, 409, "text/plain", sv_from_cstr( \
+                    temp_sprintf(                                         \
+                    "A %s with the same unique value already exists. (%s)",\
+                    #singular, dbmsg)));                                  \
+                return;                                                   \
+            }                                                             \
+            serve_error(sc, 500); return;                                 \
+        }                                                                 \
         http_render_redirect(sc, 302,                                     \
                              http_redirect_target(sc, "/" #plural));      \
     }

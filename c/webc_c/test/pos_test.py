@@ -505,6 +505,15 @@ def main():
           db_row("SELECT parent_id FROM categories WHERE id = ?", (kid,)),
           (cid,))
 
+    # Phase 23: a duplicate unique value is a 409 whose plain-text body
+    # names the row -- the JS banner shows that text instead of a generic
+    # "HTTP 500" (the old behavior for every UNIQUE rejection).
+    st, body, _ = c.post_urlencoded(
+        "/pos/categories/create?redirect=/pos/categories",
+        {"cat_code": "POS-CAT-ROOT", "name": "Dup Root", "parent_id": ""})
+    t.chk("duplicate cat_code -> 409 + reason in body",
+          (st, b"already exists" in body), (409, True))
+
     st, body, _ = c.get("/pos/categories")
     html = body.decode()
     row, edit = row_and_edit(html, kid)
@@ -987,7 +996,7 @@ def main():
         {"recipient_name": "Dup", "recipient_phone": "099",
          "delivery_address": "St 1", "delivery_status": "pending",
          "delivery_cost": "0", "driver_staff_id": ""})
-    t.chk("second delivery for same order rejected (UNIQUE)", st, 500)
+    t.chk("second delivery for same order rejected (UNIQUE, 409)", st, 409)
 
     st, body, _ = c.get("/pos/orders")
     html = body.decode()
@@ -1365,7 +1374,7 @@ def main():
     st, _, _ = c.post_urlencoded(
         f"/pos/role_permissions/create?role_id={rid}&redirect=/pos/roles",
         {"permission_id": permid, "created_at": ""})
-    t.chk("duplicate grant rejected (UNIQUE pair)", st, 500)
+    t.chk("duplicate grant rejected (UNIQUE pair, 409)", st, 409)
 
     # member link under the role (user_id from body, role_id from query)
     st, _, _ = c.post_urlencoded(
@@ -1457,7 +1466,7 @@ def main():
     st, _, _ = c.post_urlencoded(
         f"/pos/translations/create?language_id={lang5f}&redirect=/pos/i18n",
         {"trans_key": "greeting", "trans_value": "dup"})
-    t.chk("duplicate translation key rejected (UNIQUE pair)", st, 500)
+    t.chk("duplicate translation key rejected (UNIQUE pair, 409)", st, 409)
 
     st, _, _ = c.post_urlencoded(
         f"/pos/i18n/{lang5f}/delete?redirect=/pos/i18n", {})

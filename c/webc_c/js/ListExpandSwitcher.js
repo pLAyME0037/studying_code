@@ -135,13 +135,16 @@ function mdSwap(newRoot) {
     return true;
 }
 
-function mdBanner(form, status) {
+function mdBanner(form, status, reason) {
     const div = document.createElement('div');
     div.style.cssText = 'border:1px solid #f87171;background:#fef2f2;color:#b91c1c;' +
         'padding:8px 12px;font-size:14px;margin:8px 0;display:flex;justify-content:space-between;' +
         'align-items:center;gap:12px;max-width:640px;';
     const msg = document.createElement('span');
-    msg.textContent = 'Request failed' + (status ? ' (HTTP ' + status + ')' : '') +
+    // `reason` is the server's plain-text body (e.g. the 409 duplicate
+    // explanation); without it fall back to the generic status text.
+    msg.textContent = (reason ||
+        'Request failed' + (status ? ' (HTTP ' + status + ')' : '')) +
         ' - your input was kept.';
     const close = document.createElement('button');
     close.type = 'button';
@@ -212,9 +215,17 @@ async function mdHandleSubmit(e, form) {
             return;
         }
 
-        // HTTP error (400/413/500): keep the input, drop the pending flash
+        // HTTP error (400/409/413/500): keep the input, drop the pending
+        // flash. A plain-text body (the 409 duplicate reason) replaces the
+        // generic banner text; styled HTML error pages keep the default.
         try { sessionStorage.removeItem(MD_FLASH_KEY); } catch (err) {}
-        mdBanner(form, res.status);
+        let reason = '';
+        try {
+            const ctype = res.headers.get('content-type') || '';
+            if (ctype.startsWith('text/plain'))
+                reason = (await res.text()).trim();
+        } catch (err) { /* body gone -> generic text */ }
+        mdBanner(form, res.status, reason);
     } finally {
         busy.forEach(b => { b.disabled = false; });
     }
