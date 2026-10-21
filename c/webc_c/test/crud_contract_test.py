@@ -233,8 +233,9 @@ def pick_marker_field(fields, kinds):
     return None
 
 
-def row_page_walk(page, rid, table, marker_field):
-    """Find a page holding rid's update form; return html or None."""
+def row_page_walk(page, rid, table, marker_field, create_only=False):
+    """Find the page holding rid's row (its update form when there is
+    one); return html or None."""
     for n in range(1, 41):
         path = page if n == 1 else f"{page}?page={n}"
         st, body, _ = c.get(path)
@@ -242,6 +243,8 @@ def row_page_walk(page, rid, table, marker_field):
             return None
         html = body.decode()
         if f'id="md-m-{table}-{rid}"' in html:
+            return html
+        if create_only and f'data-row-id="{rid}"' in html:
             return html
         if f'data-md-master="{rid}"' in html and marker_field is None:
             return html
@@ -280,6 +283,10 @@ def main():
         if a is None:
             print(f"SKIP: {page} (read-only master, no create form)")
             continue
+        # create-only masters (create_only config) render the add form
+        # but no edit button/update form; their row legs locate the row
+        # by data-row-id instead of the update form's id.
+        page_create_only = "master-edit-btn" not in html
 
         action = a.get("action", "")
         scope = a.get("data-md-scope", "")
@@ -314,11 +321,16 @@ def main():
         t.chk(f"{slug}: created row locatable", bool(rid), True)
         if not rid:
             continue
-        rhtml = row_page_walk(page, rid, scope, marker_field)
+        rhtml = row_page_walk(page, rid, scope, marker_field, page_create_only)
         t.chk(f"{slug}: row found in pager", bool(rhtml), True)
         if not rhtml:
             continue
         ua, uinner = find_form(rhtml, "update", rid)
+        if ua is None and "master-edit-btn" not in rhtml:
+            # create-only master (create_only config): no edit button and
+            # no update route -- the create contract above is the story
+            print(f"NOTE: {page} is create-only - update/delete legs skipped")
+            continue
         t.chk(f"{slug}: update form rendered for the row", ua is not None, True)
         if ua:
             ufields, _ = parse_fields(uinner, create=False)

@@ -122,6 +122,10 @@ typedef struct {
     int          no_create;   /* hides the generic add form only: rows are
                                  * created upstream (orders come from the
                                  * sale/checkout flow), edit/delete stay */
+    int          create_only; /* the inverse of no_create: keeps the add
+                                 * form but hides the row actions
+                                 * (edit/delete/restore) -- register ONLY
+                                 * the /create route; e.g. dictionaries */
 } MD_MasterConfig;
 
 /* column + resolved FK dropdown options for the generic create form */

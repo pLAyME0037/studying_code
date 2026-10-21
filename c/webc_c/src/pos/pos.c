@@ -13,7 +13,7 @@
 // =========================================================================
 // /pos/users: avatar cell (profile_pic, name, username) + email.
 // Column shapes are separate from the demo md_users_columns so the demo
-// pages do not move. (Phase 16 moved the geo stack out to src/pos/geo.c.)
+// pages do not move. 
 // =========================================================================
 
 // Avatar cell: picture + name + username + account status. Status prints
@@ -32,40 +32,71 @@ static const MD_Cell usr_cell = {
     .style        = "avatar",
     .part_choices = usr_cell_choices,
 };
-static const char *usr_ts_parts[]  = { "created_at", "updated_at", "deleted_at" };
+static const char *usr_ts_fields[] = { "created_at", "updated_at", "deleted_at" };
 static const char *usr_ts_labels[] = { "Joined", "Edited", "Deleted" };
 static const MD_Cell usr_ts_cell = {
-    .parts       = usr_ts_parts,
+    .parts       = usr_ts_fields,
     .part_labels = usr_ts_labels,
     .part_count  = 3,
     .style       = "activity",
 };
-// Master fields + every FK the account carries; the child tabs hold the
-// editable relations (Roles - user_roles). Staff is a master table and
-// lives only on /pos/staff.
+
 MD_Column md_pos_users_columns[] = {
-    { .name = "profile_pic", .label = "User", .type = COL_TYPE_TEXT,
-      .nullable = true, .cell = &usr_cell },
-    { .name = "phone", .label = "Phone", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "email", .label = "Email", .type = COL_TYPE_TEXT,
-      .nullable = true },
-    { .name = "user_type_dict_id", .label = "Type", .type = COL_TYPE_FK_SELECT,
-      .nullable = true, .fk_table = "dictionaries", .fk_label = "label",
-      .fk_where = "category = 'USER_TYPE'" },
-    { .name = "org_unit_id", .label = "Org", .type = COL_TYPE_FK_SELECT,
-      .nullable = true, .fk_table = "org_units", .fk_label = "ou_name" },
-    { .name = "location_id", .label = "Location", .type = COL_TYPE_FK_SELECT,
-      .nullable = true, .fk_table = "locations", .fk_label = "province",
-      // Phase 16 geo: the pick list is the provinces mirror (0009 seeds one
-      // locations row per province, legacy 4-part rows stay for old values).
-      .fk_where = "locations.id IN (SELECT id FROM provinces)" },
-    { .name = "customer_id", .label = "Customer", .type = COL_TYPE_FK_SELECT,
-      .nullable = true, .fk_table = "customers",
-      .fk_label = "COALESCE((SELECT name FROM users WHERE users.customer_id "
-                  "= customers.id AND users.deleted_at IS NULL LIMIT 1), id)" },
-    { .name = "created_at", .label = "Activity", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1, .cell = &usr_ts_cell },
+    {
+        .name        = "profile_pic",
+        .label       = "User",
+        .type        = COL_TYPE_TEXT,
+        .nullable    = true,
+        .cell        = &usr_cell
+    }, {
+        .name        = "phone",
+        .label       = "Phone",
+        .type        = COL_TYPE_TEXT,
+        .nullable    = false
+    }, {
+        .name        = "email",
+        .label       = "Email",
+        .type        = COL_TYPE_TEXT,
+        .nullable    = true
+    }, {
+        .name        = "user_type_dict_id",
+        .label       = "Type",
+        .type        = COL_TYPE_FK_SELECT,
+        .nullable    = true,
+        .fk_table    = "dictionaries",
+        .fk_label    = "label",
+        .fk_where    = "category = 'USER_TYPE'"
+    }, {
+        .name        = "org_unit_id",
+        .label       = "Org",
+        .type        = COL_TYPE_FK_SELECT,
+        .nullable    = true,
+        .fk_table    = "org_units",
+        .fk_label    = "ou_name"
+    }, {
+        .name        = "location_id",
+        .label       = "Location",
+        .type        = COL_TYPE_FK_SELECT,
+        .nullable    = true,
+        .fk_table    = "locations",
+        .fk_label    = "province",
+        .fk_where    = "locations.id IN (SELECT id FROM provinces)"
+    }, {
+        .name        = "customer_id",
+        .label       = "Customer",
+        .type        = COL_TYPE_FK_SELECT,
+        .nullable    = true,
+        .fk_table    = "customers",
+        .fk_label    = "COALESCE((SELECT name FROM users WHERE users.customer_id "
+                       "= customers.id AND users.deleted_at IS NULL LIMIT 1), id)"
+    }, {
+        .name        = "created_at",
+        .label       = "Activity",
+        .type        = COL_TYPE_DATE,
+        .nullable    = false,
+        .computed    = 1,
+        .cell        = &usr_ts_cell
+    },
 };
 const size_t md_pos_users_columns_count = ARRAY_LEN(md_pos_users_columns);
 
@@ -107,11 +138,11 @@ static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt))    return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
     for (int i = 1; i <= 10; ++i) {
         if (!sql_bind(&stmt, i, SQL_SV(fields[i - 1]))) return_defer(false);
     }
-    if (!sql_final_step(&stmt))                  return_defer(false);
+    if (!sql_final_step(&stmt)) return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -212,8 +243,7 @@ static MD_Column md_pos_user_role_columns[] = {
     { .name = "created_at", .label = "Linked", .type = COL_TYPE_DATE,
       .nullable = false, .computed = 1 },
 };
-static const size_t md_pos_user_role_columns_count =
-    ARRAY_LEN(md_pos_user_role_columns);
+static const size_t md_pos_user_role_columns_count = ARRAY_LEN(md_pos_user_role_columns);
 
 void serve_pos_users(Serve_Context *sc) {
     // Children: the editable relations of an account (role links). Staff
@@ -260,9 +290,7 @@ SERVE_CREATE(pos_users, pos_user, usr_fields, usr_opt_fields)
 SERVE_UPDATE(pos_users, pos_user, usr_fields, usr_opt_fields)
 SERVE_SOFT_DELETE(pos_users, pos_user)
 
-// ---- /pos/dictionaries (read_only showcase) -----------------------------
-// Seeded reference data: the page is a pure view -- no create form, no
-// edit/delete UI, and the module registers only the GET route.
+// ---- /pos/dictionaries -----------------------------
 
 MD_Column md_dictionaries_columns[] = {
     { .name = "category",   .label = "Category", .type = COL_TYPE_TEXT, .nullable = false },
@@ -272,18 +300,53 @@ MD_Column md_dictionaries_columns[] = {
 };
 const size_t md_dictionaries_columns_count = ARRAY_LEN(md_dictionaries_columns);
 
-void serve_pos_dictionaries(Serve_Context *sc) {
+// Required keys first: category drives the SERVE_CREATE 400 guard; the
+// sort key is optional and defaults to 0 (pos_num: empty -> SQL_I(0)),
+// matching the column DEFAULT on both dialects. The macro pastes
+// create_ + singular -> create_pos_dict and generates the route handler
+// serve_pos_dict_create.
+static const char *dict_fields[]     = { "category", "code", "label" };
+static const char *dict_opt_fields[] = { "sort_order" };
+
+static bool create_pos_dict(db_t *db, String_View *fields, size_t count) {
+    if (count < 4) return false;
+
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "INSERT INTO dictionaries "
+                         "(category, code, label, sort_order) "
+                         "VALUES (?, ?, ?, ?);",
+        [SQL_MYSQL]    =  "INSERT INTO dictionaries "
+                         "(category, code, label, sort_order) "
+                         "VALUES (?, ?, ?, ?);",
+        [SQL_POSTGRES] = "INSERT INTO dictionaries "
+                         "(category, code, label, sort_order) "
+                         "VALUES ($1, $2, $3, $4);",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt))    return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))  return_defer(false);  // category
+    if (!sql_bind(&stmt, 2, SQL_SV(fields[1])))  return_defer(false);  // code
+    if (!sql_bind(&stmt, 3, SQL_SV(fields[2])))  return_defer(false);  // label
+    if (!sql_bind(&stmt, 4, pos_num(fields[3]))) return_defer(false);  // sort_order
+    if (!sql_final_step(&stmt))                  return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+SERVE_CREATE(pos_dict, pos_dict, dict_fields, dict_opt_fields)
+
+// create-only page (create_only): the add form + POST /create; no row
+// actions (edit/delete/restore hidden, no such routes registered).
+void serve_pos_dict(Serve_Context *sc) {
     MD_MasterConfig config = {
         .table          = "dictionaries",
         .title          = "Dictionaries",
         .id_column      = "id",
-        .crud_path      = "/pos/dictionaries",  /* never used: no write routes */
+        .crud_path      = "/pos/dictionaries",
         .columns        = md_dictionaries_columns,
         .column_count   = md_dictionaries_columns_count,
-        .read_only      = 1,
+        .create_only    = 1,
     };
     serve_master_child(sc, &config);
 }
-// SERVE_CREATE(pos_users, pos_user, usr_fields, usr_opt_fields)
-// SERVE_UPDATE(pos_users, pos_user, usr_fields, usr_opt_fields)
-// SERVE_SOFT_DELETE(pos_users, pos_user)

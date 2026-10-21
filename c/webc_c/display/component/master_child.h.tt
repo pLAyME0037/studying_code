@@ -179,7 +179,7 @@
                             ({ } })
                             <td class="pl-3 py-1 whitespace-nowrap">
                                 <div class="flex items-center gap-1">
-                                    ({ if (!config->read_only && config->soft_delete && show_deleted) { })
+                                    ({ if (!config->read_only && !config->create_only && config->soft_delete && show_deleted) { })
                                     <form method="POST"
                                           action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/restore?redirect=({ STR(md_path); })?deleted=1"
                                           data-md-kind="master"
@@ -196,7 +196,7 @@
                                         </button>
                                     </form>
                                     ({ } else { })
-                                    ({ if (!config->read_only) { })
+                                    ({ if (!config->read_only && !config->create_only) { })
                                     <button type="button"
                                             class="master-edit-btn p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30"
                                             title="Edit"
@@ -212,7 +212,7 @@
                                         aria-expanded="false">
                                         󰈈
                                     </button>
-                                    ({ if (!config->read_only) { })
+                                    ({ if (!config->read_only && !config->create_only) { })
                                     <form method="POST"
                                           action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/delete?redirect=({ STR(md_path); })"
                                           data-md-kind="master"
@@ -233,6 +233,7 @@
                                 </div>
                             </td>
                         </tr>
+({ if (!config->read_only && !config->create_only) { })
                         <tr class="md-master-edit-row hidden">
                             <td colspan="({ INT(config->column_count + 1); })" class="pl-3 py-1 bg-amber-50 dark:bg-gray-900">
                                 <form id="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
@@ -324,6 +325,7 @@
                                 </form>
                             </td>
                         </tr>
+({ } })
                         <tr class="detail-panel-row" 
                             data-master-id="({ STR(rows->items[ri].id); })" 
                             style="display: none;">

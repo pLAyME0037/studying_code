@@ -461,21 +461,49 @@ def main():
           (st, "pos_avatar_1" not in body.decode()
            and "pos_avatar_2" not in body.decode()), (200, True))
 
-    # ---- read_only page (/pos/dictionaries) ------------------------------
+    # ---- create-only page (/pos/dictionaries) ----------------------------
     st, body, _ = c.get("/pos/dictionaries")
     html = body.decode()
-    t.chk("dictionaries page (read_only)", st, 200)
+    t.chk("dictionaries page (create-only)", st, 200)
     t.chk("dictionaries th = 4 columns + actions", th_count(html), 5)
     t.chk("dictionaries lists seed rows", html.count('data-row-id="') >= 1, True)
-    t.chk("read_only: no create form", 'data-md-op="create"' not in html, True)
-    t.chk("read_only: no edit buttons", "master-edit-btn" not in html, True)
-    t.chk("read_only: no delete forms", 'data-md-op="delete"' not in html, True)
-    t.chk("read_only: no restore forms", 'data-md-op="restore"' not in html, True)
-    t.chk("read_only: no add-child buttons", "add-child-btn" not in html, True)
-    t.chk("read_only: write route not registered",
-          c.req("POST", "/pos/dictionaries/create",
-                b"a=b", {"Content-Type": "application/x-www-form-urlencoded"})[0],
-          404)
+    t.chk("create-only: add form present", 'data-md-op="create"' in html, True)
+    t.chk("create-only: no edit buttons", "master-edit-btn" not in html, True)
+    t.chk("create-only: no delete forms", 'data-md-op="delete"' not in html, True)
+    t.chk("create-only: no restore forms", 'data-md-op="restore"' not in html, True)
+    t.chk("create-only: no add-child buttons", "add-child-btn" not in html, True)
+
+    # create: sort_order empty -> column default 0; the row shows up
+    st, _, _ = c.post_urlencoded(
+        "/pos/dictionaries/create?redirect=/pos/dictionaries",
+        {"category": "POS_TEST_DICT", "code": "PTD-1", "label": "Plan Check",
+         "sort_order": ""})
+    t.chk("dictionary create", st, 302)
+    t.chk("dictionary row stored (sort empty -> 0)",
+          db_row("SELECT sort_order FROM dictionaries WHERE category = ? "
+                 "AND code = ?", ("POS_TEST_DICT", "PTD-1")),
+          (0,))
+    st, body, _ = c.get("/pos/dictionaries")
+    t.chk("dictionary row visible after create",
+          "Plan Check" in body.decode(), True)
+
+    # duplicate UNIQUE(category, code) -> 409 with the reason (Phase 23)
+    st, body, _ = c.post_urlencoded(
+        "/pos/dictionaries/create?redirect=/pos/dictionaries",
+        {"category": "POS_TEST_DICT", "code": "PTD-1", "label": "Dup",
+         "sort_order": "1"})
+    t.chk("duplicate dictionary -> 409 + reason",
+          (st, b"already exists" in body), (409, True))
+
+    # create-only contract: no update/delete/restore routes exist
+    did = db_row("SELECT id FROM dictionaries WHERE category = ? AND code = ?",
+                 ("POS_TEST_DICT", "PTD-1"))[0]
+    for op in ("update", "delete", "restore"):
+        st, _, _ = c.post_urlencoded(
+            f"/pos/dictionaries/{did}/{op}?redirect=/pos/dictionaries",
+            {"category": "POS_TEST_DICT", "code": "PTD-1",
+             "label": "X", "sort_order": "1"})
+        t.chk(f"create-only: /{op} route not registered", st, 404)
 
     # ---- Phase 5a: CATALOG (/pos/categories, /pos/products) --------------
     st, body, _ = c.get("/pos/categories")

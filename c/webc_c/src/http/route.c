@@ -246,8 +246,9 @@ void route_initialize(void) {
     route_new(&routes, "/pos/users", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_users_delete);
     route_new(&routes, "/pos/users", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_users_restore);
 
-    // read_only showcase: view only
-    route_new(&routes, "/pos/dictionaries", NULL, "GET", ROUTE_EXACT, serve_pos_dictionaries);
+    // create-only: the add form + /create (no update/delete/restore)
+    route_new(&routes, "/pos/dictionaries", NULL, "GET", ROUTE_EXACT, serve_pos_dict);
+    route_new(&routes, "/pos/dictionaries/create", NULL, "POST", ROUTE_EXACT, serve_pos_dict_create);
 
     // Phase 5a CATALOG
     route_new(&routes, "/pos/categories", NULL,       "GET",  ROUTE_EXACT,     serve_pos_categories);

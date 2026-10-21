@@ -19,7 +19,8 @@ void serve_pos_users_restore(Serve_Context *sc);
 extern MD_Column md_pos_users_columns[];
 extern const size_t md_pos_users_columns_count;
 
-/* read_only view: GET route only, no write routes registered */
-void serve_pos_dictionaries(Serve_Context *sc);
+/* create-only view: the add form + POST /create; no row actions */
+void serve_pos_dict(Serve_Context *sc);
+void serve_pos_dict_create(Serve_Context *sc);
 
 #endif // !POS_H_

@@ -702,6 +702,29 @@ vanilla JS only.
   flipped to 409. Suite: 881 PASS (http 120 / pos 378 / shop 118 /
   role 48 / crud_contract 170 / mysql 41 / https 6).
 
+## Phase 24 - create_only flag + writable /pos/dictionaries (suite 892 PASS)
+- New MD_MasterConfig flag create_only (the inverse of no_create): the
+  generic add form stays, the row actions (edit/delete/restore) hide,
+  and the module registers ONLY the /create route. First user:
+  /pos/dictionaries -- staff can append lookup rows (category / code /
+  label, sort defaults to 0) but not edit or delete the shared dict.
+- Template: master_child.h.tt gates the edit BUTTON, the inline edit
+  ROW (previously rendered unconditionally -- even on read_only
+  pages), the delete form and the restore form with !create_only.
+- pos.c: create_pos_dict (3-dialect INSERT; sort_order binds pos_num
+  so an empty box stores the column default 0) + SERVE_CREATE(pos_dict,
+  pos_dict, ...); the page fn is serve_pos_dict; pos.h and route.c
+  follow (GET /pos/dictionaries + POST /pos/dictionaries/create only).
+- Tests: the dictionaries read_only block became the create-only block
+  (add form present, no edit/delete/restore, create -> 302 + row +
+  sort 0, duplicate UNIQUE(category, code) -> 409 + reason,
+  /update /delete /restore -> 404). crud_contract learned to skip the
+  update/delete legs on create-only pages (row located by data-row-id,
+  not the update form's id) while staying strict when a normal page
+  loses its form.
+- Suite: 892 PASS (http 120 / pos 384 / shop 118 / role 48 /
+  crud_contract 175 / mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize
