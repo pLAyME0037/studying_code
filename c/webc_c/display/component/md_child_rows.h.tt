@@ -1,26 +1,29 @@
-<tr class="md-row ({ if (show_deleted) { })hover:bg-red-100 dark:hover:bg-red-800 bg-red-50 dark:bg-red-900({ } else { })hover:bg-gray-100 dark:hover:bg-gray-700({ } })"
-    data-row-id="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"> ({
-    for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
-        <td class="pl-3 py-1 text-sm text-gray-700 dark:text-gray-200">
-            ({ if (config->children[ti].columns[cci].cell) { })
-                ({ STR(md_cell_render(config->children[ti].columns[cci].cell,
-                       rows->items[ri].children[ti].items[ci].values,
-                       md_col_slot(config->children[ti].columns, cci))); })
-            ({ } else { })
-                ({ ESCAPED(rows->items[ri].children[ti].items[ci].disp[md_col_slot(config->children[ti].columns, cci)]); })
-            ({ } })
-        </td>
-    ({ } })
+<tr class="md-row <c> if (show_deleted) { </c>hover:bg-red-100 dark:hover:bg-red-800 bg-red-50 dark:bg-red-900<c> }
+                      else { </c>hover:bg-gray-100 dark:hover:bg-gray-700
+                  <c> } </c>"
+    data-row-id="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>">
+    <c>
+    for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { </c>
+    <td class="pl-3 py-1 text-sm text-gray-700 dark:text-gray-200">
+        <c> if (config->children[ti].columns[cci].cell) { </c>
+            <c> STR(md_cell_render(config->children[ti].columns[cci].cell,
+                   rows->items[ri].children[ti].items[ci].values,
+                   md_col_slot(config->children[ti].columns, cci))); </c>
+        <c> } else { </c>
+            <c> ESCAPED(rows->items[ri].children[ti].items[ci].disp[md_col_slot(config->children[ti].columns, cci)]); </c>
+        <c> } </c>
+    </td>
+    <c> } </c>
     <td class="p-1 whitespace-nowrap">
         <div class="flex gap-1 items-center">
-            ({ if (config->children[ti].soft_delete && show_deleted) { })
+            <c> if (config->children[ti].soft_delete && show_deleted) { </c>
             <form method="POST"
-                  action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/restore?redirect=({ STR(md_path); })?deleted=1"
+                  action="<c> STR(config->children[ti].crud_path); </c>/<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>/restore?redirect=<c> STR(md_path); </c>?deleted=1"
                   data-md-kind="child"
-                  data-md-scope="({ STR(config->children[ti].table); })"
+                  data-md-scope="<c> STR(config->children[ti].table); </c>"
                   data-md-op="restore"
-                  data-md-master="({ STR(rows->items[ri].id); })"
-                  data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+                  data-md-master="<c> STR(rows->items[ri].id); </c>"
+                  data-md-target="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
                   class="inline">
                 <button type="submit"
                         title="Restore"
@@ -29,8 +32,8 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 </button>
             </form>
-            ({ } else { })
-            ({ if (!config->read_only) { })
+            <c> } else { </c>
+            <c> if (!config->read_only) { </c>
             <button type="button"
                     class="child-edit-btn p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/40"
                     title="Edit"
@@ -38,12 +41,12 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
             <form method="POST"
-                  action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/delete?redirect=({ STR(md_path); })"
+                  action="<c> STR(config->children[ti].crud_path); </c>/<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>/delete?redirect=<c> STR(md_path); </c>"
                   data-md-kind="child"
-                  data-md-scope="({ STR(config->children[ti].table); })"
+                  data-md-scope="<c> STR(config->children[ti].table); </c>"
                   data-md-op="delete"
-                  data-md-master="({ STR(rows->items[ri].id); })"
-                  data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+                  data-md-master="<c> STR(rows->items[ri].id); </c>"
+                  data-md-target="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
                   class="inline">
                 <button type="submit"
                         title="Delete"
@@ -52,81 +55,85 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
             </form>
-            ({ } })
-            ({ } })
+            <c> } </c>
+            <c> } </c>
         </div>
     </td>
 </tr>
 <tr class="md-edit-row hidden">
-    ({ for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
+    <c> for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { </c>
         <td class="p-1">
-        ({ if (config->children[ti].columns[cci].computed) { })
-        ({ } else if (config->children[ti].columns[cci].cell) { })
-            <div class="flex flex-col gap-1">
-                ({ for (size_t pi = 0; pi < config->children[ti].columns[cci].cell->part_count; ++pi) { })
-                    <label class="block text-xs text-gray-500 dark:text-gray-400">
-                        ({ ESCAPED(md_cell_part_label(config->children[ti].columns[cci].cell, pi)); })
-                    </label>
-                    ({ if (config->children[ti].columns[cci].cell->part_choices
-                           && config->children[ti].columns[cci].cell->part_choices[pi]) { })
-                    <select form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
-                            name="({ ESCAPED(config->children[ti].columns[cci].cell->parts[pi]); })"
-                            class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                        ({ for (size_t o = 0;
-                                config->children[ti].columns[cci].cell->part_choices[pi][o];
-                                ++o) { })
-                            <option value="({ STR(config->children[ti].columns[cci].cell->part_choices[pi][o]); })"
-                                ({ if (strcmp(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci) + pi], config->children[ti].columns[cci].cell->part_choices[pi][o]) == 0) { })selected({ } })>
-                                ({ ESCAPED(config->children[ti].columns[cci].cell->part_choices[pi][o]); })
-                            </option>
-                        ({ } })
-                    </select>
-                    ({ } else { })
-                    <input form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
-                           name="({ ESCAPED(config->children[ti].columns[cci].cell->parts[pi]); })"
-                           type="text"
-                           value="({ ESCAPED(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci) + pi]); })"
-                           class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                    ({ } })
-                ({ } })
-            </div>
-        ({ } else { })
-        ({ if (config->children[ti].columns[cci].type == COL_TYPE_FK_SELECT) { })
-            <select form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
-                    name="({ STR(config->children[ti].columns[cci].name); })"
+        <c> if (config->children[ti].columns[cci].computed) { </c>
+        <c> } else if (config->children[ti].columns[cci].cell) { </c>
+        <div class="flex flex-col gap-1">
+            <c> for (size_t pi = 0; pi < config->children[ti].columns[cci].cell->part_count; ++pi) { </c>
+            <label class="block text-xs text-gray-500 dark:text-gray-400">
+                <c> ESCAPED(md_cell_part_label(config->children[ti].columns[cci].cell, pi)); </c>
+            </label>
+                <c> if (config->children[ti].columns[cci].cell->part_choices
+                       && config->children[ti].columns[cci].cell->part_choices[pi]) { </c>
+                <select form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
+                        name="<c> ESCAPED(config->children[ti].columns[cci].cell->parts[pi]); </c>"
+                        class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    <c> for (size_t o = 0;
+                            config->children[ti].columns[cci].cell->part_choices[pi][o];
+                            ++o) { </c>
+                    <option value="<c> STR(config->children[ti].columns[cci].cell->part_choices[pi][o]); </c>"
+                        <c> if (strcmp(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci) + pi], config->children[ti].columns[cci].cell->part_choices[pi][o]) == 0) { </c>selected<c> } </c>>
+                        <c> ESCAPED(config->children[ti].columns[cci].cell->part_choices[pi][o]); </c>
+                    </option>
+                    <c> } </c>
+                </select>
+                <c> } else { </c>
+                <input form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
+                       name="<c> ESCAPED(config->children[ti].columns[cci].cell->parts[pi]); </c>"
+                       type="text"
+                       value="<c> ESCAPED(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci) + pi]); </c>"
+                       class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                <c> } </c>
+            <c> } </c>
+        </div>
+        <c> } else { </c>
+            <c> if (config->children[ti].columns[cci].type == COL_TYPE_FK_SELECT) { </c>
+            <select form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
+                    name="<c> STR(config->children[ti].columns[cci].name); </c>"
                     class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                ({ if (config->children[ti].columns[cci].nullable) { })
+                <c> if (config->children[ti].columns[cci].nullable) { </c>
                 <option value=""
-                    ({ if (rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)][0] == '\0') { })selected({ } })>
+                    <c> if (rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)][0] == '\0') { </c>selected<c> } </c>>
                     None
                 </option>
-                ({ } })
-                ({ for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { })
-                    <option value="({ STR(config->children[ti].columns[cci].opt[o].id); })"
-                        ({ if (strcmp(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)], config->children[ti].columns[cci].opt[o].id) == 0) { })selected({ } })>
-                        ({ ESCAPED(config->children[ti].columns[cci].opt[o].label); })
-                    </option>
-                ({ } })
+                <c> } </c>
+                <c> for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { </c>
+                <option value="<c> STR(config->children[ti].columns[cci].opt[o].id); </c>"
+                    <c> if (strcmp(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)], config->children[ti].columns[cci].opt[o].id) == 0) { </c>selected<c> } </c>>
+                    <c> ESCAPED(config->children[ti].columns[cci].opt[o].label); </c>
+                </option>
+                <c> } </c>
             </select>
-        ({ } else { })
-            <input form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
-                   name="({ STR(config->children[ti].columns[cci].name); })"
-                   type="({ if (config->children[ti].columns[cci].type == COL_TYPE_DATE) { })date({ } else if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
-                   ({ if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })step="any" ({ } })
-                   ({ if (!config->children[ti].columns[cci].nullable
-                          && config->children[ti].columns[cci].type != COL_TYPE_DATE) { })required({ } })
-                   value="({ ESCAPED(config->children[ti].columns[cci].type == COL_TYPE_DATE
+            <c> } else { </c>
+            <input form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
+                   name="<c> STR(config->children[ti].columns[cci].name); </c>"
+                   type="<c> if (config->children[ti].columns[cci].type == COL_TYPE_DATE) { </c>date<c> } else if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { </c>number<c> } else { </c>text<c> } </c>"
+                   <c> if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { </c>
+                          step="any" 
+                   <c> } </c>
+                   <c> if (!config->children[ti].columns[cci].nullable &&
+                           config->children[ti].columns[cci].type != COL_TYPE_DATE) { </c>
+                          required
+                   <c> } </c>
+                   value="<c> ESCAPED(config->children[ti].columns[cci].type == COL_TYPE_DATE
                                     ? md_date_input(rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)])
-                                    : rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)]); })"
+                                    : rows->items[ri].children[ti].items[ci].values[md_col_slot(config->children[ti].columns, cci)]); </c>"
                    class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-        ({ } })
-        ({ } })
+            <c> } </c>
+        <c> } </c>
         </td>
-    ({ } })
+    <c> } </c>
     <td class="p-1">
         <div class="flex flex-col gap-1 items-start">
             <button type="submit"
-                    form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+                    form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
                     title="Confirm"
                     aria-label="Confirm"
                     class="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
@@ -141,13 +148,13 @@
         </div>
     </td>
 </tr>
-<form id="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+<form id="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
       method="POST"
-      action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/update?({ STR(config->children[ti].fk_column); })=({ STR(rows->items[ri].id); })&redirect=({ STR(md_path); })"
+      action="<c> STR(config->children[ti].crud_path); </c>/<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>/update?<c> STR(config->children[ti].fk_column); </c>=<c> STR(rows->items[ri].id); </c>&redirect=<c> STR(md_path); </c>"
       data-md-kind="child"
-      data-md-scope="({ STR(config->children[ti].table); })"
+      data-md-scope="<c> STR(config->children[ti].table); </c>"
       data-md-op="update"
-      data-md-master="({ STR(rows->items[ri].id); })"
-      data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+      data-md-master="<c> STR(rows->items[ri].id); </c>"
+      data-md-target="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
       class="hidden">
 </form>

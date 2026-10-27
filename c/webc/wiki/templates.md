@@ -22,17 +22,17 @@ Two delimiters:
 
 | | |
 |---|---|
-| `({` | open a C island |
-| `})` | close it |
+| `<c>` | open a C island |
+| `</c>` | close it |
 
 Everything outside an island is literal HTML. Everything inside is C, copied
 verbatim.
 
 ```
-Build time: ({ STR(WEBC_BUILD_TIME); })
+Build time: <c> STR(WEBC_BUILD_TIME); </c>
 ```
 
-There is no escaping, no `{{ }}`, no filters and no expression grammar. If you
+There is no escaping, no `<c></c>`, no filters and no expression grammar. If you
 want a conditional, write `if`. If you want a loop, write `for`. The template
 language *is* C, which means it is fully typed, has no surprises, and is
 checked by the compiler like any other code.
@@ -44,14 +44,14 @@ The whole compiler is 38 lines and works by alternating `sv_chop_by_sv`:
 ```c
 int c_code_mode = 0;
 while (tmplat.count) {
-    String_View token = sv_chop_by_sv(&tmplat, c_code_mode ? "})" : "({");
+    String_View token = sv_chop_by_sv(&tmplat, c_code_mode ? "</c>" : "<c>");
     if (c_code_mode) compile_c_code(token);     // printed verbatim
     else             compile_byte_array(token); // → OUT("\x..\x..", N);
     c_code_mode = !c_code_mode;
 }
 ```
 
-It starts in HTML mode, so the first token (text before the first `({`) is
+It starts in HTML mode, so the first token (text before the first `<c>`) is
 treated as literal HTML. Each token flips the mode.
 
 `compile_byte_array` writes the literal as a hex-escaped `OUT(...)` call:
@@ -138,7 +138,7 @@ them — same mechanism, different binding.
     </h2>
     ...
         <p class="mt-2 text-sm ...">
-            Build time: ({ STR(WEBC_BUILD_TIME); })
+            Build time: <c> STR(WEBC_BUILD_TIME); </c>
         </p>
     ...
 </div>
@@ -157,13 +157,13 @@ which, once `render_version_page` compiles, is just three calls in order.
 A richer island — a loop, from `display/user.h.tt`:
 
 ```
-({ for (size_t i = 0; i < users.count; ++i) { })
+<c> for (size_t i = 0; i < users.count; ++i) { </c>
 <tr class="hover:bg-gray-50 ...">
     <td class="px-6 py-4 ...">
-        ({ STR(users.items[i].id) })
+        <c> STR(users.items[i].id) </c>
     </td>
 </tr>
-({ } })
+<c> } </c>
 ```
 
 `users` is a local in the enclosing function. The generated header can see it
@@ -174,7 +174,7 @@ symbol table and no lookup at runtime.
 
 `SERVE_READ` supports `?fragment=all`: the handler skips `PAGE_BEGIN`/
 `PAGE_END` and emits only the body region. Templates are written with
-`({ if (!fragment) { })` guards around shell markup so the same file serves
+`<c> if (!fragment) { </c>` guards around shell markup so the same file serves
 both the full page and the bare pagination store that
 `js/PaginationSwitcher.js` fetches to flip pages client-side.
 

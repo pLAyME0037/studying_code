@@ -2585,28 +2585,23 @@ NOBDEF Nob_String_View nob_sv_chop_while(Nob_String_View *sv, int (*p)(int x))
     return result;
 }
 
-NOBDEF Nob_String_View nob_sv_chop_by_sv(Nob_String_View *sv, const char *delim) {
+NOBDEF Nob_String_View nob_sv_chop_by_sv(Nob_String_View *sv,
+                                         Nob_String_View *delim)
+{
     size_t i = 0;
-    while (i < sv->count) {
-        if (sv->data[i] == delim[0] &&
-            i + 1 < sv->count       &&
-            sv->data[i + 1] == delim[1])
-        {
+    size_t match_len = sv->count;
+    size_t delim_len = 0;
+    while (i + delim->count <= sv->count) {
+        if (memcmp(sv->data + i, delim->data, delim->count) == 0) {
+            match_len = i;
+            delim_len = delim->count;
             break;
         }
         ++i;
     }
-
-    Nob_String_View result = nob_sv_from_parts(sv->data, i);
-
-    if (i < sv->count) {
-        sv->count -= i + 2;
-        sv->data  += i + 2;
-    } else {
-        sv->count = 0;
-        sv->data  += i;
-    }
-
+    Nob_String_View result = nob_sv_from_parts(sv->data, match_len);
+    sv->data  += match_len + delim_len;
+    sv->count -= match_len + delim_len;
     return result;
 }
 

@@ -275,7 +275,7 @@ void serve_shop_checkout_post(Serve_Context *sc) {
                     // created
                 } else {
                     fail = tr("checkout.err_customer",
-                          "មិនអាចបង្កើតគណនីអតិថិជនបានទេ");
+                              "មិនអាចបង្កើតគណនីអតិថិជនបានទេ");
                 }
                 sql_finalize(&stmt);
             }
@@ -371,8 +371,8 @@ void serve_shop_checkout_post(Serve_Context *sc) {
             [SQL_POSTGRES] = stock_pg,
         };
         static const char *const dec_q[SQL_LANG_COUNT] = {
-            [SQL_SQLITE] = "UPDATE inventory_stocks SET quantity = "
-                           "quantity - ? WHERE id = ?;",
+            [SQL_SQLITE]   = "UPDATE inventory_stocks SET quantity = "
+                             "quantity - ? WHERE id = ?;",
             [SQL_MYSQL]    = "UPDATE inventory_stocks SET quantity = "
                              "quantity - ? WHERE id = ?;",
             [SQL_POSTGRES] = "UPDATE inventory_stocks SET quantity = "

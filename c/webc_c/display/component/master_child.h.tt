@@ -1,25 +1,27 @@
-({ if (!fragment) { })
+<c> if (!fragment) { </c>
 <div id="mc-root" class="max-w-full mx-auto">
     <!-- View strip: Live + Trash on soft_delete pages. The dedicated
          search row below it (?q text, ?qcol scope) filters whichever
          view is active. orders hides Live + the add form
          (MD_MasterConfig.no_live/no_create: rows come from sales). -->
-    ({ if (config->soft_delete) { })
+    <c> if (config->soft_delete) { </c>
     <div class="mb-2 inline-flex text-sm border border-gray-200 dark:border-gray-700 divide-x divide-gray-200 dark:divide-gray-700">
-        ({ if (!config->no_live) { })
-        <a href="({ STR(md_path); })"
+        <c> if (!config->no_live) { </c>
+        <a href="<c> STR(md_path); </c>"
            title="Plain list of live rows"
-           class="px-2 py-1.5 font-medium ({ if (!show_deleted) { })bg-blue text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Live</a>
-        ({ } })
-        <a href="({ STR(md_path); })?deleted=1"
+           class="px-2 py-1.5 font-medium <c> if (!show_deleted) { </c>bg-blue text-onbase<c> } else { </c>text-subtext0 hover:text-text hover:bg-surface0<c> } </c>">
+            Live</a>
+        <c> } </c>
+        <a href="<c> STR(md_path); </c>?deleted=1"
            title="Soft-deleted rows - restore or leave them here"
-           class="px-2 py-1.5 font-medium ({ if (show_deleted) { })bg-red text-onbase({ } else { })text-subtext0 hover:text-text hover:bg-surface0({ } })">Trash (<span data-trash-total>({ INT(trash_total); })</span>)</a>
+           class="px-2 py-1.5 font-medium <c> if (show_deleted) { </c>bg-red text-onbase<c> } else { </c>text-subtext0 hover:text-text hover:bg-surface0<c> } </c>">
+            Trash (<span data-trash-total><c> INT(trash_total); </c></span>)</a>
     </div>
-    ({ } })
+    <c> } </c>
     <!-- The per-column filter row lives inside the table's header row;
          its inputs post into this empty anchor form via the form
          attribute. -->
-    <form id="md-query-form" method="GET" action="({ STR(md_path); })"></form>
+    <form id="md-query-form" method="GET" action="<c> STR(md_path); </c>"></form>
     <script>
     (function () {
         var boxes = document.querySelectorAll('[data-md-qbox]');
@@ -44,84 +46,82 @@
                 break;
             }
         }
-    })();
+    </c>();
     </script>
-({ if (show_deleted) { })
+<c> if (show_deleted) { </c>
     <div class="mb-3 px-2 py-1 flex justify-between items-center text-sm bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
         <span>Deleted rows &mdash; restore to bring them back, or leave them here.</span>
-        <a href="({ STR(md_path); })" class="underline">Back to list</a>
+        <a href="<c> STR(md_path); </c>" class="underline">Back to list</a>
     </div>
-({ } })
-({ if (!config->read_only && !config->no_create && !show_deleted) { })
+<c> } </c>
+<c> if (!config->read_only && !config->no_create && !show_deleted) { </c>
     <form method="POST"
-          action="({ STR(config->crud_path); })/create?redirect=({ STR(md_path); })"
+          action="<c> STR(config->crud_path); </c>/create?redirect=<c> STR(md_path); </c>"
           data-md-kind="master"
-          data-md-scope="({ STR(config->table); })"
+          data-md-scope="<c> STR(config->table); </c>"
           data-md-op="create"
           class="mb-3 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
         <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
-            Add ({ ESCAPED(config->title); })
+            Add <c> ESCAPED(config->title); </c>
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            ({ for (size_t fi = 0; fi < form_cols.count; ++fi) { })
-                ({ if (!form_cols.items[fi].col->computed) { })
-                ({ if (form_cols.items[fi].col->cell) { })
+            <c> for (size_t fi = 0; fi < form_cols.count; ++fi) { </c>
+                <c> if (!form_cols.items[fi].col->computed) { </c>
+                <c> if (form_cols.items[fi].col->cell) { </c>
                 <div>
-                    ({ for (size_t pi = 0; pi < form_cols.items[fi].col->cell->part_count; ++pi) { })
+                    <c> for (size_t pi = 0; pi < form_cols.items[fi].col->cell->part_count; ++pi) { </c>
                         <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
-                            ({ ESCAPED(md_cell_part_label(form_cols.items[fi].col->cell, pi)); })
+                            <c> ESCAPED(md_cell_part_label(form_cols.items[fi].col->cell, pi)); </c>
                         </label>
-                        ({ if (form_cols.items[fi].col->cell->part_choices
-                               && form_cols.items[fi].col->cell->part_choices[pi]) { })
-                        <select name="({ ESCAPED(form_cols.items[fi].col->cell->parts[pi]); })"
+                        <c> if (form_cols.items[fi].col->cell->part_choices
+                               && form_cols.items[fi].col->cell->part_choices[pi]) { </c>
+                        <select name="<c> ESCAPED(form_cols.items[fi].col->cell->parts[pi]); </c>"
                                 class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                            ({ for (size_t o = 0;
-                                    form_cols.items[fi].col->cell->part_choices[pi][o];
-                                    ++o) { })
-                                <option value="({ STR(form_cols.items[fi].col->cell->part_choices[pi][o]); })">
-                                    ({ ESCAPED(form_cols.items[fi].col->cell->part_choices[pi][o]); })
-                                </option>
-                            ({ } })
+                            <c> for (size_t o = 0; form_cols.items[fi].col->cell->part_choices[pi][o]; ++o) { </c>
+                            <option value="<c> STR(form_cols.items[fi].col->cell->part_choices[pi][o]); </c>">
+                                <c> ESCAPED(form_cols.items[fi].col->cell->part_choices[pi][o]); </c>
+                            </option>
+                            <c> } </c>
                         </select>
-                        ({ } else { })
-                        <input name="({ ESCAPED(form_cols.items[fi].col->cell->parts[pi]); })"
+                        <c> } else { </c>
+                        <input name="<c> ESCAPED(form_cols.items[fi].col->cell->parts[pi]); </c>"
                                type="text"
                                class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                        ({ } })
-                    ({ } })
+                        <c> } </c>
+                    <c> } </c>
                 </div>
-                ({ } else { })
+                <c> } else { </c>
                 <div>
                     <label class="block text-sm text-gray-600 dark:text-gray-300 mb-1">
-                        ({ ESCAPED(form_cols.items[fi].col->label); })
+                        <c> ESCAPED(form_cols.items[fi].col->label); </c>
                     </label>
-                    ({ if (form_cols.items[fi].col->type == COL_TYPE_FK_SELECT) { })
-                        <select name="({ ESCAPED(form_cols.items[fi].col->name); })"
-                                ({ if (!form_cols.items[fi].col->nullable) { })required({ } })
-                                class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                            <option value="">None</option>
-                            ({ for (size_t o = 0; o < form_cols.items[fi].count; ++o) { })
-                                <option value="({ STR(form_cols.items[fi].items[o].id); })">
-                                    ({ ESCAPED(form_cols.items[fi].items[o].label); })
-                                </option>
-                            ({ } })
-                        </select>
-                    ({ } else if (form_cols.items[fi].col->type == COL_TYPE_TEXTAREA) { })
-                        <textarea name="({ ESCAPED(form_cols.items[fi].col->name); })"
-                                  rows="1"
-                                  class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"></textarea>
-                    ({ } else { })
-                        <input name="({ ESCAPED(form_cols.items[fi].col->name); })"
-                               type="({ if (form_cols.items[fi].col->type == COL_TYPE_DATE) { })date({ } else if (form_cols.items[fi].col->type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
-                               ({ if (form_cols.items[fi].col->type == COL_TYPE_NUM) { })step="any" ({ } })
-                               ({ if (!form_cols.items[fi].col->nullable
-                                      && form_cols.items[fi].col->type != COL_TYPE_DATE) { })required({ } })
-                               class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                    ({ } })
+                    <c> if (form_cols.items[fi].col->type == COL_TYPE_FK_SELECT) { </c>
+                    <select name="<c> ESCAPED(form_cols.items[fi].col->name); </c>"
+                            <c> if (!form_cols.items[fi].col->nullable) { </c>required<c> } </c>
+                            class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                        <option value="">None</option>
+                        <c> for (size_t o = 0; o < form_cols.items[fi].count; ++o) { </c>
+                        <option value="<c> STR(form_cols.items[fi].items[o].id); </c>">
+                            <c> ESCAPED(form_cols.items[fi].items[o].label); </c>
+                        </option>
+                        <c> } </c>
+                    </select>
+                    <c> } else if (form_cols.items[fi].col->type == COL_TYPE_TEXTAREA) { </c>
+                    <textarea name="<c> ESCAPED(form_cols.items[fi].col->name); </c>"
+                              rows="1"
+                              class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white"></textarea>
+                    <c> } else { </c>
+                    <input name="<c> ESCAPED(form_cols.items[fi].col->name); </c>"
+                           type="<c> if (form_cols.items[fi].col->type == COL_TYPE_DATE) { </c>date<c> } else if (form_cols.items[fi].col->type == COL_TYPE_NUM) { </c>number<c> } else { </c>text<c> } </c>"
+                           <c> if (form_cols.items[fi].col->type == COL_TYPE_NUM) { </c>step="any" <c> } </c>
+                           <c> if (!form_cols.items[fi].col->nullable
+                                  && form_cols.items[fi].col->type != COL_TYPE_DATE) { </c>required<c> } </c>
+                           class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                    <c> } </c>
                 </div>
-                ({ } })
-                ({ } })
-            ({ } })
+                <c> } </c>
+                <c> } </c>
+            <c> } </c>
         </div>
         <button type="submit"
             class="bg-gray-200 dark:bg-gray-700 text-sky-900 dark:text-sky-200 border-b-3 border-b-sky-200 hover:border-b-blue-700 p-1 font-medium">
@@ -132,233 +132,252 @@
             Discard
         </button>
     </form>
-    ({ } })
-({ } })
+    <c> } </c>
+<c> } </c>
 
-({ if (fragment) { })
-    <div id="pg-store" hidden>
-        <table data-pg-rows="({ STR(page_container); })" data-pg-unit="3">
-            <tbody>
-({ } else { })
-    <div class="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-scroll border">
-        <table class="w-full text-left border-collapse master-table">
-            <thead class="bg-slate-100 dark:bg-slate-900 dark:text-white text-slate-800">
-                <tr class="border-b border-gray-200 dark:border-gray-700">
-                    ({ for (size_t i = 0; i < config->column_count; ++i) { })
-                        <th class="py-1 pl-3 font-semibold">
-                            ({ ESCAPED(config->columns[i].label); })
-                        </th>
-                    ({ } })
-                    <th class="py-1 pl-3 font-semibold">
-                        Actions
-                    </th>
+<c> if (fragment) { </c>
+<div id="pg-store" hidden>
+    <table data-pg-rows="<c> STR(page_container); </c>" data-pg-unit="3">
+        <tbody>
+<c> } else { </c>
+<div class="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-scroll border">
+    <table class="w-full text-left border-collapse master-table">
+        <thead class="bg-slate-100 dark:bg-slate-900 dark:text-white text-slate-800">
+            <tr class="border-b border-gray-200 dark:border-gray-700">
+                <c> for (size_t i = 0; i < config->column_count; ++i) { </c>
+                <th class="py-1 pl-3 font-semibold">
+                    <c> ESCAPED(config->columns[i].label); </c>
+                </th>
+                <c> } </c>
+                <th class="py-1 pl-3 font-semibold">
+                    Actions
+                </th>
+            </tr>
+            <c> md_query_row(sb, config, &form_cols, md_path, sc->query_string,
+                            q_text, qcol_name, search.term_count > 0); </c>
+        </thead>
+        <tbody id="<c> STR(page_container); </c>" class="divide-y divide-gray-200 dark:divide-gray-700">
+<c> } </c>
+            <c> if (rows->count == 0) { </c>
+            <tr>
+                <td colspan="<c> INT(config->column_count + 1); </c>"
+                    class="pl-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 text-center">
+                    No <c> ESCAPED(config->title); </c> yet.
+                </td>
+            </tr>
+            <c> } else { </c>
+                <c> for (size_t ri = 0; ri < rows->count; ++ri) { </c>
+                <tr class="<c> if (show_deleted) { </c>hover:bg-red-100 dark:hover:bg-red-800 bg-red-50 dark:bg-red-900<c> } else { </c>hover:bg-gray-100 dark:hover:bg-gray-700<c> } </c>"
+                    data-row-id="<c> STR(rows->items[ri].id); </c>">
+                    <c> for (size_t ci = 0; ci < config->column_count; ++ci) { </c>
+                    <td class="pl-3 py-1 text-gray-700 dark:text-gray-200">
+                        <c> if (config->columns[ci].cell) { </c>
+                            <c> STR(md_cell_render(config->columns[ci].cell,
+                                   rows->items[ri].values,
+                                   md_col_slot(config->columns, ci))); </c>
+                        <c> } else { </c>
+                            <c> ESCAPED(rows->items[ri].disp[md_col_slot(config->columns, ci)]); </c>
+                        <c> } </c>
+                    </td>
+                    <c> } </c>
+                    <td class="pl-3 py-1 whitespace-nowrap">
+                        <div class="flex items-center gap-1">
+                            <c> if (!config->read_only   &&
+                                   !config->create_only &&
+                                    config->soft_delete &&
+                                    show_deleted) { </c>
+                            <form method="POST"
+                                  action="<c> STR(config->crud_path); </c>/<c> STR(rows->items[ri].id); </c>/restore?redirect=<c> STR(md_path); </c>?deleted=1"
+                                  data-md-kind="master"
+                                  data-md-scope="<c> STR(config->table); </c>"
+                                  data-md-op="restore"
+                                  data-md-master="<c> STR(rows->items[ri].id); </c>"
+                                  data-md-target="<c> STR(rows->items[ri].id); </c>"
+                                  class="inline">
+                                <button type="submit"
+                                        title="Restore"
+                                        aria-label="Restore"
+                                        class="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                </button>
+                            </form>
+                            <c> } else { </c>
+                            <c> if (!config->read_only && !config->create_only) { </c>
+                            <button type="button"
+                                    class="master-edit-btn p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                                    title="Edit"
+                                    aria-label="Edit"
+                                    data-master-id="<c> STR(rows->items[ri].id); </c>">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <c> } </c>
+                            <button
+                                type="button"
+                                class="expand-btn p-1 text-xs hover:bg-indigo-900/30 text-indigo-600"
+                                data-master-id="<c> STR(rows->items[ri].id); </c>"
+                                aria-expanded="false">
+                                󰈈
+                            </button>
+                            <c> if (!config->read_only && !config->create_only) { </c>
+                            <form method="POST"
+                                  action="<c> STR(config->crud_path); </c>/<c> STR(rows->items[ri].id); </c>/delete?redirect=<c> STR(md_path); </c>"
+                                  data-md-kind="master"
+                                  data-md-scope="<c> STR(config->table); </c>"
+                                  data-md-op="delete"
+                                  data-md-master="<c> STR(rows->items[ri].id); </c>"
+                                  data-md-target="<c> STR(rows->items[ri].id); </c>"
+                                  class="inline">
+                                <button type="submit"
+                                        title="Delete"
+                                        aria-label="Delete"
+                                        class="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                </button>
+                            </form>
+                            <c> } </c>
+                        <c> } </c>
+                        </div>
+                    </td>
                 </tr>
-                ({ md_query_row(sb, config, &form_cols, md_path, sc->query_string, q_text, qcol_name, search.term_count > 0); })
-            </thead>
-            <tbody id="({ STR(page_container); })" class="divide-y divide-gray-200 dark:divide-gray-700">
-({ } })
-                ({ if (rows->count == 0) { })
-                    <tr>
-                        <td colspan="({ INT(config->column_count + 1); })"
-                            class="pl-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 text-center">
-                            No ({ ESCAPED(config->title); }) yet.
-                        </td>
-                    </tr>
-                ({ } else { })
-                    ({ for (size_t ri = 0; ri < rows->count; ++ri) { })
-                        <tr class="({ if (show_deleted) { })hover:bg-red-100 dark:hover:bg-red-800 bg-red-50 dark:bg-red-900({ } else { })hover:bg-gray-100 dark:hover:bg-gray-700({ } })"
-                            data-row-id="({ STR(rows->items[ri].id); })">
-                            ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
-                                <td class="pl-3 py-1 text-gray-700 dark:text-gray-200">
-                                    ({ if (config->columns[ci].cell) { })
-                                        ({ STR(md_cell_render(config->columns[ci].cell, rows->items[ri].values, md_col_slot(config->columns, ci))); })
-                                    ({ } else { })
-                                        ({ ESCAPED(rows->items[ri].disp[md_col_slot(config->columns, ci)]); })
-                                    ({ } })
-                                </td>
-                            ({ } })
-                            <td class="pl-3 py-1 whitespace-nowrap">
-                                <div class="flex items-center gap-1">
-                                    ({ if (!config->read_only && !config->create_only && config->soft_delete && show_deleted) { })
-                                    <form method="POST"
-                                          action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/restore?redirect=({ STR(md_path); })?deleted=1"
-                                          data-md-kind="master"
-                                          data-md-scope="({ STR(config->table); })"
-                                          data-md-op="restore"
-                                          data-md-master="({ STR(rows->items[ri].id); })"
-                                          data-md-target="({ STR(rows->items[ri].id); })"
-                                          class="inline">
-                                        <button type="submit"
-                                                title="Restore"
-                                                aria-label="Restore"
-                                                class="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        </button>
-                                    </form>
-                                    ({ } else { })
-                                    ({ if (!config->read_only && !config->create_only) { })
-                                    <button type="button"
-                                            class="master-edit-btn p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30"
-                                            title="Edit"
-                                            aria-label="Edit"
-                                            data-master-id="({ STR(rows->items[ri].id); })">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                                    </button>
-                                    ({ } })
-                                    <button
-                                        type="button"
-                                        class="expand-btn p-1 text-xs hover:bg-indigo-900/30 text-indigo-600"
-                                        data-master-id="({ STR(rows->items[ri].id); })"
-                                        aria-expanded="false">
-                                        󰈈
-                                    </button>
-                                    ({ if (!config->read_only && !config->create_only) { })
-                                    <form method="POST"
-                                          action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/delete?redirect=({ STR(md_path); })"
-                                          data-md-kind="master"
-                                          data-md-scope="({ STR(config->table); })"
-                                          data-md-op="delete"
-                                          data-md-master="({ STR(rows->items[ri].id); })"
-                                          data-md-target="({ STR(rows->items[ri].id); })"
-                                          class="inline">
-                                        <button type="submit"
-                                                title="Delete"
-                                                aria-label="Delete"
-                                                class="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
-                                    ({ } })
-                                    ({ } })
-                                </div>
-                            </td>
-                        </tr>
-({ if (!config->read_only && !config->create_only) { })
-                        <tr class="md-master-edit-row hidden">
-                            <td colspan="({ INT(config->column_count + 1); })" class="pl-3 py-1 bg-amber-50 dark:bg-gray-900">
-                                <form id="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
-                                      method="POST"
-                                      action="({ STR(config->crud_path); })/({ STR(rows->items[ri].id); })/update?redirect=({ STR(md_path); })"
-                                      data-md-kind="master"
-                                      data-md-scope="({ STR(config->table); })"
-                                      data-md-op="update"
-                                      data-md-master="({ STR(rows->items[ri].id); })"
-                                      data-md-target="({ STR(rows->items[ri].id); })"
-                                      class="flex flex-wrap gap-3 items-end">
-                            ({ for (size_t ci = 0; ci < config->column_count; ++ci) { })
-                                ({ if (config->columns[ci].computed) { })
-                                ({ } else if (config->columns[ci].cell) { })
-                                    <div class="flex flex-col gap-1 min-w-[140px]">
-                                        ({ for (size_t pi = 0; pi < config->columns[ci].cell->part_count; ++pi) { })
-                                            <label class="text-xs text-gray-500 dark:text-gray-400">
-                                                ({ ESCAPED(md_cell_part_label(config->columns[ci].cell, pi)); })
-                                            </label>
-                                            ({ if (config->columns[ci].cell->part_choices
-                                                   && config->columns[ci].cell->part_choices[pi]) { })
-                                            <select form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
-                                                    name="({ ESCAPED(config->columns[ci].cell->parts[pi]); })"
-                                                    class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                                                ({ for (size_t o = 0;
-                                                        config->columns[ci].cell->part_choices[pi][o];
-                                                        ++o) { })
-                                                    <option value="({ STR(config->columns[ci].cell->part_choices[pi][o]); })"
-                                                            ({ if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci) + pi], config->columns[ci].cell->part_choices[pi][o]) == 0) { })selected({ } })>
-                                                        ({ ESCAPED(config->columns[ci].cell->part_choices[pi][o]); })
-                                                    </option>
-                                                ({ } })
-                                            </select>
-                                            ({ } else { })
-                                            <input form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
-                                                   name="({ ESCAPED(config->columns[ci].cell->parts[pi]); })"
-                                                   type="text"
-                                                   value="({ ESCAPED(rows->items[ri].values[md_col_slot(config->columns, ci) + pi]); })"
-                                                   class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                                            ({ } })
-                                        ({ } })
-                                    </div>
-                                ({ } else { })
-                                    <div class="flex flex-col gap-1 min-w-35">
-                                        <label class="text-xs text-gray-500 dark:text-gray-400">
-                                            ({ ESCAPED(config->columns[ci].label); })
-                                        </label>
-                                ({ if (config->columns[ci].type == COL_TYPE_FK_SELECT) { })
-                                        <select form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
-                                                name="({ ESCAPED(config->columns[ci].name); })"
-                                                ({ if (!config->columns[ci].nullable) { })required({ } })
-                                                class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                                            ({ if (config->columns[ci].nullable) { })
-                                            <option value=""
-                                                    ({ if (rows->items[ri].values[md_col_slot(config->columns, ci)][0] == '\0') { })selected({ } })>
-                                                None
-                                            </option>
-                                            ({ } })
-                                            ({ for (size_t o = 0; o < config->columns[ci].opt_count; ++o) { })
-                                                <option value="({ STR(config->columns[ci].opt[o].id); })"
-                                                    ({ if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci)], config->columns[ci].opt[o].id) == 0) { })selected({ } })>
-                                                    ({ ESCAPED(config->columns[ci].opt[o].label); })
-                                                </option>
-                                            ({ } })
-                                        </select>
-                                ({ } else { })
-                                        <input form="md-m-({ STR(config->table); })-({ STR(rows->items[ri].id); })"
-                                               name="({ ESCAPED(config->columns[ci].name); })"
-                                               type="({ if (config->columns[ci].type == COL_TYPE_DATE) { })date({ } else if (config->columns[ci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
-                                               ({ if (config->columns[ci].type == COL_TYPE_NUM) { })step="any" ({ } })
-                                               ({ if (!config->columns[ci].nullable
-                                                      && config->columns[ci].type != COL_TYPE_DATE) { })required({ } })
-                                               value="({ ESCAPED(config->columns[ci].type == COL_TYPE_DATE
-                                                                ? md_date_input(rows->items[ri].values[md_col_slot(config->columns, ci)])
-                                                                : rows->items[ri].values[md_col_slot(config->columns, ci)]); })"
-                                               class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                                ({ } })
-                                    </div>
-                                ({ } })
-                            ({ } })
-                                    <button type="submit" title="Confirm" aria-label="Confirm"
-                                            class="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-                                    </button>
-                                    <button type="button" class="md-discard p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
-                                            title="Discard" aria-label="Discard">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-({ } })
-                        <tr class="detail-panel-row" 
-                            data-master-id="({ STR(rows->items[ri].id); })" 
-                            style="display: none;">
-                            <td colspan="({ INT(config->column_count + 1); })" 
-                                class="px-0 py-0">
-                                <div class="detail-panel bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
-                                    <div class="flex border-b border-gray-200 dark:border-gray-700 flex-wrap">
-                                        ({ for (size_t ti = 0; ti < config->children_count; ++ti) { })
-                                            <button
-                                                type="button"
-                                                class="tab-btn px-3 py-1.5 text-sm font-medium ({ if (ti == 0) { })text-indigo-600 border-b-2 border-indigo-600({ } else { })text-gray-500 hover:text-gray-700 dark:text-gray-400({ } })"
-                                                data-tab="({ STR(config->children[ti].table); })">
-                                                ({ ESCAPED(config->children[ti].title); })
-                                            </button>
-                                        ({ } })
-                                    </div>
-                                    ({ for (size_t ti = 0; ti < config->children_count; ++ti) { })
-                                        ({ #include "./md_child_tab.h" })
-                                    ({ } })
-                                </div>
-                            </td>
-                        </tr>
-                    ({ } })
-                ({ } })
-        ({ if (fragment) { })
-            </tbody>
-        </table>
-    </div>
-            ({ #include "./pager_templates.h" })
-        ({ } else { })
-            </tbody>
-        </table>
-    </div>
-            ({ #include "./pagination.h" })
+            <c> if (!config->read_only && !config->create_only) { </c>
+            <tr class="md-master-edit-row hidden">
+                <td colspan="<c> INT(config->column_count + 1); </c>" class="pl-3 py-1 bg-amber-50 dark:bg-gray-900">
+                    <form id="md-m-<c> STR(config->table); </c>-<c> STR(rows->items[ri].id); </c>"
+                          method="POST"
+                          action="<c> STR(config->crud_path); </c>/<c> STR(rows->items[ri].id); </c>/update?redirect=<c> STR(md_path); </c>"
+                          data-md-kind="master"
+                          data-md-scope="<c> STR(config->table); </c>"
+                          data-md-op="update"
+                          data-md-master="<c> STR(rows->items[ri].id); </c>"
+                          data-md-target="<c> STR(rows->items[ri].id); </c>"
+                          class="flex flex-wrap gap-3 items-end">
+                    <c> for (size_t ci = 0; ci < config->column_count; ++ci) { </c>
+                        <c> if (config->columns[ci].computed) { </c>
+                        <c> } else if (config->columns[ci].cell) { </c>
+                        <div class="flex flex-col gap-1 min-w-35">
+                            <c> for (size_t pi = 0; pi < config->columns[ci].cell->part_count; ++pi) { </c>
+                            <label class="text-xs text-gray-500 dark:text-gray-400">
+                                <c> ESCAPED(md_cell_part_label(config->columns[ci].cell, pi)); </c>
+                            </label>
+                            <c> if (config->columns[ci].cell->part_choices
+                                   && config->columns[ci].cell->part_choices[pi]) { </c>
+                            <select form="md-m-<c> STR(config->table); </c>-<c> STR(rows->items[ri].id); </c>"
+                                    name="<c> ESCAPED(config->columns[ci].cell->parts[pi]); </c>"
+                                    class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                                <c> for (size_t o = 0;
+                                        config->columns[ci].cell->part_choices[pi][o];
+                                        ++o) { </c>
+                                <option value="<c> STR(config->columns[ci].cell->part_choices[pi][o]); </c>"
+                                        <c> if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci) + pi],
+                                                      config->columns[ci].cell->part_choices[pi][o]) == 0) { </c>
+                                        selected<c> } </c>>
+                                    <c> ESCAPED(config->columns[ci].cell->part_choices[pi][o]); </c>
+                                </option>
+                            <c> } </c>
+                            </select>
+                            <c> } else { </c>
+                            <input form="md-m-<c> STR(config->table); </c>-<c> STR(rows->items[ri].id); </c>"
+                                   name="<c> ESCAPED(config->columns[ci].cell->parts[pi]); </c>"
+                                   type="text"
+                                   value="<c> ESCAPED(rows->items[ri].values[md_col_slot(config->columns, ci) + pi]); </c>"
+                                   class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                            <c> } </c>
+                        <c> } </c>
+                        </div>
+                    <c> } else { </c>
+                    <div class="flex flex-col gap-1 min-w-35">
+                        <label class="text-xs text-gray-500 dark:text-gray-400">
+                            <c> ESCAPED(config->columns[ci].label); </c>
+                        </label>
+                        <c> if (config->columns[ci].type == COL_TYPE_FK_SELECT) { </c>
+                        <select form="md-m-<c> STR(config->table); </c>-<c> STR(rows->items[ri].id); </c>"
+                                name="<c> ESCAPED(config->columns[ci].name); </c>"
+                                <c> if (!config->columns[ci].nullable) { </c>required<c> } </c>
+                                class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                            <c> if (config->columns[ci].nullable) { </c>
+                            <option value=""
+                                    <c> if (rows->items[ri].values[md_col_slot(config->columns, ci)][0] == '\0') { </c>
+                                    selected<c> } </c>>
+                                None
+                            </option>
+                            <c> } </c>
+                            <c> for (size_t o = 0; o < config->columns[ci].opt_count; ++o) { </c>
+                            <option value="<c> STR(config->columns[ci].opt[o].id); </c>"
+                                <c> if (strcmp(rows->items[ri].values[md_col_slot(config->columns, ci)], config->columns[ci].opt[o].id) == 0) { </c>selected<c> } </c>>
+                                <c> ESCAPED(config->columns[ci].opt[o].label); </c>
+                            </option>
+                        <c> } </c>
+                        </select>
+                        <c> } else { </c>
+                        <input form="md-m-<c> STR(config->table); </c>-<c> STR(rows->items[ri].id); </c>"
+                               name="<c> ESCAPED(config->columns[ci].name); </c>"
+                               type="<c> if (config->columns[ci].type == COL_TYPE_DATE) { </c>
+                                            date
+                                     <c> } else if (config->columns[ci].type == COL_TYPE_NUM) { </c>
+                                            number
+                                     <c> } else { </c>
+                                            text
+                                     <c> } </c>"
+                               <c> if (config->columns[ci].type == COL_TYPE_NUM) { </c>
+                                      step="any"
+                               <c> } </c>
+                               <c> if (!config->columns[ci].nullable &&
+                                       config->columns[ci].type != COL_TYPE_DATE) { </c>
+                                      required
+                               <c> } </c>
+                               value="<c> ESCAPED(config->columns[ci].type == COL_TYPE_DATE
+                                                ? md_date_input(rows->items[ri].values[md_col_slot(config->columns, ci)])
+                                                : rows->items[ri].values[md_col_slot(config->columns, ci)]); </c>"
+                               class="px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                        <c> } </c>
+                    </div>
+                    <c> } </c>
+                <c> } </c>
+                        <button type="submit" title="Confirm" aria-label="Confirm"
+                                class="p-1 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        </button>
+                        <button type="button" class="md-discard p-1 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700"
+                                title="Discard" aria-label="Discard">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        <c> } </c>
+            <tr class="detail-panel-row" 
+                data-master-id="<c> STR(rows->items[ri].id); </c>" 
+                style="display: none;">
+                <td colspan="<c> INT(config->column_count + 1); </c>" 
+                    class="px-0 py-0">
+                    <div class="detail-panel bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700">
+                        <div class="flex border-b border-gray-200 dark:border-gray-700 flex-wrap">
+                            <c> for (size_t ti = 0; ti < config->children_count; ++ti) { </c>
+                            <button
+                                type="button"
+                                class="tab-btn px-3 py-1.5 text-sm font-medium <c> if (ti == 0) { </c>text-indigo-600 border-b-2 border-indigo-600<c> } else { </c>text-gray-500 hover:text-gray-700 dark:text-gray-400<c> } </c>"
+                                data-tab="<c> STR(config->children[ti].table); </c>">
+                                <c> ESCAPED(config->children[ti].title); </c>
+                            </button>
+                            <c> } </c>
+                        </div>
+                        <c> for (size_t ti = 0; ti < config->children_count; ++ti) { </c>
+                            <c> #include "./md_child_tab.h" </c>
+                        <c> } </c>
+                    </div>
+                </td>
+            </tr>
+        <c> } </c>
+    <c> } </c>
+<c> if (fragment) { </c>
+        </tbody>
+    </table>
 </div>
-        ({ } })
+    <c> #include "./pager_templates.h" </c>
+<c> } else { </c>
+        </tbody>
+    </table>
+</div>
+    <c> #include "./pagination.h" </c>
+</div>
+<c> } </c>

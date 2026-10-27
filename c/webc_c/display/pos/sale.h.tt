@@ -12,19 +12,19 @@
             Orders
         </a>
     </div>
-({ if (err && err[0]) { })
+<c> if (err && err[0]) { </c>
     <div class="bg-red/10 border-l-2 border-red text-red px-3 py-2 text-xs m-3">
-        ({ ESCAPED(err); })
+        <c> ESCAPED(err); </c>
     </div>
-({ } })
-({ if (!can_sell) { })
+<c> } </c>
+<c> if (!can_sell) { </c>
     <div class="px-4 py-6 text-sm text-subtext0">
         This account isn't linked to a staff record with a branch, so it can't
         record a sale. Ask a manager to link it under 
         <a href="/pos/staff" class="text-blue hover:underline">Staff</a>.
     </div>
 </div>
-({ } else { })
+<c> } else { </c>
     <form method="POST" action="/pos/sale" class="p-4 space-y-4">
         <div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
@@ -46,7 +46,7 @@
             <button type="submit" class="bg-blue text-onbase text-sm px-4 py-2">Complete sale (paid)</button>
         </div>
     </form>
-    <script>window.SALE_UNITS=({ STR(units.items ? units.items : "[]"); });</script>
+    <script>window.SALE_UNITS=<c> STR(units.items ? units.items : "[]"); </c>;</script>
     <script>(
         function(){
             var U=window.SALE_UNITS||[]; function g(i){
@@ -64,7 +64,7 @@
             ];
             function sel(){
                 var kv={};
-                F.forEach(function(f){kv[f.k]=g(f.id).value;});
+                F.forEach(function(f){kv[f.k]=g(f.id).value;</c>;
                 return kv;
             }
             function hit(u,f,v){
@@ -96,7 +96,7 @@
                         var v=u[f.fs[j]]||'';
                         if(v&&!seen[v]){seen[v]=1;out.push(v);}
                     }
-                });
+                </c>;
                 out.sort();
                 return out;
             }
@@ -108,14 +108,14 @@
                 vals.forEach(function(v){
                     var o=document.createElement('option');
                     o.value=v;o.textContent=v;s.appendChild(o);
-                });
+                </c>;
                 if(keep){s.value=keep;if(!s.value)s.value='';}
             }
             // chain reaction: one facet changed -> re-derive EVERY facet's options
             // (each against the other facets' current selections),
             // then rebuild the list
             function refresh(){
-                F.forEach(function(f){ fill(f,opts(f,sel())); });
+                F.forEach(function(f){ fill(f,opts(f,sel())); </c>;
             }
             var prod=g('sale-product'),
                 priceEl=g('sale-price');
@@ -134,21 +134,21 @@
                     o.textContent=u.name+' - '+(u.sku||u.psku||'');
                     o.setAttribute('data-price',fmt(u.price));
                     prod.appendChild(o);
-                });
+                </c>;
                 if(prev){
                     prod.value=prev;
                     if(prod.value!==prev)prod.value='';
                 }
                 showPrice();}
             function onFilter(){refresh();rebuild();}
-            F.forEach(function(f){g(f.id).addEventListener('change',onFilter);});
+            F.forEach(function(f){g(f.id).addEventListener('change',onFilter);</c>;
             prod.addEventListener('change',showPrice);
             var lines=g('sale-lines'),totalEl=g('sale-total'),seq=0;
             function recalc(){
                 var t=0;
                 lines.querySelectorAll('[data-line]').forEach(function(r){
                     t+=parseFloat(r.getAttribute('data-total'))||0;
-                });
+                </c>;
                 totalEl.textContent=fmt(t);
             }
             // add the picked unit + qty as a posted line, then reset
@@ -189,10 +189,10 @@
                 if(e.target.hasAttribute&&e.target.hasAttribute('data-rm')){
                     var r=e.target.closest('[data-line]');if(r){r.remove();recalc();}
                 }
-            });
+            </c>;
             refresh();
             rebuild();
-        })();
+        </c>();
     </script>
 </div>
-({ } })
+<c> } </c>

@@ -361,7 +361,7 @@ int main(int argc, char **argv) {
 
     mkdir_if_not_exists("./build/bin");
 
-    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-Wswitch-enum", "-ggdb", "-pedantic",
+    nob_cmd_append(&cmd, "cc", "-Wall", "-Wextra", "-Wswitch-enum", "-ggdb",
             "-I"BUILD_FOLDER,
             "-I"SQLITE3_AMALGAMATION_FOLDER,
             "-I.",

@@ -6,8 +6,8 @@
         Select a module to manage.
     </p>
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        ({ for (size_t i = 0; i < custom->count; ++i) { })
-            <a href="({ STR(custom->items[i].path); })"
+        <c> for (size_t i = 0; i < custom->count; ++i) { </c>
+            <a href="<c> STR(custom->items[i].path); </c>"
                class="group flex flex-col items-center justify-center p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-indigo-400 hover:shadow-md transition-all duration-200">
                 <svg class="w-8 h-8 mb-3 text-indigo-600 dark:text-indigo-400"
                      fill="none"
@@ -16,12 +16,12 @@
                         <path stroke-linecap="round"
                               stroke-linejoin="round"
                               stroke-width="2"
-                              d="({ STR(custom->items[i].icon); })" />
+                              d="<c> STR(custom->items[i].icon); </c>" />
                 </svg>
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-200 text-center">
-                    ({ ESCAPED(custom->items[i].title); })
+                    <c> ESCAPED(custom->items[i].title); </c>
                 </span>
             </a>
-        ({ } })
+        <c> } </c>
     </div>
 </div>

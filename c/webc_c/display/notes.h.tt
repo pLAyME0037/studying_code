@@ -1,5 +1,5 @@
 <div>
-({ if (!fragment) { })
+<c> if (!fragment) { </c>
     <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-4">
         SQLite Notes
     </h2>
@@ -21,13 +21,13 @@
             Add note
         </button>
     </form>
-({ } })
+<c> } </c>
 
-({ if (fragment) { })
+<c> if (fragment) { </c>
     <div id="pg-store" hidden>
-        <table data-pg-rows="({ STR(page_container); })" data-pg-unit="1">
+        <table data-pg-rows="<c> STR(page_container); </c>" data-pg-unit="1">
             <tbody>
-({ } else { })
+<c> } else { </c>
     <table class="w-full text-left border-collapse overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <thead class="bg-indigo-600 text-white">
             <tr>
@@ -38,38 +38,38 @@
                 <th class="px-4 py-3 font-semibold">Actions</th>
             </tr>
         </thead>
-        <tbody id="({ STR(page_container); })" class="divide-y divide-gray-200 dark:divide-gray-700">
-({ } })
-            ({ if (notes.count == 0) { })
+        <tbody id="<c> STR(page_container); </c>" class="divide-y divide-gray-200 dark:divide-gray-700">
+<c> } </c>
+            <c> if (notes.count == 0) { </c>
                 <tr>
                     <td colspan="5" class="px-4 py-4 text-sm text-gray-500 dark:text-gray-400">
                         No notes in the database yet.
                     </td>
                 </tr>
-            ({ } else for (size_t i = 0; i < notes.count; ++i) { })
+            <c> } else for (size_t i = 0; i < notes.count; ++i) { </c>
                 <tr>
-                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400">({ STR(notes.items[i].id); })</td>
-                    <td class="px-4 py-2 font-medium text-gray-800 dark:text-white">({ ESCAPED(notes.items[i].title); })</td>
-                    <td class="px-4 py-2 text-gray-600 dark:text-gray-300">({ ESCAPED(notes.items[i].created_at); })</td>
-                    <td class="px-4 py-2 text-gray-600 dark:text-gray-300">({ ESCAPED(notes.items[i].body); })</td>
+                    <td class="px-4 py-2 text-gray-500 dark:text-gray-400"><c> STR(notes.items[i].id); </c></td>
+                    <td class="px-4 py-2 font-medium text-gray-800 dark:text-white"><c> ESCAPED(notes.items[i].title); </c></td>
+                    <td class="px-4 py-2 text-gray-600 dark:text-gray-300"><c> ESCAPED(notes.items[i].created_at); </c></td>
+                    <td class="px-4 py-2 text-gray-600 dark:text-gray-300"><c> ESCAPED(notes.items[i].body); </c></td>
                     <td class="px-4 py-2 whitespace-nowrap">
-                        <a href="/notes/({ STR(notes.items[i].id); })/edit"
+                        <a href="/notes/<c> STR(notes.items[i].id); </c>/edit"
                            class="mr-2 px-2 py-1 rounded text-xs bg-amber-500 hover:bg-amber-600 text-white">Edit</a>
-                        <form method="POST" action="/notes/({ STR(notes.items[i].id); })/delete" class="inline">
+                        <form method="POST" action="/notes/<c> STR(notes.items[i].id); </c>/delete" class="inline">
                             <button type="submit"
                                     class="px-2 py-1 rounded text-xs bg-red-500 hover:bg-red-600 text-white">Delete</button>
                         </form>
                     </td>
                 </tr>
-            ({ } })
-({ if (fragment) { })
+            <c> } </c>
+<c> if (fragment) { </c>
             </tbody>
         </table>
     </div>
-    ({ #include "./component/pager_templates.h" })
-({ } else { })
+    <c> #include "./component/pager_templates.h" </c>
+<c> } else { </c>
         </tbody>
     </table>
-    ({ #include "./component/pagination.h" })
-({ } })
+    <c> #include "./component/pagination.h" </c>
+<c> } </c>
 </div>

@@ -3,16 +3,16 @@
     <!-- workspace header: greeting + date + role chip + quick actions -->
     <div class="flex flex-wrap items-end justify-between gap-2">
         <div>
-            <h2 class="text-xl font-bold text-text">({ STR(ws->greeting); })</h2>
+            <h2 class="text-xl font-bold text-text"><c> STR(ws->greeting); </c></h2>
             <p class="text-xs text-subtext0 mt-0.5">
-                ({ STR(ws->date_human); }) · ({ STR(ws->workspace); })
+                <c> STR(ws->date_human); </c> · <c> STR(ws->workspace); </c>
             </p>
         </div>
         <div class="flex items-center gap-2 flex-wrap">
-            <span class="px-2 py-1.5 text-xs font-semibold border ({ STR(ws->role_cls); })">
-                ({ STR(ws->role_label); })
+            <span class="px-2 py-1.5 text-xs font-semibold border <c> STR(ws->role_cls); </c>">
+                <c> STR(ws->role_label); </c>
             </span>
-            ({ if (ws->kind == 0) { })
+            <c> if (ws->kind == 0) { </c>
             <a href="/pos/sale"
                class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">
                 New sale
@@ -25,8 +25,8 @@
                class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
                 Alerts
             </a>
-            ({ } })
-            ({ if (ws->kind == 1) { })
+            <c> } </c>
+            <c> if (ws->kind == 1) { </c>
             <a href="/pos/sale"
                class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90">
                 New sale
@@ -39,99 +39,99 @@
                class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
                 Reports
             </a>
-            ({ } })
+            <c> } </c>
             <a href="/"
                class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0">
                 Shopping
             </a>
-            ({ if (ws->kind == 3) { })
+            <c> if (ws->kind == 3) { </c>
             <span class="text-xs text-subtext0">
                 No workspace assigned - ask a manager for a role.
             </span>
-            ({ } })
+            <c> } </c>
         </div>
     </div>
 
     <!-- KPI strip -->
-    ({ if (ws->kpi_count > 0) { })
-    <div class="grid grid-cols-2 gap-2 ({ STR(ws->kpi_count >= 6 ? "md:grid-cols-3 xl:grid-cols-6" : (ws->kpi_count == 4 ? "md:grid-cols-4" : "md:grid-cols-3")) })">
-        ({ for (int ki = 0; ki < ws->kpi_count; ++ki) { })
+    <c> if (ws->kpi_count > 0) { </c>
+    <div class="grid grid-cols-2 gap-2 <c> STR(ws->kpi_count >= 6 ? "md:grid-cols-3 xl:grid-cols-6" : (ws->kpi_count == 4 ? "md:grid-cols-4" : "md:grid-cols-3")) </c>">
+        <c> for (int ki = 0; ki < ws->kpi_count; ++ki) { </c>
         <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-0.5">
-            <span class="text-xs text-overlay0 uppercase tracking-wide">({ STR(ws->kpis[ki].label); })</span>
-            <span class="text-xl font-bold text-text">({ STR(ws->kpis[ki].value); })</span>
-            ({ if (ws->kpis[ki].delta_show) { })
-            <span class="text-xs ({ STR(ws->kpis[ki].delta_tone == 1 ? "text-green" : (ws->kpis[ki].delta_tone == 0 ? "text-red" : "text-subtext0")) })">({ STR(ws->kpis[ki].delta); })</span>
-            ({ } })
+            <span class="text-xs text-overlay0 uppercase tracking-wide"><c> STR(ws->kpis[ki].label); </c></span>
+            <span class="text-xl font-bold text-text"><c> STR(ws->kpis[ki].value); </c></span>
+            <c> if (ws->kpis[ki].delta_show) { </c>
+            <span class="text-xs <c> STR(ws->kpis[ki].delta_tone == 1 ? "text-green" : (ws->kpis[ki].delta_tone == 0 ? "text-red" : "text-subtext0")) </c>"><c> STR(ws->kpis[ki].delta); </c></span>
+            <c> } </c>
         </div>
-        ({ } })
+        <c> } </c>
     </div>
-    ({ } })
+    <c> } </c>
 
     <!-- attention line: one priority signal, straight to the fixing page -->
-    ({ if (ws->kind != 3) { })
-    ({ if (ws->attention_href[0]) { })
-    <a href="({ STR(ws->attention_href); })"
-       class="flex items-center justify-between gap-2 border-l-2 px-2.5 py-2 text-sm font-medium hover:brightness-95 ({ STR(ws->attention_cls); })">
-        <span>({ STR(ws->attention); })</span>
+    <c> if (ws->kind != 3) { </c>
+    <c> if (ws->attention_href[0]) { </c>
+    <a href="<c> STR(ws->attention_href); </c>"
+       class="flex items-center justify-between gap-2 border-l-2 px-2.5 py-2 text-sm font-medium hover:brightness-95 <c> STR(ws->attention_cls); </c>">
+        <span><c> STR(ws->attention); </c></span>
         <span class="text-xs opacity-70">Open page</span>
     </a>
-    ({ } })
-    ({ if (!ws->attention_href[0]) { })
-    <div class="flex items-center gap-2 border-l-2 px-2.5 py-2 text-sm font-medium ({ STR(ws->attention_cls); })">
-        <span>({ STR(ws->attention); })</span>
+    <c> } </c>
+    <c> if (!ws->attention_href[0]) { </c>
+    <div class="flex items-center gap-2 border-l-2 px-2.5 py-2 text-sm font-medium <c> STR(ws->attention_cls); </c>">
+        <span><c> STR(ws->attention); </c></span>
     </div>
-    ({ } })
-    ({ } })
+    <c> } </c>
+    <c> } </c>
 
     <!-- manager: 7-day bars + recent orders | counter: my shift + my orders -->
-    ({ if (ws->kind == 0 || ws->kind == 1) { })
+    <c> if (ws->kind == 0 || ws->kind == 1) { </c>
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-2">
-        ({ if (ws->kind == 0) { })
+        <c> if (ws->kind == 0) { </c>
         <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-2">
             <div class="flex items-center justify-between">
                 <span class="text-xs text-overlay0 uppercase tracking-wide">Net sales - last 7 days</span>
-                <span class="text-xs font-semibold text-text">({ STR(ws->bars_sum); })</span>
+                <span class="text-xs font-semibold text-text"><c> STR(ws->bars_sum); </c></span>
             </div>
             <div class="flex items-end gap-1.5" style="height: 72px">
-                ({ for (int bi = 0; bi < 7; ++bi) { })
-                <div class="flex-1 bg-blue" style="height: ({ INT(ws->bars[bi].pct); })px"
-                     title="({ STR(ws->bars[bi].value); })"></div>
-                ({ } })
+                <c> for (int bi = 0; bi < 7; ++bi) { </c>
+                <div class="flex-1 bg-blue" style="height: <c> INT(ws->bars[bi].pct); </c>px"
+                     title="<c> STR(ws->bars[bi].value); </c>"></div>
+                <c> } </c>
             </div>
             <div class="flex gap-1.5">
-                ({ for (int bi = 0; bi < 7; ++bi) { })
-                <span class="flex-1 text-center text-xs text-overlay0">({ STR(ws->bars[bi].day); })</span>
-                ({ } })
+                <c> for (int bi = 0; bi < 7; ++bi) { </c>
+                <span class="flex-1 text-center text-xs text-overlay0"><c> STR(ws->bars[bi].day); </c></span>
+                <c> } </c>
             </div>
         </div>
-        ({ } })
-        ({ if (ws->kind == 1) { })
+        <c> } </c>
+        <c> if (ws->kind == 1) { </c>
         <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-2">
             <span class="text-xs text-overlay0 uppercase tracking-wide">My shift</span>
-            ({ if (ws->has_shift) { })
+            <c> if (ws->has_shift) { </c>
             <div class="border-l-2 border-green bg-green/10 px-2 py-1.5 flex flex-col gap-0.5">
-                <span class="text-sm font-semibold text-green">Open since ({ STR(ws->shift_since); })</span>
-                <span class="text-xs text-subtext0">Opening cash ({ STR(ws->shift_cash); }) · ({ STR(ws->shift_org); })</span>
+                <span class="text-sm font-semibold text-green">Open since <c> STR(ws->shift_since); </c></span>
+                <span class="text-xs text-subtext0">Opening cash <c> STR(ws->shift_cash); </c> · <c> STR(ws->shift_org); </c></span>
             </div>
             <a href="/pos/shifts"
                class="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0 text-center">Manage shift</a>
-            ({ } })
-            ({ if (!ws->has_shift) { })
+            <c> } </c>
+            <c> if (!ws->has_shift) { </c>
             <div class="border-l-2 border-yellow bg-yellow/10 px-2 py-1.5 flex flex-col gap-0.5">
                 <span class="text-sm font-semibold text-yellow">No open shift</span>
                 <span class="text-xs text-subtext0">Open one before the first sale.</span>
             </div>
             <a href="/pos/shifts"
                class="px-2.5 py-1.5 text-xs font-medium bg-blue text-onbase hover:brightness-90 text-center">Open shift</a>
-            ({ } })
+            <c> } </c>
         </div>
-        ({ } })
+        <c> } </c>
         <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-1.5 xl:col-span-2">
             <div class="flex items-center justify-between">
-                <span class="text-xs text-overlay0 uppercase tracking-wide">({ STR(ws->kind == 0 ? "Recent orders" : "My recent orders"); })</span>
+                <span class="text-xs text-overlay0 uppercase tracking-wide"><c> STR(ws->kind == 0 ? "Recent orders" : "My recent orders"); </c></span>
                 <a href="/pos/orders" class="text-xs text-blue hover:underline">View all</a>
             </div>
-            ({ if (ws->recent_count > 0) { })
+            <c> if (ws->recent_count > 0) { </c>
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs text-overlay0 border-b border-surface0">
@@ -143,39 +143,39 @@
                     </tr>
                 </thead>
                 <tbody>
-                    ({ for (int ri = 0; ri < ws->recent_count; ++ri) { })
+                    <c> for (int ri = 0; ri < ws->recent_count; ++ri) { </c>
                     <tr class="border-b border-surface0/50" data-order-row>
-                        <td class="py-1 pr-2 text-text font-medium">({ STR(ws->recent[ri].number); })</td>
-                        <td class="py-1 pr-2 text-subtext0">({ STR(ws->recent[ri].time); })</td>
-                        <td class="py-1 pr-2 text-subtext0">({ STR(ws->recent[ri].who); })</td>
-                        <td class="py-1 pr-2 text-right text-text">({ STR(ws->recent[ri].total); })</td>
+                        <td class="py-1 pr-2 text-text font-medium"><c> STR(ws->recent[ri].number); </c></td>
+                        <td class="py-1 pr-2 text-subtext0"><c> STR(ws->recent[ri].time); </c></td>
+                        <td class="py-1 pr-2 text-subtext0"><c> STR(ws->recent[ri].who); </c></td>
+                        <td class="py-1 pr-2 text-right text-text"><c> STR(ws->recent[ri].total); </c></td>
                         <td class="py-1">
-                            <span class="px-1.5 py-0.5 text-xs font-medium ({ STR(ws->recent[ri].tone_cls); })">({ STR(ws->recent[ri].status); })</span>
+                            <span class="px-1.5 py-0.5 text-xs font-medium <c> STR(ws->recent[ri].tone_cls); </c>"><c> STR(ws->recent[ri].status); </c></span>
                         </td>
                     </tr>
-                    ({ } })
+                    <c> } </c>
                 </tbody>
             </table>
-            ({ } })
-            ({ if (ws->recent_count == 0) { })
+            <c> } </c>
+            <c> if (ws->recent_count == 0) { </c>
             <span class="text-xs text-subtext0">No orders yet.</span>
-            ({ } })
+            <c> } </c>
         </div>
     </div>
-    ({ } })
+    <c> } </c>
 
     <!-- driver: the assigned-deliveries run -->
-    ({ if (ws->kind == 2) { })
+    <c> if (ws->kind == 2) { </c>
     <div class="border border-surface0 bg-mantle px-2.5 py-2 flex flex-col gap-1.5">
         <div class="flex items-center justify-between flex-wrap gap-2">
             <span class="text-xs text-overlay0 uppercase tracking-wide">Assigned deliveries</span>
             <div class="flex items-center gap-1.5 text-xs">
-                <span class="px-1.5 py-0.5 font-medium bg-yellow/15 text-yellow">({ INT(ws->del_pending); }) pending</span>
-                <span class="px-1.5 py-0.5 font-medium bg-blue/15 text-blue">({ INT(ws->del_transit); }) in transit</span>
-                <span class="px-1.5 py-0.5 font-medium bg-green/15 text-green">({ INT(ws->del_done); }) delivered</span>
+                <span class="px-1.5 py-0.5 font-medium bg-yellow/15 text-yellow"><c> INT(ws->del_pending); </c> pending</span>
+                <span class="px-1.5 py-0.5 font-medium bg-blue/15 text-blue"><c> INT(ws->del_transit); </c> in transit</span>
+                <span class="px-1.5 py-0.5 font-medium bg-green/15 text-green"><c> INT(ws->del_done); </c> delivered</span>
             </div>
         </div>
-        ({ if (ws->deliv_count > 0) { })
+        <c> if (ws->deliv_count > 0) { </c>
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-xs text-overlay0 border-b border-surface0">
@@ -187,32 +187,32 @@
                 </tr>
             </thead>
             <tbody>
-                ({ for (int di = 0; di < ws->deliv_count; ++di) { })
+                <c> for (int di = 0; di < ws->deliv_count; ++di) { </c>
                 <tr class="border-b border-surface0/50" data-deliv-row>
-                    <td class="py-1 pr-2 text-text font-medium">({ STR(ws->delivs[di].number); })</td>
-                    <td class="py-1 pr-2 text-subtext0">({ STR(ws->delivs[di].recipient); })</td>
-                    <td class="py-1 pr-2 text-subtext0">({ STR(ws->delivs[di].phone); })</td>
-                    <td class="py-1 pr-2 text-subtext0">({ STR(ws->delivs[di].note); })</td>
+                    <td class="py-1 pr-2 text-text font-medium"><c> STR(ws->delivs[di].number); </c></td>
+                    <td class="py-1 pr-2 text-subtext0"><c> STR(ws->delivs[di].recipient); </c></td>
+                    <td class="py-1 pr-2 text-subtext0"><c> STR(ws->delivs[di].phone); </c></td>
+                    <td class="py-1 pr-2 text-subtext0"><c> STR(ws->delivs[di].note); </c></td>
                     <td class="py-1">
-                        <span class="px-1.5 py-0.5 text-xs font-medium ({ STR(ws->delivs[di].tone_cls); })">({ STR(ws->delivs[di].status); })</span>
+                        <span class="px-1.5 py-0.5 text-xs font-medium <c> STR(ws->delivs[di].tone_cls); </c>"><c> STR(ws->delivs[di].status); </c></span>
                     </td>
                 </tr>
-                ({ } })
+                <c> } </c>
             </tbody>
         </table>
-        ({ } })
-        ({ if (ws->deliv_count == 0) { })
+        <c> } </c>
+        <c> if (ws->deliv_count == 0) { </c>
         <span class="text-xs text-subtext0">No deliveries assigned right now.</span>
-        ({ } })
+        <c> } </c>
     </div>
-    ({ } })
+    <c> } </c>
 
     <!-- generic: no role yet -->
-    ({ if (ws->kind == 3) { })
+    <c> if (ws->kind == 3) { </c>
     <div class="border border-surface0 bg-mantle px-2.5 py-3 text-sm text-subtext0">
         This account has no workspace yet. A manager can grant one on the Roles page.
         <a href="/" class="text-blue hover:underline">Open the storefront</a>.
     </div>
-    ({ } })
+    <c> } </c>
 
 </div>

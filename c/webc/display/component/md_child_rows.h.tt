@@ -1,11 +1,12 @@
 <tr class="md-row hover:bg-gray-50 dark:hover:bg-gray-700/50"
-    data-row-id="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"> ({
+    data-row-id="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>">
+    <c>
     for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) {
-    })
+    </c>
         <td class="pl-3 text-sm text-gray-700 dark:text-gray-200">
-            ({ ESCAPED(rows->items[ri].children[ti].items[ci].disp[cci + 1]); })
+            <c> ESCAPED(rows->items[ri].children[ti].items[ci].disp[cci + 1]); </c>
         </td>
-    ({ } })
+    <c> } </c>
     <td class="p-1 whitespace-nowrap">
         <div class="flex gap-1 items-center">
             <button type="button"
@@ -15,12 +16,12 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </button>
             <form method="POST"
-                  action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/delete?redirect=({ STR(md_path); })"
+                  action="<c> STR(config->children[ti].crud_path); </c>/<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>/delete?redirect=<c> STR(md_path); </c>"
                   data-md-kind="child"
-                  data-md-scope="({ STR(config->children[ti].table); })"
+                  data-md-scope="<c> STR(config->children[ti].table); </c>"
                   data-md-op="delete"
-                  data-md-master="({ STR(rows->items[ri].id); })"
-                  data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+                  data-md-master="<c> STR(rows->items[ri].id); </c>"
+                  data-md-target="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
                   class="inline">
                 <button type="submit"
                         title="Delete"
@@ -33,33 +34,33 @@
     </td>
 </tr>
 <tr class="md-edit-row hidden">
-    ({ for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
+    <c> for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { </c>
         <td class="p-1">
-        ({ if (config->children[ti].columns[cci].type == COL_TYPE_FK_SELECT) { })
-            <select form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
-                    name="({ STR(config->children[ti].columns[cci].name); })"
+        <c> if (config->children[ti].columns[cci].type == COL_TYPE_FK_SELECT) { </c>
+            <select form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
+                    name="<c> STR(config->children[ti].columns[cci].name); </c>"
                     class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                ({ for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { })
-                    <option value="({ STR(config->children[ti].columns[cci].opt[o].id); })"
-                        ({ if (strcmp(rows->items[ri].children[ti].items[ci].values[cci + 1], config->children[ti].columns[cci].opt[o].id) == 0) { })selected({ } })>
-                        ({ ESCAPED(config->children[ti].columns[cci].opt[o].label); })
+                <c> for (size_t o = 0; o < config->children[ti].columns[cci].opt_count; ++o) { </c>
+                    <option value="<c> STR(config->children[ti].columns[cci].opt[o].id); </c>"
+                        <c> if (strcmp(rows->items[ri].children[ti].items[ci].values[cci + 1], config->children[ti].columns[cci].opt[o].id) == 0) { </c>selected<c> } </c>>
+                        <c> ESCAPED(config->children[ti].columns[cci].opt[o].label); </c>
                     </option>
-                ({ } })
+                <c> } </c>
             </select>
-        ({ } else { })
-            <input form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
-                   name="({ STR(config->children[ti].columns[cci].name); })"
-                   type="({ if (config->children[ti].columns[cci].type == COL_TYPE_DATE) { })date({ } else if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })number({ } else { })text({ } })"
-                   ({ if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { })step="any" ({ } })
-                   value="({ ESCAPED(rows->items[ri].children[ti].items[ci].values[cci + 1]); })"
+        <c> } else { </c>
+            <input form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
+                   name="<c> STR(config->children[ti].columns[cci].name); </c>"
+                   type="<c> if (config->children[ti].columns[cci].type == COL_TYPE_DATE) { </c>date<c> } else if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { </c>number<c> } else { </c>text<c> } </c>"
+                   <c> if (config->children[ti].columns[cci].type == COL_TYPE_NUM) { </c>step="any" <c> } </c>
+                   value="<c> ESCAPED(rows->items[ri].children[ti].items[ci].values[cci + 1]); </c>"
                    class="w-full px-0.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-        ({ } })
+        <c> } </c>
         </td>
-    ({ } })
+    <c> } </c>
     <td class="p-1">
         <div class="flex flex-col gap-1 items-start">
             <button type="submit"
-                    form="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+                    form="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
                     title="Confirm"
                     aria-label="Confirm"
                     class="p-1 rounded text-green-600 hover:bg-green-100 dark:hover:bg-green-900/40">
@@ -74,13 +75,13 @@
         </div>
     </td>
 </tr>
-<form id="mdf-e-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+<form id="mdf-e-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
       method="POST"
-      action="({ STR(config->children[ti].crud_path); })/({ STR(rows->items[ri].children[ti].items[ci].values[0]); })/update?({ STR(config->children[ti].fk_column); })=({ STR(rows->items[ri].id); })&redirect=({ STR(md_path); })"
+      action="<c> STR(config->children[ti].crud_path); </c>/<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>/update?<c> STR(config->children[ti].fk_column); </c>=<c> STR(rows->items[ri].id); </c>&redirect=<c> STR(md_path); </c>"
       data-md-kind="child"
-      data-md-scope="({ STR(config->children[ti].table); })"
+      data-md-scope="<c> STR(config->children[ti].table); </c>"
       data-md-op="update"
-      data-md-master="({ STR(rows->items[ri].id); })"
-      data-md-target="({ STR(rows->items[ri].children[ti].items[ci].values[0]); })"
+      data-md-master="<c> STR(rows->items[ri].id); </c>"
+      data-md-target="<c> STR(rows->items[ri].children[ti].items[ci].values[0]); </c>"
       class="hidden">
 </form>

@@ -13,6 +13,13 @@ Status vocabulary:
 
 ---
 
+## 2026-10-27 — Refactor tt template to use <c> for opening and </c> for closing instead of ({})
+### wip
+More html like parttern to use.
+All document will be update including:
+- [README.md](README.md)
+- [templates.md](templates.md)
+
 ## 2026-10-19 — Multi-account login + switching — **done**
 
 Sign into several accounts on one browser and hop between them without

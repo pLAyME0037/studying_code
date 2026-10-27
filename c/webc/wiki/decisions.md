@@ -12,7 +12,7 @@ decision, that is said out loud.
 
 ## D1 — Templates compile to C; there is no template engine in the binary
 
-**Decision.** `display/*.tt` is HTML with `({ C })` islands. `src/tt.c` runs at
+**Decision.** `display/*.tt` is HTML with `<c> C </c>` islands. `src/tt.c` runs at
 build time and emits `build/h_to_html/*.h` containing `OUT("\x..", N);` byte
 literals interleaved with the C verbatim. Those headers are `#include`d
 *inside* function bodies. See [templates.md](templates.md).

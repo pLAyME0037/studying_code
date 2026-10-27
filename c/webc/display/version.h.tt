@@ -7,7 +7,7 @@
             WebC v0.3.0 — server-rendered MVC build.
         </p>
         <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Build time: ({ STR(WEBC_BUILD_TIME); })
+            Build time: <c> STR(WEBC_BUILD_TIME); </c>
         </p>
     </div>
 </div>

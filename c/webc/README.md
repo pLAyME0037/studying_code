@@ -6,9 +6,9 @@ with no template engine, no interpreter and no allocation per tag.
 
 ```c
 // display/user.h.tt  →  build/h_to_html/user.h  →  #include'd inside render_users_page()
-({ if (!fragment) { })
+<c> if (!fragment) { </c>
 <form method="POST" action="/users/create" ...>
-({ } })
+<c> } </c>
 ```
 
 Out of the box it ships a working app: a dashboard, a paginated `/users` list
@@ -123,7 +123,7 @@ version is TLS 1.2.
 ## Project layout
 
 ```
-display/            .tt templates — HTML with ({ C }) islands
+display/            .tt templates — HTML with <c> C </c> islands
   component/          reusable fragments (pager, sidebar, sweet-alert, MD tabs)
   layout/             page shell (header/footer/dashboard)
 src/

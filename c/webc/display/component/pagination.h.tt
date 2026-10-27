@@ -1,4 +1,4 @@
-({
+<c>
     // Global pager markup (included from every paged list).
     // Scope contract at each include site:
     //   Page_Info page_info;      current window (page/per_page/total/total_pages)
@@ -11,29 +11,29 @@
     // per-page links carry NO data-pg-n -> always a full SSR reload.
     // The bar renders even for a single page (row count + per-page
     // switcher); Prev/Next become disabled spans at the ends.
-})
+</c>
 <nav class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm"
-     data-pg-container="({ STR(page_container); })"
-     data-pg-key="({ STR(page_key); })"
-     data-pg-base="({ STR(page_base); })"
-     data-pg-per="({ STR(temp_sprintf("%zu", page_info.per_page)); })">
+     data-pg-container="<c> STR(page_container); </c>"
+     data-pg-key="<c> STR(page_key); </c>"
+     data-pg-base="<c> STR(page_base); </c>"
+     data-pg-per="<c> STR(temp_sprintf("%zu", page_info.per_page)); </c>">
     <span class="text-gray-500 dark:text-gray-400">
-        Showing ({ STR(temp_sprintf("%zu", (page_info.page - 1) * page_info.per_page + 1)); })
-        &ndash;({ STR(temp_sprintf("%zu", page_info.page * page_info.per_page < page_info.total
-                    ? page_info.page * page_info.per_page : page_info.total)); })
-        of ({ STR(temp_sprintf("%zu", page_info.total)); }) rows
+        Showing <c> STR(temp_sprintf("%zu", (page_info.page - 1) * page_info.per_page + 1)); </c>
+        &ndash;<c> STR(temp_sprintf("%zu", page_info.page * page_info.per_page < page_info.total
+                    ? page_info.page * page_info.per_page : page_info.total)); </c>
+        of <c> STR(temp_sprintf("%zu", page_info.total)); </c> rows
     </span>
     <div class="flex items-center gap-1">
-        ({ const char *pg_btn = "px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"; })
-        ({ const char *pg_cur = "px-2 py-1 rounded bg-indigo-600 text-white"; })
-        ({ if (page_info.page > 1) { })
-        <a class="({ STR(pg_btn); })"
-           data-pg-n="({ STR(temp_sprintf("%zu", page_info.page - 1)); })"
-           href="({ page_href(sb, page_base, page_query, page_key, page_info.page - 1, page_info.per_page); })">Prev</a>
-        ({ } else { })
-        <span class="({ STR(pg_btn); }) opacity-40">Prev</span>
-        ({ } })
-        ({ 
+        <c> const char *pg_btn = "px-2 py-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"; </c>
+        <c> const char *pg_cur = "px-2 py-1 rounded bg-indigo-600 text-white"; </c>
+        <c> if (page_info.page > 1) { </c>
+        <a class="<c> STR(pg_btn); </c>"
+           data-pg-n="<c> STR(temp_sprintf("%zu", page_info.page - 1)); </c>"
+           href="<c> page_href(sb, page_base, page_query, page_key, page_info.page - 1, page_info.per_page); </c>">Prev</a>
+        <c> } else { </c>
+        <span class="<c> STR(pg_btn); </c> opacity-40">Prev</span>
+        <c> } </c>
+        <c> 
             // a window of up to 5 page numbers around the current page
             size_t pg_first = page_info.page > 3 ? page_info.page - 2 : 1;
             if (pg_first + 4 > page_info.total_pages) {
@@ -41,44 +41,44 @@
             }
             size_t pg_last = pg_first + 4;
             if (pg_last > page_info.total_pages) pg_last = page_info.total_pages;
-        })
-        ({ if (pg_first > 1) { })
-        <a class="({ STR(pg_btn); })" data-pg-n="1"
-           href="({ page_href(sb, page_base, page_query, page_key, 1, page_info.per_page); })">1</a>
+        </c>
+        <c> if (pg_first > 1) { </c>
+        <a class="<c> STR(pg_btn); </c>" data-pg-n="1"
+           href="<c> page_href(sb, page_base, page_query, page_key, 1, page_info.per_page); </c>">1</a>
         <span class="text-gray-400 px-1">&hellip;</span>
-        ({ } })
-        ({ for (size_t pgn = pg_first; pgn <= pg_last; ++pgn) { })
-            ({ if (pgn == page_info.page) { })
-            <span class="({ STR(pg_cur); })">({ STR(temp_sprintf("%zu", pgn)); })</span>
-            ({ } else { })
-            <a class="({ STR(pg_btn); })"
-               data-pg-n="({ STR(temp_sprintf("%zu", pgn)); })"
-               href="({ page_href(sb, page_base, page_query, page_key, pgn, page_info.per_page); })">({ STR(temp_sprintf("%zu", pgn)); })</a>
-            ({ } })
-        ({ } })
-        ({ if (pg_last < page_info.total_pages) { })
+        <c> } </c>
+        <c> for (size_t pgn = pg_first; pgn <= pg_last; ++pgn) { </c>
+            <c> if (pgn == page_info.page) { </c>
+            <span class="<c> STR(pg_cur); </c>"><c> STR(temp_sprintf("%zu", pgn)); </c></span>
+            <c> } else { </c>
+            <a class="<c> STR(pg_btn); </c>"
+               data-pg-n="<c> STR(temp_sprintf("%zu", pgn)); </c>"
+               href="<c> page_href(sb, page_base, page_query, page_key, pgn, page_info.per_page); </c>"><c> STR(temp_sprintf("%zu", pgn)); </c></a>
+            <c> } </c>
+        <c> } </c>
+        <c> if (pg_last < page_info.total_pages) { </c>
         <span class="text-gray-400 px-1">&hellip;</span>
-        <a class="({ STR(pg_btn); })"
-           data-pg-n="({ STR(temp_sprintf("%zu", page_info.total_pages)); })"
-           href="({ page_href(sb, page_base, page_query, page_key, page_info.total_pages, page_info.per_page); })">({ STR(temp_sprintf("%zu", page_info.total_pages)); })</a>
-        ({ } })
-        ({ if (page_info.page < page_info.total_pages) { })
-        <a class="({ STR(pg_btn); })"
-           data-pg-n="({ STR(temp_sprintf("%zu", page_info.page + 1)); })"
-           href="({ page_href(sb, page_base, page_query, page_key, page_info.page + 1, page_info.per_page); })">Next</a>
-        ({ } else { })
-        <span class="({ STR(pg_btn); }) opacity-40">Next</span>
-        ({ } })
+        <a class="<c> STR(pg_btn); </c>"
+           data-pg-n="<c> STR(temp_sprintf("%zu", page_info.total_pages)); </c>"
+           href="<c> page_href(sb, page_base, page_query, page_key, page_info.total_pages, page_info.per_page); </c>"><c> STR(temp_sprintf("%zu", page_info.total_pages)); </c></a>
+        <c> } </c>
+        <c> if (page_info.page < page_info.total_pages) { </c>
+        <a class="<c> STR(pg_btn); </c>"
+           data-pg-n="<c> STR(temp_sprintf("%zu", page_info.page + 1)); </c>"
+           href="<c> page_href(sb, page_base, page_query, page_key, page_info.page + 1, page_info.per_page); </c>">Next</a>
+        <c> } else { </c>
+        <span class="<c> STR(pg_btn); </c> opacity-40">Next</span>
+        <c> } </c>
         <span class="text-gray-400 px-2">|</span>
         <span class="text-gray-500 dark:text-gray-400">Per page:</span>
-        ({ for (size_t ppi = 0; ppi < 3; ++ppi) { })
-            ({ size_t ppv = ppi == 0 ? 10 : (ppi == 1 ? 20 : 50); })
-            ({ if (ppv == page_info.per_page) { })
-            <span class="({ STR(pg_cur); })">({ STR(temp_sprintf("%zu", ppv)); })</span>
-            ({ } else { })
-            <a class="({ STR(pg_btn); })"
-               href="({ page_href(sb, page_base, page_query, page_key, 1, ppv); })">({ STR(temp_sprintf("%zu", ppv)); })</a>
-            ({ } })
-        ({ } })
+        <c> for (size_t ppi = 0; ppi < 3; ++ppi) { </c>
+            <c> size_t ppv = ppi == 0 ? 10 : (ppi == 1 ? 20 : 50); </c>
+            <c> if (ppv == page_info.per_page) { </c>
+            <span class="<c> STR(pg_cur); </c>"><c> STR(temp_sprintf("%zu", ppv)); </c></span>
+            <c> } else { </c>
+            <a class="<c> STR(pg_btn); </c>"
+               href="<c> page_href(sb, page_base, page_query, page_key, 1, ppv); </c>"><c> STR(temp_sprintf("%zu", ppv)); </c></a>
+            <c> } </c>
+        <c> } </c>
     </div>
 </nav>

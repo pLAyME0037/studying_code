@@ -1,1 +1,1 @@
-</main><footer class="bg-mantle border-t border-surface0 mt-auto"><div class="max-w-5xl mx-auto px-3 py-2 text-xs text-overlay0">({ ESCAPED(tr("shop.footer", "POS · ហាងលក់រាយ")); })</div></footer></div>
+</main><footer class="bg-mantle border-t border-surface0 mt-auto"><div class="max-w-5xl mx-auto px-3 py-2 text-xs text-overlay0"><c> ESCAPED(tr("shop.footer", "POS · ហាងលក់រាយ")); </c></div></footer></div>

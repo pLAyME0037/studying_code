@@ -1,4 +1,4 @@
-({ 
+<c> 
     // Emits one server-rendered pager per page inside <template> blocks for
     // ?fragment=all responses (js/PaginationSwitcher.js swaps the matching
     // one in when a page link is clicked). Expects the same scope as
@@ -12,4 +12,4 @@
             STR("</template>");
         }
     }
-})
+</c>

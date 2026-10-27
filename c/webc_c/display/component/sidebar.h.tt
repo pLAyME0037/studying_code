@@ -1,4 +1,4 @@
-({
+<c>
     // Grouped POS nav: one row per entry; a non-NULL group renders the
     // color-step group header above the row. Single-path SVG icons only
     // (the loop emits one <path>). Reports joins when its pages land.
@@ -120,57 +120,57 @@
             if (nav_vis[j]) { nav_grp[nv] = true; break; }
         }
     }
-})
+</c>
 <aside id="sidebar"
        class="shrink-0 flex flex-col border-r border-surface0 bg-mantle transition-all duration-300 h-full">
 
     <div class="border-b border-surface0 bg-crust shrink-0">
         <div id="sidebar-pad"
              class="flex items-center p-3 user-card">
-            ({ STR(SIDEBAR_AVATAR_RAW); })
+            <c> STR(SIDEBAR_AVATAR_RAW); </c>
             <div class="ml-3 min-w-0 nav-label">
                 <p class="text-sm font-semibold text-text truncate">
-                    ({ STR(SIDEBAR_NAME); })
+                    <c> STR(SIDEBAR_NAME); </c>
                 </p>
                 <p class="text-xs text-subtext0 truncate">
-                    ({ STR(SIDEBAR_SUB); })
+                    <c> STR(SIDEBAR_SUB); </c>
                 </p>
             </div>
         </div>
 
         <div class="sidebar-tooltip">
-            ({ STR(SIDEBAR_NAME); })
+            <c> STR(SIDEBAR_NAME); </c>
         </div>
     </div>
 
     <nav class="flex-1 py-0 px-3 space-y-1 overflow-y-auto no-scrollbar">
-        ({ for (size_t ni = 0; ni < nav_items_count; ++ni) { })
-        ({ if (nav_items[ni].group != NULL && nav_grp[ni]) { })
+        <c> for (size_t ni = 0; ni < nav_items_count; ++ni) { </c>
+        <c> if (nav_items[ni].group != NULL && nav_grp[ni]) { </c>
         <div class="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-overlay0 bg-surface0/60 nav-label">
-            ({ STR(nav_items[ni].group); })
+            <c> STR(nav_items[ni].group); </c>
         </div>
-        ({ } })
-        ({ if (nav_vis[ni]) { })
+        <c> } </c>
+        <c> if (nav_vis[ni]) { </c>
         <div class="relative group/item mb-1">
-            <a href="({ STR(nav_items[ni].path); })"
-               class="nav-link flex items-center transition-all duration-200 ease-in-out p-2 ({ CLS(NAV_ACTIVE(nav_items[ni].path) &&
+            <a href="<c> STR(nav_items[ni].path); </c>"
+               class="nav-link flex items-center transition-all duration-200 ease-in-out p-2 <c> CLS(NAV_ACTIVE(nav_items[ni].path) &&
                    (strcmp(nav_items[ni].path, "/") != 0 || strcmp(CURRENT_PATH, "/") == 0),
                    "nav-active",
-                   "text-subtext0") })">
+                   "text-subtext0") </c>">
                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="({ STR(nav_items[ni].icon); })" />
+                          d="<c> STR(nav_items[ni].icon); </c>" />
                 </svg>
                 <span class="ml-3 text-sm font-medium whitespace-nowrap flex-1 nav-label">
-                    ({ STR(nav_items[ni].label); })
+                    <c> STR(nav_items[ni].label); </c>
                 </span>
             </a>
             <div class="sidebar-tooltip">
-                ({ STR(nav_items[ni].label); })
+                <c> STR(nav_items[ni].label); </c>
             </div>
         </div>
-        ({ } })
-        ({ } })
+        <c> } </c>
+    <c> } </c>
     </nav>
 
     <div id="sidebar-pad" class="border-t border-surface0 shrink-0">

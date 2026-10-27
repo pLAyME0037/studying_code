@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Example WebC Site - ({ STR(PAGE_TITLE); })</title>
+    <title>Example WebC Site - <c> STR(PAGE_TITLE); </c></title>
     <link href="/css/output.css" rel="stylesheet">
     <script src="/js/sidebarSwitcher.js">
         (function () {
@@ -11,7 +11,7 @@
             if (isCollapsed) {
               document.documentElement.classList.add('sidebar-collapsed');
             }
-        })();
+        </c>();
     </script>
     <script src="/js/themeSwitcher.js"></script>
     <script src="/js/ListExpandSwitcher.js"></script>
@@ -57,34 +57,34 @@
                     <div class="h-6 w-px bg-gray-300 dark:bg-gray-600 mx-2 hidden md:block"></div>
 
                     <h1 class="text-lg font-semibold text-gray-800 dark:text-white truncate">
-                        ({ STR(PAGE_TITLE); })
+                        <c> STR(PAGE_TITLE); </c>
                     </h1>
                 </div>
 
                 <div class="flex items-center space-x-3">
                     <div class="flex items-center gap-1">
-                        ({ {
-                            char *theme_btn = "px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"; })
+                        <c> {
+                            char *theme_btn = "px-2 py-1 rounded text-sm text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"; </c>
                             <button onclick="window.themeController.setTheme('light')"
-                                    class="({ STR(theme_btn); })">
+                                    class="<c> STR(theme_btn); </c>">
                                 Light
                             </button>
                             <button onclick="window.themeController.setTheme('dark')"
-                                    class="({ STR(theme_btn); })">
+                                    class="<c> STR(theme_btn); </c>">
                                 Dark
                             </button>
                             <button onclick="window.themeController.setTheme('device')"
-                                    class="({ STR(theme_btn); })">
+                                    class="<c> STR(theme_btn); </c>">
                                 System
                             </button>
-                        ({ } })
+                        <c> } </c>
                     </div>
                 </div>
             </div>
         </header>
 
         <div class="flex-1 flex overflow-hidden relative min-h-0">
-            ({ #include "../component/sidebar.h" })
+            <c> #include "../component/sidebar.h" </c>
 
             <div class="flex-1 flex flex-col min-w-0">
                 <main class="flex-1 overflow-y-auto flex flex-col min-w-0 bg-gray-100 dark:bg-gray-900">

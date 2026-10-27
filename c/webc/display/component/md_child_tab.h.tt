@@ -1,4 +1,4 @@
-({
+<c>
     // Per-master child window. One shared ?<table>_page key (parsed once
     // per table into child_pages[] in serve_master_child); the totals are
     // per master, so the window is clamped against each master's own rows.
@@ -14,23 +14,23 @@
             config->children[ti].table, rows->items[ri].id);
     const char *page_base = md_path;
     String_View page_query = sc->query_string;
-})
-<div class="tab-content ({ if (ti == 0) { })({ } else { })hidden({ } })"
-     data-tab="({ STR(config->children[ti].table); })"
-     data-master-id="({ STR(rows->items[ri].id); })">
+</c>
+<div class="tab-content <c> if (ti == 0) { </c><c> } else { </c>hidden<c> } </c>"
+     data-tab="<c> STR(config->children[ti].table); </c>"
+     data-master-id="<c> STR(rows->items[ri].id); </c>">
     <div class="bg-slate-100 dark:bg-slate-900 border border-gray-200 dark:border-gray-700 flex justify-between items-center">
         <div class="flex items-center pl-3 gap-2">
             <h4 class="font-medium text-sm text-gray-800 dark:text-white">
-                ({ ESCAPED(config->children[ti].title); })
+                <c> ESCAPED(config->children[ti].title); </c>
             </h4>
             <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300">
-                ({ STR(config->children[ti].fk_column); }): ({ STR(rows->items[ri].id); })
+                <c> STR(config->children[ti].fk_column); </c>: <c> STR(rows->items[ri].id); </c>
             </span>
         </div>
         <button type="button"
                 title="Add"
                 aria-label="Add"
-                data-tab="({ STR(config->children[ti].table); })"
+                data-tab="<c> STR(config->children[ti].table); </c>"
                 class="add-child-btn flex items-center gap-1 px-2 py-1 text-xs rounded text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/40">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
         </button>
@@ -39,55 +39,55 @@
     <table class="w-full text-left border-collapse text-sm">
         <thead class="bg-slate-100 dark:bg-slate-900 dark:text-white text-slate-800">
             <tr class="border border-gray-200 dark:border-gray-700">
-                ({ for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { })
+                <c> for (size_t cci = 0; cci < config->children[ti].column_count; ++cci) { </c>
                     <th class="px-3 py-1.5 font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                        ({ ESCAPED(config->children[ti].columns[cci].label); })
+                        <c> ESCAPED(config->children[ti].columns[cci].label); </c>
                     </th>
-                ({ } })
+                <c> } </c>
                 <th class="px-3 py-1.5 font-medium text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 w-20">
                     Actions
                 </th>
             </tr>
         </thead>
-        <tbody id="({ STR(page_container); })">
-            ({ #include "./md_child_add_row.h" })
-            ({ if (rows->items[ri].children[ti].count == 0) { })
-                <tr><td colspan="({ INT(config->children[ti].column_count + 1); })"
+        <tbody id="<c> STR(page_container); </c>">
+            <c> #include "./md_child_add_row.h" </c>
+            <c> if (rows->items[ri].children[ti].count == 0) { </c>
+                <tr><td colspan="<c> INT(config->children[ti].column_count + 1); </c>"
                         class="px-3 py-3 text-sm text-gray-400 text-center">No records</td></tr>
-            ({ } else { })
-                ({ for (size_t ci = cw_lo; ci < cw_hi; ++ci) { })
-                    ({ #include "./md_child_rows.h" })
-                ({ } })
-            ({ } })
+            <c> } else { </c>
+                <c> for (size_t ci = cw_lo; ci < cw_hi; ++ci) { </c>
+                    <c> #include "./md_child_rows.h" </c>
+                <c> } </c>
+            <c> } </c>
         </tbody>
     </table>
 
-    ({ #include "./pagination.h" })
+    <c> #include "./pagination.h" </c>
 
-    <form id="mdf-a-({ STR(config->children[ti].table); })-({ STR(rows->items[ri].id); })"
+    <form id="mdf-a-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].id); </c>"
           method="POST"
-          action="({ STR(config->children[ti].crud_path); })/create?({ STR(config->children[ti].fk_column); })=({ STR(rows->items[ri].id); })&redirect=({ STR(md_path); })"
+          action="<c> STR(config->children[ti].crud_path); </c>/create?<c> STR(config->children[ti].fk_column); </c>=<c> STR(rows->items[ri].id); </c>&redirect=<c> STR(md_path); </c>"
           data-md-kind="child"
-          data-md-scope="({ STR(config->children[ti].table); })"
+          data-md-scope="<c> STR(config->children[ti].table); </c>"
           data-md-op="create"
-          data-md-master="({ STR(rows->items[ri].id); })"
+          data-md-master="<c> STR(rows->items[ri].id); </c>"
           class="hidden">
     </form>
 
-    ({ if (page_info.total > 0) { })
+    <c> if (page_info.total > 0) { </c>
         <div class="m-1 text-sm text-amber-200">
-            ({ INT(page_info.total); }) record(s)
+            <c> INT(page_info.total); </c> record(s)
         </div>
-    ({ } })
+    <c> } </c>
 
-    ({ if (fragment) { })
-        <table data-pg-rows="({ STR(page_container); })" data-pg-unit="3">
+    <c> if (fragment) { </c>
+        <table data-pg-rows="<c> STR(page_container); </c>" data-pg-unit="3">
             <tbody>
-                ({ for (size_t ci = 0; ci < rows->items[ri].children[ti].count; ++ci) { })
-                    ({ #include "./md_child_rows.h" })
-                ({ } })
+                <c> for (size_t ci = 0; ci < rows->items[ri].children[ti].count; ++ci) { </c>
+                    <c> #include "./md_child_rows.h" </c>
+                <c> } </c>
             </tbody>
         </table>
-    ({ #include "./pager_templates.h" })
-    ({ } })
+    <c> #include "./pager_templates.h" </c>
+    <c> } </c>
 </div>
