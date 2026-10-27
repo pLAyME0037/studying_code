@@ -19,16 +19,15 @@ build_property.ProjectTypeGuids =
 build_property.InvariantGlobalization = 
 build_property.PlatformNeutralAssembly = 
 build_property.EnforceExtendedAnalyzerRules = 
-build_property.EntryPointFilePath = 
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = user_info
-build_property.ProjectDir = /mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/
+build_property.ProjectDir = /mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.EffectiveAnalysisLevelStyle = 10.0
 build_property.EnableCodeStyleSeverity = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/App.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/App.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.App.xaml
 build_metadata.AdditionalFiles.TargetPath = App.xaml
@@ -38,7 +37,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/AppShell.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/AppShell.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.AppShell.xaml
 build_metadata.AdditionalFiles.TargetPath = AppShell.xaml
@@ -48,7 +47,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/MainPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/MainPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.MainPage.xaml
 build_metadata.AdditionalFiles.TargetPath = MainPage.xaml
@@ -58,7 +57,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/CoursePage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/CoursePage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.CoursePage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/CoursePage.xaml
@@ -68,7 +67,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/EditStudentPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/EditStudentPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.EditStudentPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/EditStudentPage.xaml
@@ -78,7 +77,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/HomePage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/HomePage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.HomePage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/HomePage.xaml
@@ -88,7 +87,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/SettingPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/SettingPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.SettingPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/SettingPage.xaml
@@ -98,7 +97,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/StudentDetailPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/StudentDetailPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.StudentDetailPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/StudentDetailPage.xaml
@@ -108,7 +107,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/StudentList.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/StudentList.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.StudentList.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/StudentList.xaml
@@ -118,7 +117,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Pages/StudentPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Pages/StudentPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Pages.StudentPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Pages/StudentPage.xaml
@@ -128,7 +127,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Resources/Styles/Colors.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Resources/Styles/Colors.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Resources.Styles.Colors.xaml
 build_metadata.AdditionalFiles.TargetPath = Resources/Styles/Colors.xaml
@@ -138,7 +137,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Resources/Styles/Styles.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Resources/Styles/Styles.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Resources.Styles.Styles.xaml
 build_metadata.AdditionalFiles.TargetPath = Resources/Styles/Styles.xaml
@@ -148,7 +147,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ExAboutWu.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ExAboutWu.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ExAboutWu.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ExAboutWu.xaml
@@ -158,7 +157,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ExFaculty.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ExFaculty.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ExFaculty.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ExFaculty.xaml
@@ -168,7 +167,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ExFacultyOfEconomic.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ExFacultyOfEconomic.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ExFacultyOfEconomic.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ExFacultyOfEconomic.xaml
@@ -178,7 +177,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ExFacultyOfScience.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ExFacultyOfScience.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ExFacultyOfScience.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ExFacultyOfScience.xaml
@@ -188,7 +187,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ExHome.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ExHome.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ExHome.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ExHome.xaml
@@ -198,7 +197,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ExOffices.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ExOffices.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ExOffices.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ExOffices.xaml
@@ -208,7 +207,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/MainPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/MainPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.MainPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/MainPage.xaml
@@ -218,7 +217,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/ProductCate.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/ProductCate.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.ProductCate.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/ProductCate.xaml
@@ -228,7 +227,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/SimpleDialogPage.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/SimpleDialogPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.SimpleDialogPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/SimpleDialogPage.xaml
@@ -238,7 +237,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/Staff.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/Staff.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.Staff.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/Staff.xaml
@@ -248,7 +247,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/StudentDB/StudentList.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/StudentDB/StudentList.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.StudentDB.StudentList.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/StudentDB/StudentList.xaml
@@ -258,7 +257,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/StudentDB/StudentListAdd.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/StudentDB/StudentListAdd.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.StudentDB.StudentListAdd.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/StudentDB/StudentListAdd.xaml
@@ -268,7 +267,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/StudentDB/StudentListCollection.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/StudentDB/StudentListCollection.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.StudentDB.StudentListCollection.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/StudentDB/StudentListCollection.xaml
@@ -278,7 +277,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/StudentManagement.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/StudentManagement.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.StudentManagement.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/StudentManagement.xaml
@@ -288,7 +287,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/StudentNote.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/StudentNote.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.StudentNote.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/StudentNote.xaml
@@ -298,7 +297,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/User.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/User.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.User.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/User.xaml
@@ -308,7 +307,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/WUCompanyLogin.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/WUCompanyLogin.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.WUCompanyLogin.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/WUCompanyLogin.xaml
@@ -318,7 +317,7 @@ build_metadata.AdditionalFiles.NoWarn =
 build_metadata.AdditionalFiles.EnableDiagnostics = 
 build_metadata.AdditionalFiles.LineInfo = 
 
-[/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/Views/WUCompanyRegister.xaml]
+[/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/Views/WUCompanyRegister.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = user_info.Views.WUCompanyRegister.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/WUCompanyRegister.xaml

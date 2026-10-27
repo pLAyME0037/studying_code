@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 3,
   "targets": {
     "net10.0": {
       "CommunityToolkit.Maui/15.0.1": {
@@ -77,30 +77,30 @@
           "lib/net8.0/ExCSS.dll": {}
         }
       },
-      "HarfBuzzSharp/8.3.1.3": {
+      "HarfBuzzSharp/14.2.1.201": {
         "type": "package",
         "dependencies": {
-          "HarfBuzzSharp.NativeAssets.Win32": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.macOS": "8.3.1.3"
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.1.201"
         },
         "compile": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "related": ".pdb"
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.Linux/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Linux/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtimeTargets": {
           "runtimes/linux-arm/native/libHarfBuzzSharp.so": {
@@ -110,6 +110,14 @@
           "runtimes/linux-arm64/native/libHarfBuzzSharp.so": {
             "assetType": "native",
             "rid": "linux-arm64"
+          },
+          "runtimes/linux-bionic-arm64/native/libHarfBuzzSharp.so": {
+            "assetType": "native",
+            "rid": "linux-bionic-arm64"
+          },
+          "runtimes/linux-bionic-x64/native/libHarfBuzzSharp.so": {
+            "assetType": "native",
+            "rid": "linux-bionic-x64"
           },
           "runtimes/linux-loongarch64/native/libHarfBuzzSharp.so": {
             "assetType": "native",
@@ -149,13 +157,13 @@
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.macOS/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.macOS/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtimeTargets": {
           "runtimes/osx/native/libHarfBuzzSharp.dylib": {
@@ -164,13 +172,13 @@
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.Win32/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Win32/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtimeTargets": {
           "runtimes/win-arm64/native/libHarfBuzzSharp.dll": {
@@ -445,33 +453,33 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Maui.Controls/10.0.101": {
+      "Microsoft.Maui.Controls/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.101",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101",
-          "Microsoft.Maui.Resizetizer": "10.0.101"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.110",
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110",
+          "Microsoft.Maui.Resizetizer": "10.0.110"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.101": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110"
         },
         "build": {
           "buildTransitive/netstandard2.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/netstandard2.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.101": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -484,14 +492,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.101": {
+      "Microsoft.Maui.Controls.Core/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.101"
+          "Microsoft.Maui.Core": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.dll": {
@@ -608,12 +616,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.101": {
+      "Microsoft.Maui.Controls.Xaml/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Core": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Core": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.Xaml.dll": {
@@ -626,7 +634,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.101": {
+      "Microsoft.Maui.Core/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -634,8 +642,8 @@
           "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Essentials": "10.0.101",
-          "Microsoft.Maui.Graphics": "10.0.101"
+          "Microsoft.Maui.Essentials": "10.0.110",
+          "Microsoft.Maui.Graphics": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.dll": {
@@ -652,10 +660,10 @@
           "buildTransitive/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.101": {
+      "Microsoft.Maui.Essentials/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.101"
+          "Microsoft.Maui.Graphics": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Essentials.dll": {
@@ -668,7 +676,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.101": {
+      "Microsoft.Maui.Graphics/10.0.110": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Maui.Graphics.dll": {
@@ -681,11 +689,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Skia/10.0.90": {
+      "Microsoft.Maui.Graphics.Skia/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.90",
-          "SkiaSharp": "3.116.1"
+          "Microsoft.Maui.Graphics": "10.0.110",
+          "SkiaSharp": "4.150.1"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Graphics.Skia.dll": {
@@ -698,29 +706,29 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.101": {
+      "Microsoft.Maui.Resizetizer/10.0.110": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
           "buildTransitive/Microsoft.Maui.Resizetizer.targets": {}
         }
       },
-      "OpenMaui.Controls.Linux/10.0.90.1": {
+      "OpenMaui.Controls.Linux/10.0.110.13": {
         "type": "package",
         "dependencies": {
-          "HarfBuzzSharp": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
+          "HarfBuzzSharp": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.1.201",
           "Lib.Harmony": "2.4.2",
-          "Microsoft.Maui.Controls": "10.0.90",
-          "Microsoft.Maui.Graphics": "10.0.90",
-          "Microsoft.Maui.Graphics.Skia": "10.0.90",
-          "OpenMaui.Hosting": "10.0.90.1",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.NativeAssets.Linux": "3.119.2",
-          "SkiaSharp.Views.Desktop.Common": "3.119.2",
-          "SkiaSharp.Views.Maui.Controls": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2",
-          "Svg.Skia": "3.4.1",
+          "Microsoft.Maui.Controls": "10.0.110",
+          "Microsoft.Maui.Graphics": "10.0.110",
+          "Microsoft.Maui.Graphics.Skia": "10.0.110",
+          "OpenMaui.Hosting": "10.0.110.13",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.NativeAssets.Linux": "4.152.1",
+          "SkiaSharp.Views.Desktop.Common": "4.152.1",
+          "SkiaSharp.Views.Maui.Controls": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1",
+          "Svg.Skia": "5.2.3",
           "Tmds.DBus": "0.94.2"
         },
         "compile": {
@@ -738,6 +746,10 @@
           "build/OpenMaui.Controls.Linux.targets": {}
         },
         "runtimeTargets": {
+          "runtimes/linux-arm64/native/libopenmaui_wl.so": {
+            "assetType": "native",
+            "rid": "linux-arm64"
+          },
           "runtimes/linux-x64/native/libopenmaui_wl.so": {
             "assetType": "native",
             "rid": "linux-x64"
@@ -757,10 +769,10 @@
           "lib/net10.0/OpenMaui.Controls.Linux.MediaElement.dll": {}
         }
       },
-      "OpenMaui.Hosting/10.0.90.1": {
+      "OpenMaui.Hosting/10.0.110.13": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls": "10.0.90"
+          "Microsoft.Maui.Controls": "10.0.110"
         },
         "compile": {
           "lib/net10.0/OpenMaui.Hosting.dll": {}
@@ -769,7 +781,7 @@
           "lib/net10.0/OpenMaui.Hosting.dll": {}
         }
       },
-      "ShimSkiaSharp/3.4.1": {
+      "ShimSkiaSharp/5.2.3": {
         "type": "package",
         "compile": {
           "lib/net10.0/ShimSkiaSharp.dll": {}
@@ -778,28 +790,28 @@
           "lib/net10.0/ShimSkiaSharp.dll": {}
         }
       },
-      "SkiaSharp/3.119.2": {
+      "SkiaSharp/4.152.1": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "3.119.2",
-          "SkiaSharp.NativeAssets.macOS": "3.119.2"
+          "SkiaSharp.NativeAssets.Win32": "4.152.1",
+          "SkiaSharp.NativeAssets.macOS": "4.152.1"
         },
         "compile": {
-          "ref/net8.0/SkiaSharp.dll": {}
+          "ref/net10.0/SkiaSharp.dll": {}
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.dll": {
+          "lib/net10.0/SkiaSharp.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.NativeAssets.Linux/3.119.2": {
+      "SkiaSharp.NativeAssets.Linux/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtimeTargets": {
           "runtimes/linux-arm/native/libSkiaSharp.so": {
@@ -809,6 +821,14 @@
           "runtimes/linux-arm64/native/libSkiaSharp.so": {
             "assetType": "native",
             "rid": "linux-arm64"
+          },
+          "runtimes/linux-bionic-arm64/native/libSkiaSharp.so": {
+            "assetType": "native",
+            "rid": "linux-bionic-arm64"
+          },
+          "runtimes/linux-bionic-x64/native/libSkiaSharp.so": {
+            "assetType": "native",
+            "rid": "linux-bionic-x64"
           },
           "runtimes/linux-loongarch64/native/libSkiaSharp.so": {
             "assetType": "native",
@@ -848,13 +868,13 @@
           }
         }
       },
-      "SkiaSharp.NativeAssets.macOS/3.119.2": {
+      "SkiaSharp.NativeAssets.macOS/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtimeTargets": {
           "runtimes/osx/native/libSkiaSharp.dylib": {
@@ -863,13 +883,13 @@
           }
         }
       },
-      "SkiaSharp.NativeAssets.Win32/3.119.2": {
+      "SkiaSharp.NativeAssets.Win32/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtimeTargets": {
           "runtimes/win-arm64/native/libSkiaSharp.dll": {
@@ -898,54 +918,54 @@
           }
         }
       },
-      "SkiaSharp.Views.Desktop.Common/3.119.2": {
+      "SkiaSharp.Views.Desktop.Common/4.152.1": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp": "3.119.2"
+          "SkiaSharp": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Controls/3.119.2": {
+      "SkiaSharp.Views.Maui.Controls/4.152.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls": "8.0.82",
-          "Microsoft.Maui.Core": "8.0.82",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2"
+          "Microsoft.Maui.Controls": "10.0.20",
+          "Microsoft.Maui.Core": "10.0.20",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Core/3.119.2": {
+      "SkiaSharp.Views.Maui.Core/4.152.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Core": "8.0.82",
-          "SkiaSharp": "3.119.2"
+          "Microsoft.Maui.Core": "10.0.20",
+          "SkiaSharp": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
             "related": ".pdb"
           }
         }
@@ -1179,7 +1199,22 @@
           "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll": {}
         }
       },
-      "Svg.Custom/3.4.1": {
+      "Svg.Animation/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "ShimSkiaSharp": "5.2.3",
+          "SkiaSharp": "4.148.0",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "compile": {
+          "lib/net10.0/Svg.Animation.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/Svg.Animation.dll": {}
+        }
+      },
+      "Svg.Custom/5.2.3": {
         "type": "package",
         "dependencies": {
           "ExCSS": "4.3.1"
@@ -1191,11 +1226,11 @@
           "lib/net10.0/Svg.Custom.dll": {}
         }
       },
-      "Svg.Model/3.4.1": {
+      "Svg.Model/5.2.3": {
         "type": "package",
         "dependencies": {
-          "ShimSkiaSharp": "3.4.1",
-          "Svg.Custom": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3"
         },
         "compile": {
           "lib/net10.0/Svg.Model.dll": {}
@@ -1204,12 +1239,32 @@
           "lib/net10.0/Svg.Model.dll": {}
         }
       },
-      "Svg.Skia/3.4.1": {
+      "Svg.SceneGraph/5.2.3": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp": "2.88.9",
-          "Svg.Custom": "3.4.1",
-          "Svg.Model": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "compile": {
+          "lib/net10.0/Svg.SceneGraph.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/Svg.SceneGraph.dll": {}
+        }
+      },
+      "Svg.Skia/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "HarfBuzzSharp": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.0",
+          "SkiaSharp": "4.148.0",
+          "Svg.Animation": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3",
+          "Svg.SceneGraph": "5.2.3"
         },
         "compile": {
           "lib/net10.0/Svg.Skia.dll": {}
@@ -1308,51 +1363,51 @@
           "lib/net8.0/ExCSS.dll": {}
         }
       },
-      "HarfBuzzSharp/8.3.1.3": {
+      "HarfBuzzSharp/14.2.1.201": {
         "type": "package",
         "dependencies": {
-          "HarfBuzzSharp.NativeAssets.Win32": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.macOS": "8.3.1.3"
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.1.201"
         },
         "compile": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "related": ".pdb"
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.Linux/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Linux/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "native": {
           "runtimes/linux-arm64/native/libHarfBuzzSharp.so": {}
         }
       },
-      "HarfBuzzSharp.NativeAssets.macOS/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.macOS/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
-      "HarfBuzzSharp.NativeAssets.Win32/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Win32/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
       "Lib.Harmony/2.4.2": {
@@ -1601,33 +1656,33 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Maui.Controls/10.0.101": {
+      "Microsoft.Maui.Controls/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.101",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101",
-          "Microsoft.Maui.Resizetizer": "10.0.101"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.110",
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110",
+          "Microsoft.Maui.Resizetizer": "10.0.110"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.101": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110"
         },
         "build": {
           "buildTransitive/netstandard2.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/netstandard2.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.101": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -1640,14 +1695,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.101": {
+      "Microsoft.Maui.Controls.Core/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.101"
+          "Microsoft.Maui.Core": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.dll": {
@@ -1764,12 +1819,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.101": {
+      "Microsoft.Maui.Controls.Xaml/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Core": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Core": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.Xaml.dll": {
@@ -1782,7 +1837,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.101": {
+      "Microsoft.Maui.Core/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -1790,8 +1845,8 @@
           "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Essentials": "10.0.101",
-          "Microsoft.Maui.Graphics": "10.0.101"
+          "Microsoft.Maui.Essentials": "10.0.110",
+          "Microsoft.Maui.Graphics": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.dll": {
@@ -1808,10 +1863,10 @@
           "buildTransitive/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.101": {
+      "Microsoft.Maui.Essentials/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.101"
+          "Microsoft.Maui.Graphics": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Essentials.dll": {
@@ -1824,7 +1879,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.101": {
+      "Microsoft.Maui.Graphics/10.0.110": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Maui.Graphics.dll": {
@@ -1837,11 +1892,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Skia/10.0.90": {
+      "Microsoft.Maui.Graphics.Skia/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.90",
-          "SkiaSharp": "3.116.1"
+          "Microsoft.Maui.Graphics": "10.0.110",
+          "SkiaSharp": "4.150.1"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Graphics.Skia.dll": {
@@ -1854,29 +1909,29 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.101": {
+      "Microsoft.Maui.Resizetizer/10.0.110": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
           "buildTransitive/Microsoft.Maui.Resizetizer.targets": {}
         }
       },
-      "OpenMaui.Controls.Linux/10.0.90.1": {
+      "OpenMaui.Controls.Linux/10.0.110.13": {
         "type": "package",
         "dependencies": {
-          "HarfBuzzSharp": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
+          "HarfBuzzSharp": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.1.201",
           "Lib.Harmony": "2.4.2",
-          "Microsoft.Maui.Controls": "10.0.90",
-          "Microsoft.Maui.Graphics": "10.0.90",
-          "Microsoft.Maui.Graphics.Skia": "10.0.90",
-          "OpenMaui.Hosting": "10.0.90.1",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.NativeAssets.Linux": "3.119.2",
-          "SkiaSharp.Views.Desktop.Common": "3.119.2",
-          "SkiaSharp.Views.Maui.Controls": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2",
-          "Svg.Skia": "3.4.1",
+          "Microsoft.Maui.Controls": "10.0.110",
+          "Microsoft.Maui.Graphics": "10.0.110",
+          "Microsoft.Maui.Graphics.Skia": "10.0.110",
+          "OpenMaui.Hosting": "10.0.110.13",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.NativeAssets.Linux": "4.152.1",
+          "SkiaSharp.Views.Desktop.Common": "4.152.1",
+          "SkiaSharp.Views.Maui.Controls": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1",
+          "Svg.Skia": "5.2.3",
           "Tmds.DBus": "0.94.2"
         },
         "compile": {
@@ -1888,6 +1943,9 @@
           "lib/net10.0/OpenMaui.Controls.Linux.dll": {
             "related": ".xml"
           }
+        },
+        "native": {
+          "runtimes/linux-arm64/native/libopenmaui_wl.so": {}
         },
         "build": {
           "build/OpenMaui.Controls.Linux.props": {},
@@ -1907,10 +1965,10 @@
           "lib/net10.0/OpenMaui.Controls.Linux.MediaElement.dll": {}
         }
       },
-      "OpenMaui.Hosting/10.0.90.1": {
+      "OpenMaui.Hosting/10.0.110.13": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls": "10.0.90"
+          "Microsoft.Maui.Controls": "10.0.110"
         },
         "compile": {
           "lib/net10.0/OpenMaui.Hosting.dll": {}
@@ -1919,7 +1977,7 @@
           "lib/net10.0/OpenMaui.Hosting.dll": {}
         }
       },
-      "ShimSkiaSharp/3.4.1": {
+      "ShimSkiaSharp/5.2.3": {
         "type": "package",
         "compile": {
           "lib/net10.0/ShimSkiaSharp.dll": {}
@@ -1928,99 +1986,99 @@
           "lib/net10.0/ShimSkiaSharp.dll": {}
         }
       },
-      "SkiaSharp/3.119.2": {
+      "SkiaSharp/4.152.1": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "3.119.2",
-          "SkiaSharp.NativeAssets.macOS": "3.119.2"
+          "SkiaSharp.NativeAssets.Win32": "4.152.1",
+          "SkiaSharp.NativeAssets.macOS": "4.152.1"
         },
         "compile": {
-          "ref/net8.0/SkiaSharp.dll": {}
+          "ref/net10.0/SkiaSharp.dll": {}
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.dll": {
+          "lib/net10.0/SkiaSharp.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.NativeAssets.Linux/3.119.2": {
+      "SkiaSharp.NativeAssets.Linux/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "native": {
           "runtimes/linux-arm64/native/libSkiaSharp.so": {}
         }
       },
-      "SkiaSharp.NativeAssets.macOS/3.119.2": {
+      "SkiaSharp.NativeAssets.macOS/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
-      "SkiaSharp.NativeAssets.Win32/3.119.2": {
+      "SkiaSharp.NativeAssets.Win32/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
-      "SkiaSharp.Views.Desktop.Common/3.119.2": {
+      "SkiaSharp.Views.Desktop.Common/4.152.1": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp": "3.119.2"
+          "SkiaSharp": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Controls/3.119.2": {
+      "SkiaSharp.Views.Maui.Controls/4.152.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls": "8.0.82",
-          "Microsoft.Maui.Core": "8.0.82",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2"
+          "Microsoft.Maui.Controls": "10.0.20",
+          "Microsoft.Maui.Core": "10.0.20",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Core/3.119.2": {
+      "SkiaSharp.Views.Maui.Core/4.152.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Core": "8.0.82",
-          "SkiaSharp": "3.119.2"
+          "Microsoft.Maui.Core": "10.0.20",
+          "SkiaSharp": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
             "related": ".pdb"
           }
         }
@@ -2080,7 +2138,22 @@
           "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll": {}
         }
       },
-      "Svg.Custom/3.4.1": {
+      "Svg.Animation/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "ShimSkiaSharp": "5.2.3",
+          "SkiaSharp": "4.148.0",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "compile": {
+          "lib/net10.0/Svg.Animation.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/Svg.Animation.dll": {}
+        }
+      },
+      "Svg.Custom/5.2.3": {
         "type": "package",
         "dependencies": {
           "ExCSS": "4.3.1"
@@ -2092,11 +2165,11 @@
           "lib/net10.0/Svg.Custom.dll": {}
         }
       },
-      "Svg.Model/3.4.1": {
+      "Svg.Model/5.2.3": {
         "type": "package",
         "dependencies": {
-          "ShimSkiaSharp": "3.4.1",
-          "Svg.Custom": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3"
         },
         "compile": {
           "lib/net10.0/Svg.Model.dll": {}
@@ -2105,12 +2178,32 @@
           "lib/net10.0/Svg.Model.dll": {}
         }
       },
-      "Svg.Skia/3.4.1": {
+      "Svg.SceneGraph/5.2.3": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp": "2.88.9",
-          "Svg.Custom": "3.4.1",
-          "Svg.Model": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "compile": {
+          "lib/net10.0/Svg.SceneGraph.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/Svg.SceneGraph.dll": {}
+        }
+      },
+      "Svg.Skia/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "HarfBuzzSharp": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.0",
+          "SkiaSharp": "4.148.0",
+          "Svg.Animation": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3",
+          "Svg.SceneGraph": "5.2.3"
         },
         "compile": {
           "lib/net10.0/Svg.Skia.dll": {}
@@ -2209,51 +2302,51 @@
           "lib/net8.0/ExCSS.dll": {}
         }
       },
-      "HarfBuzzSharp/8.3.1.3": {
+      "HarfBuzzSharp/14.2.1.201": {
         "type": "package",
         "dependencies": {
-          "HarfBuzzSharp.NativeAssets.Win32": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.macOS": "8.3.1.3"
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.1.201"
         },
         "compile": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "related": ".pdb"
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.Linux/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Linux/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "native": {
           "runtimes/linux-x64/native/libHarfBuzzSharp.so": {}
         }
       },
-      "HarfBuzzSharp.NativeAssets.macOS/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.macOS/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
-      "HarfBuzzSharp.NativeAssets.Win32/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Win32/14.2.1.201": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
       "Lib.Harmony/2.4.2": {
@@ -2502,33 +2595,33 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Maui.Controls/10.0.101": {
+      "Microsoft.Maui.Controls/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Build.Tasks": "10.0.101",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101",
-          "Microsoft.Maui.Resizetizer": "10.0.101"
+          "Microsoft.Maui.Controls.Build.Tasks": "10.0.110",
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110",
+          "Microsoft.Maui.Resizetizer": "10.0.110"
         }
       },
-      "Microsoft.Maui.Controls.Build.Tasks/10.0.101": {
+      "Microsoft.Maui.Controls.Build.Tasks/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110"
         },
         "build": {
           "buildTransitive/netstandard2.0/Microsoft.Maui.Controls.Build.Tasks.props": {},
           "buildTransitive/netstandard2.0/Microsoft.Maui.Controls.Build.Tasks.targets": {}
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.101": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Controls.Xaml": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Controls.Xaml": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.Compatibility.dll": {
@@ -2541,14 +2634,14 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.101": {
+      "Microsoft.Maui.Controls.Core/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.101"
+          "Microsoft.Maui.Core": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.dll": {
@@ -2665,12 +2758,12 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.101": {
+      "Microsoft.Maui.Controls.Xaml/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.101",
-          "Microsoft.Maui.Core": "10.0.101"
+          "Microsoft.Maui.Controls.Core": "10.0.110",
+          "Microsoft.Maui.Core": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Controls.Xaml.dll": {
@@ -2683,7 +2776,7 @@
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.101": {
+      "Microsoft.Maui.Core/10.0.110": {
         "type": "package",
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
@@ -2691,8 +2784,8 @@
           "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Essentials": "10.0.101",
-          "Microsoft.Maui.Graphics": "10.0.101"
+          "Microsoft.Maui.Essentials": "10.0.110",
+          "Microsoft.Maui.Graphics": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.dll": {
@@ -2709,10 +2802,10 @@
           "buildTransitive/Microsoft.Maui.Core.targets": {}
         }
       },
-      "Microsoft.Maui.Essentials/10.0.101": {
+      "Microsoft.Maui.Essentials/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.101"
+          "Microsoft.Maui.Graphics": "10.0.110"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Essentials.dll": {
@@ -2725,7 +2818,7 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.101": {
+      "Microsoft.Maui.Graphics/10.0.110": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Maui.Graphics.dll": {
@@ -2738,11 +2831,11 @@
           }
         }
       },
-      "Microsoft.Maui.Graphics.Skia/10.0.90": {
+      "Microsoft.Maui.Graphics.Skia/10.0.110": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.90",
-          "SkiaSharp": "3.116.1"
+          "Microsoft.Maui.Graphics": "10.0.110",
+          "SkiaSharp": "4.150.1"
         },
         "compile": {
           "lib/net10.0/Microsoft.Maui.Graphics.Skia.dll": {
@@ -2755,29 +2848,29 @@
           }
         }
       },
-      "Microsoft.Maui.Resizetizer/10.0.101": {
+      "Microsoft.Maui.Resizetizer/10.0.110": {
         "type": "package",
         "build": {
           "buildTransitive/Microsoft.Maui.Resizetizer.props": {},
           "buildTransitive/Microsoft.Maui.Resizetizer.targets": {}
         }
       },
-      "OpenMaui.Controls.Linux/10.0.90.1": {
+      "OpenMaui.Controls.Linux/10.0.110.13": {
         "type": "package",
         "dependencies": {
-          "HarfBuzzSharp": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
+          "HarfBuzzSharp": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.1.201",
           "Lib.Harmony": "2.4.2",
-          "Microsoft.Maui.Controls": "10.0.90",
-          "Microsoft.Maui.Graphics": "10.0.90",
-          "Microsoft.Maui.Graphics.Skia": "10.0.90",
-          "OpenMaui.Hosting": "10.0.90.1",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.NativeAssets.Linux": "3.119.2",
-          "SkiaSharp.Views.Desktop.Common": "3.119.2",
-          "SkiaSharp.Views.Maui.Controls": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2",
-          "Svg.Skia": "3.4.1",
+          "Microsoft.Maui.Controls": "10.0.110",
+          "Microsoft.Maui.Graphics": "10.0.110",
+          "Microsoft.Maui.Graphics.Skia": "10.0.110",
+          "OpenMaui.Hosting": "10.0.110.13",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.NativeAssets.Linux": "4.152.1",
+          "SkiaSharp.Views.Desktop.Common": "4.152.1",
+          "SkiaSharp.Views.Maui.Controls": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1",
+          "Svg.Skia": "5.2.3",
           "Tmds.DBus": "0.94.2"
         },
         "compile": {
@@ -2811,10 +2904,10 @@
           "lib/net10.0/OpenMaui.Controls.Linux.MediaElement.dll": {}
         }
       },
-      "OpenMaui.Hosting/10.0.90.1": {
+      "OpenMaui.Hosting/10.0.110.13": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls": "10.0.90"
+          "Microsoft.Maui.Controls": "10.0.110"
         },
         "compile": {
           "lib/net10.0/OpenMaui.Hosting.dll": {}
@@ -2823,7 +2916,7 @@
           "lib/net10.0/OpenMaui.Hosting.dll": {}
         }
       },
-      "ShimSkiaSharp/3.4.1": {
+      "ShimSkiaSharp/5.2.3": {
         "type": "package",
         "compile": {
           "lib/net10.0/ShimSkiaSharp.dll": {}
@@ -2832,99 +2925,99 @@
           "lib/net10.0/ShimSkiaSharp.dll": {}
         }
       },
-      "SkiaSharp/3.119.2": {
+      "SkiaSharp/4.152.1": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "3.119.2",
-          "SkiaSharp.NativeAssets.macOS": "3.119.2"
+          "SkiaSharp.NativeAssets.Win32": "4.152.1",
+          "SkiaSharp.NativeAssets.macOS": "4.152.1"
         },
         "compile": {
-          "ref/net8.0/SkiaSharp.dll": {}
+          "ref/net10.0/SkiaSharp.dll": {}
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.dll": {
+          "lib/net10.0/SkiaSharp.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.NativeAssets.Linux/3.119.2": {
+      "SkiaSharp.NativeAssets.Linux/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "native": {
           "runtimes/linux-x64/native/libSkiaSharp.so": {}
         }
       },
-      "SkiaSharp.NativeAssets.macOS/3.119.2": {
+      "SkiaSharp.NativeAssets.macOS/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
-      "SkiaSharp.NativeAssets.Win32/3.119.2": {
+      "SkiaSharp.NativeAssets.Win32/4.152.1": {
         "type": "package",
         "compile": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         },
         "runtime": {
-          "lib/net8.0/_._": {}
+          "lib/net10.0/_._": {}
         }
       },
-      "SkiaSharp.Views.Desktop.Common/3.119.2": {
+      "SkiaSharp.Views.Desktop.Common/4.152.1": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp": "3.119.2"
+          "SkiaSharp": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Controls/3.119.2": {
+      "SkiaSharp.Views.Maui.Controls/4.152.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Controls": "8.0.82",
-          "Microsoft.Maui.Core": "8.0.82",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2"
+          "Microsoft.Maui.Controls": "10.0.20",
+          "Microsoft.Maui.Core": "10.0.20",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
             "related": ".pdb"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Core/3.119.2": {
+      "SkiaSharp.Views.Maui.Core/4.152.1": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Maui.Core": "8.0.82",
-          "SkiaSharp": "3.119.2"
+          "Microsoft.Maui.Core": "10.0.20",
+          "SkiaSharp": "4.152.1"
         },
         "compile": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
             "related": ".pdb"
           }
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
             "related": ".pdb"
           }
         }
@@ -2984,7 +3077,22 @@
           "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll": {}
         }
       },
-      "Svg.Custom/3.4.1": {
+      "Svg.Animation/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "ShimSkiaSharp": "5.2.3",
+          "SkiaSharp": "4.148.0",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "compile": {
+          "lib/net10.0/Svg.Animation.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/Svg.Animation.dll": {}
+        }
+      },
+      "Svg.Custom/5.2.3": {
         "type": "package",
         "dependencies": {
           "ExCSS": "4.3.1"
@@ -2996,11 +3104,11 @@
           "lib/net10.0/Svg.Custom.dll": {}
         }
       },
-      "Svg.Model/3.4.1": {
+      "Svg.Model/5.2.3": {
         "type": "package",
         "dependencies": {
-          "ShimSkiaSharp": "3.4.1",
-          "Svg.Custom": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3"
         },
         "compile": {
           "lib/net10.0/Svg.Model.dll": {}
@@ -3009,12 +3117,32 @@
           "lib/net10.0/Svg.Model.dll": {}
         }
       },
-      "Svg.Skia/3.4.1": {
+      "Svg.SceneGraph/5.2.3": {
         "type": "package",
         "dependencies": {
-          "SkiaSharp": "2.88.9",
-          "Svg.Custom": "3.4.1",
-          "Svg.Model": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "compile": {
+          "lib/net10.0/Svg.SceneGraph.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/Svg.SceneGraph.dll": {}
+        }
+      },
+      "Svg.Skia/5.2.3": {
+        "type": "package",
+        "dependencies": {
+          "HarfBuzzSharp": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.0",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.0",
+          "SkiaSharp": "4.148.0",
+          "Svg.Animation": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3",
+          "Svg.SceneGraph": "5.2.3"
         },
         "compile": {
           "lib/net10.0/Svg.Skia.dll": {}
@@ -3177,49 +3305,70 @@
         "readme.md"
       ]
     },
-    "HarfBuzzSharp/8.3.1.3": {
-      "sha512": "NGZ2+ZVNPM+NdHB/asW0/ykWngyHWwcqjrbN2nDeH1B/aptPGlCUl8wkQ2cSJxw5fdWgdmIPmNuTPWpLwNVXWg==",
+    "HarfBuzzSharp/14.2.1.201": {
+      "sha512": "mWe1Y15EUI2lwQTaDk2TB/j3ESLeDzQRdGVfbUFLPND+8LhxgxBx8xGXSYRwvvU9gt/Fh81FJ+UPxkF037YIqg==",
       "type": "package",
-      "path": "harfbuzzsharp/8.3.1.3",
+      "path": "harfbuzzsharp/14.2.1.201",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "README.md",
-        "harfbuzzsharp.8.3.1.3.nupkg.sha512",
+        "harfbuzzsharp.14.2.1.201.nupkg.sha512",
         "harfbuzzsharp.nuspec",
         "icon.png",
+        "lib/net10.0-android36.0/HarfBuzzSharp.dll",
+        "lib/net10.0-android36.0/HarfBuzzSharp.pdb",
+        "lib/net10.0-android36.0/HarfBuzzSharp.xml",
+        "lib/net10.0-ios26.0/HarfBuzzSharp.dll",
+        "lib/net10.0-ios26.0/HarfBuzzSharp.pdb",
+        "lib/net10.0-maccatalyst26.0/HarfBuzzSharp.dll",
+        "lib/net10.0-maccatalyst26.0/HarfBuzzSharp.pdb",
+        "lib/net10.0-macos26.0/HarfBuzzSharp.dll",
+        "lib/net10.0-macos26.0/HarfBuzzSharp.pdb",
+        "lib/net10.0-tizen10.0/HarfBuzzSharp.dll",
+        "lib/net10.0-tizen10.0/HarfBuzzSharp.pdb",
+        "lib/net10.0-tvos26.0/HarfBuzzSharp.dll",
+        "lib/net10.0-tvos26.0/HarfBuzzSharp.pdb",
+        "lib/net10.0-windows10.0.19041/HarfBuzzSharp.dll",
+        "lib/net10.0-windows10.0.19041/HarfBuzzSharp.pdb",
+        "lib/net10.0/HarfBuzzSharp.dll",
+        "lib/net10.0/HarfBuzzSharp.pdb",
         "lib/net462/HarfBuzzSharp.dll",
         "lib/net462/HarfBuzzSharp.pdb",
+        "lib/net48/HarfBuzzSharp.dll",
+        "lib/net48/HarfBuzzSharp.pdb",
+        "lib/net6.0-tizen8.0/HarfBuzzSharp.dll",
+        "lib/net6.0-tizen8.0/HarfBuzzSharp.pdb",
         "lib/net6.0/HarfBuzzSharp.dll",
         "lib/net6.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-android34.0/HarfBuzzSharp.dll",
-        "lib/net8.0-android34.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-android34.0/HarfBuzzSharp.xml",
-        "lib/net8.0-ios17.0/HarfBuzzSharp.dll",
-        "lib/net8.0-ios17.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-maccatalyst17.0/HarfBuzzSharp.dll",
-        "lib/net8.0-maccatalyst17.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-macos14.0/HarfBuzzSharp.dll",
-        "lib/net8.0-macos14.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-tizen7.0/HarfBuzzSharp.dll",
-        "lib/net8.0-tizen7.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-tvos17.0/HarfBuzzSharp.dll",
-        "lib/net8.0-tvos17.0/HarfBuzzSharp.pdb",
-        "lib/net8.0-windows10.0.19041/HarfBuzzSharp.dll",
-        "lib/net8.0-windows10.0.19041/HarfBuzzSharp.pdb",
-        "lib/net8.0/HarfBuzzSharp.dll",
-        "lib/net8.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-android35.0/HarfBuzzSharp.dll",
+        "lib/net9.0-android35.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-android35.0/HarfBuzzSharp.xml",
+        "lib/net9.0-ios18.0/HarfBuzzSharp.dll",
+        "lib/net9.0-ios18.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-maccatalyst18.0/HarfBuzzSharp.dll",
+        "lib/net9.0-maccatalyst18.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-macos15.0/HarfBuzzSharp.dll",
+        "lib/net9.0-macos15.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-tizen8.0/HarfBuzzSharp.dll",
+        "lib/net9.0-tizen8.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-tvos18.0/HarfBuzzSharp.dll",
+        "lib/net9.0-tvos18.0/HarfBuzzSharp.pdb",
+        "lib/net9.0-windows10.0.19041/HarfBuzzSharp.dll",
+        "lib/net9.0-windows10.0.19041/HarfBuzzSharp.pdb",
+        "lib/net9.0/HarfBuzzSharp.dll",
+        "lib/net9.0/HarfBuzzSharp.pdb",
         "lib/netstandard2.0/HarfBuzzSharp.dll",
         "lib/netstandard2.0/HarfBuzzSharp.pdb",
         "lib/netstandard2.1/HarfBuzzSharp.dll",
         "lib/netstandard2.1/HarfBuzzSharp.pdb"
       ]
     },
-    "HarfBuzzSharp.NativeAssets.Linux/8.3.1.3": {
-      "sha512": "RI6A1LgmooU30+4QIyFt5rmBCzP0VzTR+587IJSGvYIsHHWlahFufihYxtraLfsIhW7I8dn6+xX+DZGygOPKWQ==",
+    "HarfBuzzSharp.NativeAssets.Linux/14.2.1.201": {
+      "sha512": "qFGJvyQPXgWPSCtoJFOU38Yor/Ff3WUFibapbxAXmekFjFTNCO81dvjFrWe4nbDYbsP2KNq6EASTvLDCxzt8Wg==",
       "type": "package",
-      "path": "harfbuzzsharp.nativeassets.linux/8.3.1.3",
+      "path": "harfbuzzsharp.nativeassets.linux/14.2.1.201",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3227,16 +3376,21 @@
         "README.md",
         "THIRD-PARTY-NOTICES.txt",
         "buildTransitive/net462/HarfBuzzSharp.NativeAssets.Linux.targets",
-        "harfbuzzsharp.nativeassets.linux.8.3.1.3.nupkg.sha512",
+        "buildTransitive/net48/HarfBuzzSharp.NativeAssets.Linux.targets",
+        "harfbuzzsharp.nativeassets.linux.14.2.1.201.nupkg.sha512",
         "harfbuzzsharp.nativeassets.linux.nuspec",
         "icon.png",
+        "lib/net10.0/_._",
         "lib/net462/_._",
+        "lib/net48/_._",
         "lib/net6.0/_._",
-        "lib/net8.0/_._",
+        "lib/net9.0/_._",
         "lib/netstandard2.0/_._",
         "lib/netstandard2.1/_._",
         "runtimes/linux-arm/native/libHarfBuzzSharp.so",
         "runtimes/linux-arm64/native/libHarfBuzzSharp.so",
+        "runtimes/linux-bionic-arm64/native/libHarfBuzzSharp.so",
+        "runtimes/linux-bionic-x64/native/libHarfBuzzSharp.so",
         "runtimes/linux-loongarch64/native/libHarfBuzzSharp.so",
         "runtimes/linux-musl-arm/native/libHarfBuzzSharp.so",
         "runtimes/linux-musl-arm64/native/libHarfBuzzSharp.so",
@@ -3248,34 +3402,39 @@
         "runtimes/linux-x86/native/libHarfBuzzSharp.so"
       ]
     },
-    "HarfBuzzSharp.NativeAssets.macOS/8.3.1.3": {
-      "sha512": "KPTq0xnslkI6nAo0jh3ptcQPJvZZr7MWYXa2jUe4SnHc9q+JlHElmNXp0sfFoiTgoCX7WOYpYsurypuH9Gehxw==",
+    "HarfBuzzSharp.NativeAssets.macOS/14.2.1.201": {
+      "sha512": "UCcjHofmlq/7UmGKO8HKRiPB64et4Vqvc4n5qfJ+e0VK3mBbTcfW9xkQ1e4Xae7jO08A0OPRZESLu8MT3mxHaw==",
       "type": "package",
-      "path": "harfbuzzsharp.nativeassets.macos/8.3.1.3",
+      "path": "harfbuzzsharp.nativeassets.macos/14.2.1.201",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "README.md",
         "THIRD-PARTY-NOTICES.txt",
+        "buildTransitive/net10.0-macos26.0/HarfBuzzSharp.NativeAssets.macOS.targets",
         "buildTransitive/net462/HarfBuzzSharp.NativeAssets.macOS.targets",
-        "buildTransitive/net8.0-macos14.0/HarfBuzzSharp.NativeAssets.macOS.targets",
-        "harfbuzzsharp.nativeassets.macos.8.3.1.3.nupkg.sha512",
+        "buildTransitive/net48/HarfBuzzSharp.NativeAssets.macOS.targets",
+        "buildTransitive/net9.0-macos15.0/HarfBuzzSharp.NativeAssets.macOS.targets",
+        "harfbuzzsharp.nativeassets.macos.14.2.1.201.nupkg.sha512",
         "harfbuzzsharp.nativeassets.macos.nuspec",
         "icon.png",
+        "lib/net10.0-macos26.0/_._",
+        "lib/net10.0/_._",
         "lib/net462/_._",
+        "lib/net48/_._",
         "lib/net6.0/_._",
-        "lib/net8.0-macos14.0/_._",
-        "lib/net8.0/_._",
+        "lib/net9.0-macos15.0/_._",
+        "lib/net9.0/_._",
         "lib/netstandard2.0/_._",
         "lib/netstandard2.1/_._",
         "runtimes/osx/native/libHarfBuzzSharp.dylib"
       ]
     },
-    "HarfBuzzSharp.NativeAssets.Win32/8.3.1.3": {
-      "sha512": "bx8CE8Js+XGX8PUxAHCBDEORt5aaBYtMN4Hr9QFs57Xithh6yjUyYqksizH6eRDhJkwsGI+SXWmPmMm8lZC9Pw==",
+    "HarfBuzzSharp.NativeAssets.Win32/14.2.1.201": {
+      "sha512": "KopN0RqiEOJgBTDYnNs3sduxzSRQF0dpG64GeQKCxz3nX3tmn05zk9EN/XqPVy8H5OnQtcxruD1t5Ui05TT+vQ==",
       "type": "package",
-      "path": "harfbuzzsharp.nativeassets.win32/8.3.1.3",
+      "path": "harfbuzzsharp.nativeassets.win32/14.2.1.201",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3283,14 +3442,17 @@
         "README.md",
         "THIRD-PARTY-NOTICES.txt",
         "buildTransitive/net462/HarfBuzzSharp.NativeAssets.Win32.targets",
-        "harfbuzzsharp.nativeassets.win32.8.3.1.3.nupkg.sha512",
+        "buildTransitive/net48/HarfBuzzSharp.NativeAssets.Win32.targets",
+        "harfbuzzsharp.nativeassets.win32.14.2.1.201.nupkg.sha512",
         "harfbuzzsharp.nativeassets.win32.nuspec",
         "icon.png",
+        "lib/net10.0-windows10.0.19041/_._",
+        "lib/net10.0/_._",
         "lib/net462/_._",
-        "lib/net6.0-windows10.0.19041/_._",
+        "lib/net48/_._",
         "lib/net6.0/_._",
-        "lib/net8.0-windows10.0.19041/_._",
-        "lib/net8.0/_._",
+        "lib/net9.0-windows10.0.19041/_._",
+        "lib/net9.0/_._",
         "lib/netstandard2.0/_._",
         "lib/netstandard2.1/_._",
         "runtimes/win-arm64/native/libHarfBuzzSharp.dll",
@@ -3767,10 +3929,10 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.Maui.Controls/10.0.101": {
-      "sha512": "2rgDm0YypMg9MyUSww2YWRYbZYwBHepQu/spIukyR+bOHBJ6IRAyC8AVY0VxCi9BGQZL2p5gp6Y6vusoBE/xgA==",
+    "Microsoft.Maui.Controls/10.0.110": {
+      "sha512": "QeXQZlZzqY+ynRb/trEgAA0NNFsmiXDKwsklDjY9hPfFJEjWXzNiaxq3XgmEFbse9yNTILG9LeIpmNthUh+ASQ==",
       "type": "package",
-      "path": "microsoft.maui.controls/10.0.101",
+      "path": "microsoft.maui.controls/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3778,14 +3940,14 @@
         "LICENSE.TXT",
         "README.md",
         "THIRD-PARTY-NOTICES.TXT",
-        "microsoft.maui.controls.10.0.101.nupkg.sha512",
+        "microsoft.maui.controls.10.0.110.nupkg.sha512",
         "microsoft.maui.controls.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Build.Tasks/10.0.101": {
-      "sha512": "cMM0NkF2CWBEteFs0Vde/GsP2ywzF4kXXSK5BD5fUDhno2hS+2tavQL85ZVcy04Aueaxg3789dPIwms8kLGFWg==",
+    "Microsoft.Maui.Controls.Build.Tasks/10.0.110": {
+      "sha512": "+7Jg5SjRq0FvZLI2fT7HqLA01D+iywvYqFcCdJiYUO3GHh6EdQczyBvdDBjxd40OBK+taJp81ttNy/6mTYxMpQ==",
       "type": "package",
-      "path": "microsoft.maui.controls.build.tasks/10.0.101",
+      "path": "microsoft.maui.controls.build.tasks/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3867,14 +4029,14 @@
         "buildTransitive/netstandard2.0/zh-HK/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
         "buildTransitive/netstandard2.0/zh-Hans/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
         "buildTransitive/netstandard2.0/zh-Hant/Microsoft.Maui.Controls.Build.Tasks.resources.dll",
-        "microsoft.maui.controls.build.tasks.10.0.101.nupkg.sha512",
+        "microsoft.maui.controls.build.tasks.10.0.110.nupkg.sha512",
         "microsoft.maui.controls.build.tasks.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Compatibility/10.0.101": {
-      "sha512": "2xQ97OZ7vlPRDH2bKucqI3PA7D0+tEjCB4ZtholXVJ5Pd6KKZNxDQ3OdIbd3c8DnWMXxDINl9bHpmVu5IBeerg==",
+    "Microsoft.Maui.Controls.Compatibility/10.0.110": {
+      "sha512": "Oq7iCfgaK9Qte/a+ZutoCvrKCwHdzoIkawD/4g24yZbcE7MVtybI3O2jHQ80kxIkwSg8g+qQeq28T7swz6Mpdg==",
       "type": "package",
-      "path": "microsoft.maui.controls.compatibility/10.0.101",
+      "path": "microsoft.maui.controls.compatibility/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -3909,14 +4071,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.dll",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Compatibility.xml",
-        "microsoft.maui.controls.compatibility.10.0.101.nupkg.sha512",
+        "microsoft.maui.controls.compatibility.10.0.110.nupkg.sha512",
         "microsoft.maui.controls.compatibility.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Core/10.0.101": {
-      "sha512": "zwxoNytanyMw+SHavluYuvRKD9/sPdtF5q41VuvfIjw3Cy6/FwkgIbFxvhtxSZN8VD3DwkxE6Dc3L/eLwYdytQ==",
+    "Microsoft.Maui.Controls.Core/10.0.110": {
+      "sha512": "86tIdXecm7E7HbFmB2B8JRGrzYqafM3W64cX3B4FQNX8IC6z//uW24yejXbvU9AhJiEEQZH3vzCb2MnxwVq1bA==",
       "type": "package",
-      "path": "microsoft.maui.controls.core/10.0.101",
+      "path": "microsoft.maui.controls.core/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4239,14 +4401,14 @@
         "lib/netstandard2.1/zh-HK/Microsoft.Maui.Controls.resources.dll",
         "lib/netstandard2.1/zh-Hans/Microsoft.Maui.Controls.resources.dll",
         "lib/netstandard2.1/zh-Hant/Microsoft.Maui.Controls.resources.dll",
-        "microsoft.maui.controls.core.10.0.101.nupkg.sha512",
+        "microsoft.maui.controls.core.10.0.110.nupkg.sha512",
         "microsoft.maui.controls.core.nuspec"
       ]
     },
-    "Microsoft.Maui.Controls.Xaml/10.0.101": {
-      "sha512": "A3IaoDBvGFUn0maYSLRYxVotnCVkCL1+3RxA6XhmEQNhQ3ETx//gksXRGksL8d3jFPwwTaxA2pDbcN3KIr2Pqg==",
+    "Microsoft.Maui.Controls.Xaml/10.0.110": {
+      "sha512": "FGvMa7vNfj5A+Lg/x9fRwC9p4+1ZWI9EkPYLaaWbgN4z11j4EePTc5bw5oZX61N9pPETm6aw0XflJeBEIF2GtA==",
       "type": "package",
-      "path": "microsoft.maui.controls.xaml/10.0.101",
+      "path": "microsoft.maui.controls.xaml/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4296,14 +4458,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.dll",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Controls.Xaml.xml",
-        "microsoft.maui.controls.xaml.10.0.101.nupkg.sha512",
+        "microsoft.maui.controls.xaml.10.0.110.nupkg.sha512",
         "microsoft.maui.controls.xaml.nuspec"
       ]
     },
-    "Microsoft.Maui.Core/10.0.101": {
-      "sha512": "RL7KguQE/JcDSnR0b4+r/7ql4Zhp/1n0e5iE+z1n5EYC8Ty1lr5slG5rdAOiMTWI5K9fWaHFcJqsuADract5uQ==",
+    "Microsoft.Maui.Core/10.0.110": {
+      "sha512": "FsQqFkS5Qq+vHu9yHNy5KJPmbn1slX9QBzDriNcTvncvfoUHxPpEhtbegjY8kXOoZXc0nmovX1U7eD+NozR93Q==",
       "type": "package",
-      "path": "microsoft.maui.core/10.0.101",
+      "path": "microsoft.maui.core/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4349,14 +4511,14 @@
         "lib/netstandard2.1/Microsoft.Maui.dll",
         "lib/netstandard2.1/Microsoft.Maui.pdb",
         "lib/netstandard2.1/Microsoft.Maui.xml",
-        "microsoft.maui.core.10.0.101.nupkg.sha512",
+        "microsoft.maui.core.10.0.110.nupkg.sha512",
         "microsoft.maui.core.nuspec"
       ]
     },
-    "Microsoft.Maui.Essentials/10.0.101": {
-      "sha512": "u8cPWwp6LJXuAutyyLbDXAcejB5GjzxNY4wzc/pu3dMLSRAimuX3xZBafbMhkbSiNiROondtedWZWE3FIRbi7A==",
+    "Microsoft.Maui.Essentials/10.0.110": {
+      "sha512": "9QAmmko3oez5jO+bpT64Wsef0W2xrQtug5/UClYEPqkJo95UWHdTVOWfdypCl/26yoggflZU/Swd1w56+H+DWQ==",
       "type": "package",
-      "path": "microsoft.maui.essentials/10.0.101",
+      "path": "microsoft.maui.essentials/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4391,14 +4553,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Essentials.dll",
         "lib/netstandard2.1/Microsoft.Maui.Essentials.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Essentials.xml",
-        "microsoft.maui.essentials.10.0.101.nupkg.sha512",
+        "microsoft.maui.essentials.10.0.110.nupkg.sha512",
         "microsoft.maui.essentials.nuspec"
       ]
     },
-    "Microsoft.Maui.Graphics/10.0.101": {
-      "sha512": "Ydtb8Q9MSd8MTJd5IVV+Ef3NPmkpTM2mAMZkWGcpzXzE5tmtL6T/XSh+GFOQb0sp2+X6yKzStnAkge7okVPqwg==",
+    "Microsoft.Maui.Graphics/10.0.110": {
+      "sha512": "+7WK3GKUg+osnQEsgsun5s6VpwKegjpAnBnlMmgK9iX5KO0ImBQwiOqmHOslfDr8E9r44bNmUnj33wSbEE5RKg==",
       "type": "package",
-      "path": "microsoft.maui.graphics/10.0.101",
+      "path": "microsoft.maui.graphics/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4435,14 +4597,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Graphics.dll",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.xml",
-        "microsoft.maui.graphics.10.0.101.nupkg.sha512",
+        "microsoft.maui.graphics.10.0.110.nupkg.sha512",
         "microsoft.maui.graphics.nuspec"
       ]
     },
-    "Microsoft.Maui.Graphics.Skia/10.0.90": {
-      "sha512": "VZeKIvPntWxCjdLvfPKvMpqB553apmfV9WGdxsV/gkO1yxscf8B44PZnuj1mqXz9FVWZsskR/I3hwBsqOTQ/MQ==",
+    "Microsoft.Maui.Graphics.Skia/10.0.110": {
+      "sha512": "BL7JdQdjqyuKA7d++oq+ijgoS2s0jMvMR9gNE9cftjT+zyPcykvoKpvXCVAVwT5rHf2ZyA+y+GvwsYe1Ng1Fuw==",
       "type": "package",
-      "path": "microsoft.maui.graphics.skia/10.0.90",
+      "path": "microsoft.maui.graphics.skia/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4479,14 +4641,14 @@
         "lib/netstandard2.1/Microsoft.Maui.Graphics.Skia.dll",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.Skia.pdb",
         "lib/netstandard2.1/Microsoft.Maui.Graphics.Skia.xml",
-        "microsoft.maui.graphics.skia.10.0.90.nupkg.sha512",
+        "microsoft.maui.graphics.skia.10.0.110.nupkg.sha512",
         "microsoft.maui.graphics.skia.nuspec"
       ]
     },
-    "Microsoft.Maui.Resizetizer/10.0.101": {
-      "sha512": "sgaFCRT2K9X8CAfn4YLucteQKydt/SgJY9jGEa1Ypoud/ZLA47fU5IAICCmbIzdWJHx7V4DEta7cCzyxH65Uqw==",
+    "Microsoft.Maui.Resizetizer/10.0.110": {
+      "sha512": "8b911sZEcqcQcJbtUaeaPJSkg+9tIbJ1Wz2s9UY13eqZFAeCgqOQbb/03kdlaV7cRTU/shS1ot52+536mlsp/g==",
       "type": "package",
-      "path": "microsoft.maui.resizetizer/10.0.101",
+      "path": "microsoft.maui.resizetizer/10.0.110",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4537,14 +4699,14 @@
         "buildTransitive/x64/libSkiaSharp.so",
         "buildTransitive/x86/libHarfBuzzSharp.dll",
         "buildTransitive/x86/libSkiaSharp.dll",
-        "microsoft.maui.resizetizer.10.0.101.nupkg.sha512",
+        "microsoft.maui.resizetizer.10.0.110.nupkg.sha512",
         "microsoft.maui.resizetizer.nuspec"
       ]
     },
-    "OpenMaui.Controls.Linux/10.0.90.1": {
-      "sha512": "UDFYRym/GOAZEeXv40+BJitLPYy3x2JJzcsOTchNmxV8mvhMVni5Y2JHYPloQBvwa8vn+elaArfcgcaAC2bhvA==",
+    "OpenMaui.Controls.Linux/10.0.110.13": {
+      "sha512": "IwXW18bAySEbASwOtitLjy/ZitZRBDHwDKSbd4YohfizT1HOf/fU36sz56Xl9MCr2AYMlOAMFABTF209e9+bfg==",
       "type": "package",
-      "path": "openmaui.controls.linux/10.0.90.1",
+      "path": "openmaui.controls.linux/10.0.110.13",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4554,8 +4716,9 @@
         "lib/net10.0/OpenMaui.Controls.Linux.dll",
         "lib/net10.0/OpenMaui.Controls.Linux.xml",
         "logo_only.png",
-        "openmaui.controls.linux.10.0.90.1.nupkg.sha512",
+        "openmaui.controls.linux.10.0.110.13.nupkg.sha512",
         "openmaui.controls.linux.nuspec",
+        "runtimes/linux-arm64/native/libopenmaui_wl.so",
         "runtimes/linux-x64/native/libopenmaui_wl.so"
       ]
     },
@@ -4573,24 +4736,24 @@
         "openmaui.controls.linux.mediaelement.nuspec"
       ]
     },
-    "OpenMaui.Hosting/10.0.90.1": {
-      "sha512": "lTgNYNnlRNYkY0B7ccAbze6IZkB/y93x9zCfi1ZK/gcLsjj6V1+B+pP4SrC1TQltkCyuLNtIZSlPIUGqcpC5tg==",
+    "OpenMaui.Hosting/10.0.110.13": {
+      "sha512": "1vY+fTdhsn4bZJQUJNlTnFLj+WFeYJ5ZqNk9dfjgXBrXlWSaZjxTPLV6EKZYt30E0BJrctuuZWyfYoJDpKuQzA==",
       "type": "package",
-      "path": "openmaui.hosting/10.0.90.1",
+      "path": "openmaui.hosting/10.0.110.13",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
         "lib/net10.0/OpenMaui.Hosting.dll",
         "logo_only.png",
-        "openmaui.hosting.10.0.90.1.nupkg.sha512",
+        "openmaui.hosting.10.0.110.13.nupkg.sha512",
         "openmaui.hosting.nuspec"
       ]
     },
-    "ShimSkiaSharp/3.4.1": {
-      "sha512": "ab3J5OGdwYLyXnom90OghS9NyRPH9dtsRtW5B3mL+F43YTlxido3nUtiR9NjB/sI3jvG/J744C29bsSBQ28AfQ==",
+    "ShimSkiaSharp/5.2.3": {
+      "sha512": "BBmIvh70WduWEF8C9HeU12LmHkg6+h2SRwJzey/tmztRk4ttAxhyu9eAD/jlsNGlqquYpoCQyyTx+QynavyfVA==",
       "type": "package",
-      "path": "shimskiasharp/3.4.1",
+      "path": "shimskiasharp/5.2.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4599,66 +4762,96 @@
         "lib/net6.0/ShimSkiaSharp.dll",
         "lib/net8.0/ShimSkiaSharp.dll",
         "lib/netstandard2.0/ShimSkiaSharp.dll",
-        "shimskiasharp.3.4.1.nupkg.sha512",
+        "shimskiasharp.5.2.3.nupkg.sha512",
         "shimskiasharp.nuspec"
       ]
     },
-    "SkiaSharp/3.119.2": {
-      "sha512": "nmy2dOFWPvQKMglfpjz8+/xQQcSrL9jzul3cUyzCJVSwrmSAw+6B1sEgU7jt6NZBptwGq2k/V0kjyu2GizMFtg==",
+    "SkiaSharp/4.152.1": {
+      "sha512": "p3rj8SVoa+2Tmx1EITE4jIwCDPcYjwXdZ3c9yM6l9wNn6572hwxzrth6WOBK0iGnAoTGoJBZuZpy8wYjbov6sw==",
       "type": "package",
-      "path": "skiasharp/3.119.2",
+      "path": "skiasharp/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "README.md",
         "icon.png",
-        "interactive-extensions/dotnet/SkiaSharp.DotNet.Interactive.dll",
+        "lib/net10.0-android36.0/SkiaSharp.dll",
+        "lib/net10.0-android36.0/SkiaSharp.pdb",
+        "lib/net10.0-android36.0/SkiaSharp.xml",
+        "lib/net10.0-ios26.0/SkiaSharp.dll",
+        "lib/net10.0-ios26.0/SkiaSharp.pdb",
+        "lib/net10.0-maccatalyst26.0/SkiaSharp.dll",
+        "lib/net10.0-maccatalyst26.0/SkiaSharp.pdb",
+        "lib/net10.0-macos26.0/SkiaSharp.dll",
+        "lib/net10.0-macos26.0/SkiaSharp.pdb",
+        "lib/net10.0-tizen10.0/SkiaSharp.dll",
+        "lib/net10.0-tizen10.0/SkiaSharp.pdb",
+        "lib/net10.0-tvos26.0/SkiaSharp.dll",
+        "lib/net10.0-tvos26.0/SkiaSharp.pdb",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.dll",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.pdb",
+        "lib/net10.0/SkiaSharp.dll",
+        "lib/net10.0/SkiaSharp.pdb",
         "lib/net462/SkiaSharp.dll",
         "lib/net462/SkiaSharp.pdb",
+        "lib/net48/SkiaSharp.dll",
+        "lib/net48/SkiaSharp.pdb",
+        "lib/net6.0-tizen8.0/SkiaSharp.dll",
+        "lib/net6.0-tizen8.0/SkiaSharp.pdb",
         "lib/net6.0/SkiaSharp.dll",
         "lib/net6.0/SkiaSharp.pdb",
-        "lib/net8.0-android34.0/SkiaSharp.dll",
-        "lib/net8.0-android34.0/SkiaSharp.pdb",
-        "lib/net8.0-android34.0/SkiaSharp.xml",
-        "lib/net8.0-ios17.0/SkiaSharp.dll",
-        "lib/net8.0-ios17.0/SkiaSharp.pdb",
-        "lib/net8.0-maccatalyst17.0/SkiaSharp.dll",
-        "lib/net8.0-maccatalyst17.0/SkiaSharp.pdb",
-        "lib/net8.0-macos14.0/SkiaSharp.dll",
-        "lib/net8.0-macos14.0/SkiaSharp.pdb",
-        "lib/net8.0-tizen7.0/SkiaSharp.dll",
-        "lib/net8.0-tizen7.0/SkiaSharp.pdb",
-        "lib/net8.0-tvos17.0/SkiaSharp.dll",
-        "lib/net8.0-tvos17.0/SkiaSharp.pdb",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.dll",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.pdb",
-        "lib/net8.0/SkiaSharp.dll",
-        "lib/net8.0/SkiaSharp.pdb",
+        "lib/net9.0-android35.0/SkiaSharp.dll",
+        "lib/net9.0-android35.0/SkiaSharp.pdb",
+        "lib/net9.0-android35.0/SkiaSharp.xml",
+        "lib/net9.0-ios18.0/SkiaSharp.dll",
+        "lib/net9.0-ios18.0/SkiaSharp.pdb",
+        "lib/net9.0-maccatalyst18.0/SkiaSharp.dll",
+        "lib/net9.0-maccatalyst18.0/SkiaSharp.pdb",
+        "lib/net9.0-macos15.0/SkiaSharp.dll",
+        "lib/net9.0-macos15.0/SkiaSharp.pdb",
+        "lib/net9.0-tizen8.0/SkiaSharp.dll",
+        "lib/net9.0-tizen8.0/SkiaSharp.pdb",
+        "lib/net9.0-tvos18.0/SkiaSharp.dll",
+        "lib/net9.0-tvos18.0/SkiaSharp.pdb",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.dll",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.pdb",
+        "lib/net9.0/SkiaSharp.dll",
+        "lib/net9.0/SkiaSharp.pdb",
         "lib/netstandard2.0/SkiaSharp.dll",
         "lib/netstandard2.0/SkiaSharp.pdb",
         "lib/netstandard2.1/SkiaSharp.dll",
         "lib/netstandard2.1/SkiaSharp.pdb",
+        "ref/net10.0-android36.0/SkiaSharp.dll",
+        "ref/net10.0-ios26.0/SkiaSharp.dll",
+        "ref/net10.0-maccatalyst26.0/SkiaSharp.dll",
+        "ref/net10.0-macos26.0/SkiaSharp.dll",
+        "ref/net10.0-tizen10.0/SkiaSharp.dll",
+        "ref/net10.0-tvos26.0/SkiaSharp.dll",
+        "ref/net10.0-windows10.0.19041/SkiaSharp.dll",
+        "ref/net10.0/SkiaSharp.dll",
         "ref/net462/SkiaSharp.dll",
+        "ref/net48/SkiaSharp.dll",
+        "ref/net6.0-tizen8.0/SkiaSharp.dll",
         "ref/net6.0/SkiaSharp.dll",
-        "ref/net8.0-android34.0/SkiaSharp.dll",
-        "ref/net8.0-ios17.0/SkiaSharp.dll",
-        "ref/net8.0-maccatalyst17.0/SkiaSharp.dll",
-        "ref/net8.0-macos14.0/SkiaSharp.dll",
-        "ref/net8.0-tizen7.0/SkiaSharp.dll",
-        "ref/net8.0-tvos17.0/SkiaSharp.dll",
-        "ref/net8.0-windows10.0.19041/SkiaSharp.dll",
-        "ref/net8.0/SkiaSharp.dll",
+        "ref/net9.0-android35.0/SkiaSharp.dll",
+        "ref/net9.0-ios18.0/SkiaSharp.dll",
+        "ref/net9.0-maccatalyst18.0/SkiaSharp.dll",
+        "ref/net9.0-macos15.0/SkiaSharp.dll",
+        "ref/net9.0-tizen8.0/SkiaSharp.dll",
+        "ref/net9.0-tvos18.0/SkiaSharp.dll",
+        "ref/net9.0-windows10.0.19041/SkiaSharp.dll",
+        "ref/net9.0/SkiaSharp.dll",
         "ref/netstandard2.0/SkiaSharp.dll",
         "ref/netstandard2.1/SkiaSharp.dll",
-        "skiasharp.3.119.2.nupkg.sha512",
+        "skiasharp.4.152.1.nupkg.sha512",
         "skiasharp.nuspec"
       ]
     },
-    "SkiaSharp.NativeAssets.Linux/3.119.2": {
-      "sha512": "9WzxSyG/s9Id506j0Ht+Bi5ucOpWKPzd1XXr9TD4fuCafHHy2swRSlbZtC3IDQAsvCH63OerkDJajj43uSv5og==",
+    "SkiaSharp.NativeAssets.Linux/4.152.1": {
+      "sha512": "1bB3eedb+4ZcyWigUzxXCE7LrNOlmyAs1crGCnX8UEHKl0nHOmzDt3E0d53IIgiguS88RKeCPy1ArDXK5FoDCw==",
       "type": "package",
-      "path": "skiasharp.nativeassets.linux/3.119.2",
+      "path": "skiasharp.nativeassets.linux/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4666,15 +4859,21 @@
         "README.md",
         "THIRD-PARTY-NOTICES.txt",
         "build/net462/SkiaSharp.NativeAssets.Linux.targets",
+        "build/net48/SkiaSharp.NativeAssets.Linux.targets",
         "buildTransitive/net462/SkiaSharp.NativeAssets.Linux.targets",
+        "buildTransitive/net48/SkiaSharp.NativeAssets.Linux.targets",
         "icon.png",
+        "lib/net10.0/_._",
         "lib/net462/_._",
+        "lib/net48/_._",
         "lib/net6.0/_._",
-        "lib/net8.0/_._",
+        "lib/net9.0/_._",
         "lib/netstandard2.0/_._",
         "lib/netstandard2.1/_._",
         "runtimes/linux-arm/native/libSkiaSharp.so",
         "runtimes/linux-arm64/native/libSkiaSharp.so",
+        "runtimes/linux-bionic-arm64/native/libSkiaSharp.so",
+        "runtimes/linux-bionic-x64/native/libSkiaSharp.so",
         "runtimes/linux-loongarch64/native/libSkiaSharp.so",
         "runtimes/linux-musl-arm/native/libSkiaSharp.so",
         "runtimes/linux-musl-arm64/native/libSkiaSharp.so",
@@ -4684,14 +4883,14 @@
         "runtimes/linux-riscv64/native/libSkiaSharp.so",
         "runtimes/linux-x64/native/libSkiaSharp.so",
         "runtimes/linux-x86/native/libSkiaSharp.so",
-        "skiasharp.nativeassets.linux.3.119.2.nupkg.sha512",
+        "skiasharp.nativeassets.linux.4.152.1.nupkg.sha512",
         "skiasharp.nativeassets.linux.nuspec"
       ]
     },
-    "SkiaSharp.NativeAssets.macOS/3.119.2": {
-      "sha512": "I2jMGQ/26KOnc6iAoR+Mxh9vSJJ2vioJyj9aJ9OL5yEZyXothXJxf4vBMqnSaiXMqiiU1scG7KqtT0CLkmMmWA==",
+    "SkiaSharp.NativeAssets.macOS/4.152.1": {
+      "sha512": "gKaE2zNHsPLjlA88ZClRNmtZlHNGEa/W4iPy5GpP1TtUELIXzrSr2udCbl1GWYFuCdA36IycBk5YhUuK1xi9UA==",
       "type": "package",
-      "path": "skiasharp.nativeassets.macos/3.119.2",
+      "path": "skiasharp.nativeassets.macos/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4699,24 +4898,30 @@
         "README.md",
         "THIRD-PARTY-NOTICES.txt",
         "build/net462/SkiaSharp.NativeAssets.macOS.targets",
+        "build/net48/SkiaSharp.NativeAssets.macOS.targets",
+        "buildTransitive/net10.0-macos26.0/SkiaSharp.NativeAssets.macOS.targets",
         "buildTransitive/net462/SkiaSharp.NativeAssets.macOS.targets",
-        "buildTransitive/net8.0-macos14.0/SkiaSharp.NativeAssets.macOS.targets",
+        "buildTransitive/net48/SkiaSharp.NativeAssets.macOS.targets",
+        "buildTransitive/net9.0-macos15.0/SkiaSharp.NativeAssets.macOS.targets",
         "icon.png",
+        "lib/net10.0-macos26.0/_._",
+        "lib/net10.0/_._",
         "lib/net462/_._",
+        "lib/net48/_._",
         "lib/net6.0/_._",
-        "lib/net8.0-macos14.0/_._",
-        "lib/net8.0/_._",
+        "lib/net9.0-macos15.0/_._",
+        "lib/net9.0/_._",
         "lib/netstandard2.0/_._",
         "lib/netstandard2.1/_._",
         "runtimes/osx/native/libSkiaSharp.dylib",
-        "skiasharp.nativeassets.macos.3.119.2.nupkg.sha512",
+        "skiasharp.nativeassets.macos.4.152.1.nupkg.sha512",
         "skiasharp.nativeassets.macos.nuspec"
       ]
     },
-    "SkiaSharp.NativeAssets.Win32/3.119.2": {
-      "sha512": "uYe+da6+GXVgPKkCopzvIZ83DmC8SXXKeUAPrNcztJNsg0SjPQAxfKMOPZqmVjbzznrq/QUIjLUlJSZV/e0IPA==",
+    "SkiaSharp.NativeAssets.Win32/4.152.1": {
+      "sha512": "MLDP6XT8CHLHF6gZlpW06iswGNBlL/JB2+SKuSLz0Y0k1zzsfofNyUY6J6FC32A4/F67E9S8MwovRBL+ELw0lw==",
       "type": "package",
-      "path": "skiasharp.nativeassets.win32/3.119.2",
+      "path": "skiasharp.nativeassets.win32/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4724,13 +4929,17 @@
         "README.md",
         "THIRD-PARTY-NOTICES.txt",
         "build/net462/SkiaSharp.NativeAssets.Win32.targets",
+        "build/net48/SkiaSharp.NativeAssets.Win32.targets",
         "buildTransitive/net462/SkiaSharp.NativeAssets.Win32.targets",
+        "buildTransitive/net48/SkiaSharp.NativeAssets.Win32.targets",
         "icon.png",
+        "lib/net10.0-windows10.0.19041/_._",
+        "lib/net10.0/_._",
         "lib/net462/_._",
-        "lib/net6.0-windows10.0.19041/_._",
+        "lib/net48/_._",
         "lib/net6.0/_._",
-        "lib/net8.0-windows10.0.19041/_._",
-        "lib/net8.0/_._",
+        "lib/net9.0-windows10.0.19041/_._",
+        "lib/net9.0/_._",
         "lib/netstandard2.0/_._",
         "lib/netstandard2.1/_._",
         "runtimes/win-arm64/native/libSkiaSharp.dll",
@@ -4739,89 +4948,111 @@
         "runtimes/win-x64/native/libSkiaSharp.pdb",
         "runtimes/win-x86/native/libSkiaSharp.dll",
         "runtimes/win-x86/native/libSkiaSharp.pdb",
-        "skiasharp.nativeassets.win32.3.119.2.nupkg.sha512",
+        "skiasharp.nativeassets.win32.4.152.1.nupkg.sha512",
         "skiasharp.nativeassets.win32.nuspec"
       ]
     },
-    "SkiaSharp.Views.Desktop.Common/3.119.2": {
-      "sha512": "JDHJZw4aFzPQKsmrCPvsuXcW4Qc4psMqdmOLYPw1dt6iInsErOWTUj22EUyGLwd52WDdslQLmYsUMZ1lVS3u8A==",
+    "SkiaSharp.Views.Desktop.Common/4.152.1": {
+      "sha512": "W4xIP7HRdWyyRIcD1WXFSCnMt4wRGtSGcsw3nLL5qV3w2BV4R889HSk1wAEZbeiDdghjmCfqqrU89GXKah9NnA==",
       "type": "package",
-      "path": "skiasharp.views.desktop.common/3.119.2",
+      "path": "skiasharp.views.desktop.common/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "README.md",
         "icon.png",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.dll",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.pdb",
+        "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll",
+        "lib/net10.0/SkiaSharp.Views.Desktop.Common.pdb",
         "lib/net462/SkiaSharp.Views.Desktop.Common.dll",
         "lib/net462/SkiaSharp.Views.Desktop.Common.pdb",
-        "lib/net6.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.dll",
-        "lib/net6.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.pdb",
+        "lib/net48/SkiaSharp.Views.Desktop.Common.dll",
+        "lib/net48/SkiaSharp.Views.Desktop.Common.pdb",
         "lib/net6.0/SkiaSharp.Views.Desktop.Common.dll",
         "lib/net6.0/SkiaSharp.Views.Desktop.Common.pdb",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.dll",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.pdb",
-        "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll",
-        "lib/net8.0/SkiaSharp.Views.Desktop.Common.pdb",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.dll",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.Views.Desktop.Common.pdb",
+        "lib/net9.0/SkiaSharp.Views.Desktop.Common.dll",
+        "lib/net9.0/SkiaSharp.Views.Desktop.Common.pdb",
         "lib/netstandard2.0/SkiaSharp.Views.Desktop.Common.dll",
         "lib/netstandard2.0/SkiaSharp.Views.Desktop.Common.pdb",
         "lib/netstandard2.1/SkiaSharp.Views.Desktop.Common.dll",
         "lib/netstandard2.1/SkiaSharp.Views.Desktop.Common.pdb",
-        "skiasharp.views.desktop.common.3.119.2.nupkg.sha512",
+        "skiasharp.views.desktop.common.4.152.1.nupkg.sha512",
         "skiasharp.views.desktop.common.nuspec"
       ]
     },
-    "SkiaSharp.Views.Maui.Controls/3.119.2": {
-      "sha512": "rRqgvMAhmXDevPa1ttGBA4gi7/u8EcMjwfkT8BLvugIeW85r/A3GSQBM3yilD2i0RqjvM9dBpCfPhB0hSeIGlg==",
+    "SkiaSharp.Views.Maui.Controls/4.152.1": {
+      "sha512": "xyqIKBB8CTHi4+nc+mW7IafX5lEBftggOuc1DlgDTlTFnxKQOzlZbBSjZGkXsx5v/p+8i8jyiCprhg9MEyyGKg==",
       "type": "package",
-      "path": "skiasharp.views.maui.controls/3.119.2",
+      "path": "skiasharp.views.maui.controls/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "README.md",
         "icon.png",
-        "lib/net8.0-android34.0/SkiaSharp.Views.Maui.Controls.dll",
-        "lib/net8.0-android34.0/SkiaSharp.Views.Maui.Controls.pdb",
-        "lib/net8.0-android34.0/SkiaSharp.Views.Maui.Controls.xml",
-        "lib/net8.0-ios17.5/SkiaSharp.Views.Maui.Controls.dll",
-        "lib/net8.0-ios17.5/SkiaSharp.Views.Maui.Controls.pdb",
-        "lib/net8.0-maccatalyst17.5/SkiaSharp.Views.Maui.Controls.dll",
-        "lib/net8.0-maccatalyst17.5/SkiaSharp.Views.Maui.Controls.pdb",
-        "lib/net8.0-tizen8.0/SkiaSharp.Views.Maui.Controls.dll",
-        "lib/net8.0-tizen8.0/SkiaSharp.Views.Maui.Controls.pdb",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.Views.Maui.Controls.dll",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.Views.Maui.Controls.pdb",
-        "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll",
-        "lib/net8.0/SkiaSharp.Views.Maui.Controls.pdb",
-        "skiasharp.views.maui.controls.3.119.2.nupkg.sha512",
+        "lib/net10.0-android36.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net10.0-android36.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net10.0-android36.0/SkiaSharp.Views.Maui.Controls.xml",
+        "lib/net10.0-ios26.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net10.0-ios26.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net10.0-maccatalyst26.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net10.0-maccatalyst26.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net10.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net9.0-android35.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net9.0-android35.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net9.0-android35.0/SkiaSharp.Views.Maui.Controls.xml",
+        "lib/net9.0-ios18.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net9.0-ios18.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net9.0-maccatalyst18.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net9.0-maccatalyst18.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.Views.Maui.Controls.pdb",
+        "lib/net9.0/SkiaSharp.Views.Maui.Controls.dll",
+        "lib/net9.0/SkiaSharp.Views.Maui.Controls.pdb",
+        "skiasharp.views.maui.controls.4.152.1.nupkg.sha512",
         "skiasharp.views.maui.controls.nuspec"
       ]
     },
-    "SkiaSharp.Views.Maui.Core/3.119.2": {
-      "sha512": "vUcC//VB29mY+HmXEnqgEGmkKeR1JDhgw4vZSu9vt10eXPSHSR8F49IhtxnYY+NwB1uXSJKWNEl6uXJnh1bp5A==",
+    "SkiaSharp.Views.Maui.Core/4.152.1": {
+      "sha512": "X6ksBiqQn5yLREIA6nL0a36QzU+MHq8j69btNmUyHACURiEbzZBb/QuPwRG4nZwFHhfS15eoLoYh746bCDU3Ng==",
       "type": "package",
-      "path": "skiasharp.views.maui.core/3.119.2",
+      "path": "skiasharp.views.maui.core/4.152.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.txt",
         "README.md",
         "icon.png",
-        "lib/net8.0-android34.0/SkiaSharp.Views.Maui.Core.dll",
-        "lib/net8.0-android34.0/SkiaSharp.Views.Maui.Core.pdb",
-        "lib/net8.0-android34.0/SkiaSharp.Views.Maui.Core.xml",
-        "lib/net8.0-ios17.5/SkiaSharp.Views.Maui.Core.dll",
-        "lib/net8.0-ios17.5/SkiaSharp.Views.Maui.Core.pdb",
-        "lib/net8.0-maccatalyst17.5/SkiaSharp.Views.Maui.Core.dll",
-        "lib/net8.0-maccatalyst17.5/SkiaSharp.Views.Maui.Core.pdb",
-        "lib/net8.0-tizen8.0/SkiaSharp.Views.Maui.Core.dll",
-        "lib/net8.0-tizen8.0/SkiaSharp.Views.Maui.Core.pdb",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.Views.Maui.Core.dll",
-        "lib/net8.0-windows10.0.19041/SkiaSharp.Views.Maui.Core.pdb",
-        "lib/net8.0/SkiaSharp.Views.Maui.Core.dll",
-        "lib/net8.0/SkiaSharp.Views.Maui.Core.pdb",
-        "skiasharp.views.maui.core.3.119.2.nupkg.sha512",
+        "lib/net10.0-android36.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net10.0-android36.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net10.0-android36.0/SkiaSharp.Views.Maui.Core.xml",
+        "lib/net10.0-ios26.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net10.0-ios26.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net10.0-maccatalyst26.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net10.0-maccatalyst26.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net10.0-windows10.0.19041/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net10.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net10.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net9.0-android35.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net9.0-android35.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net9.0-android35.0/SkiaSharp.Views.Maui.Core.xml",
+        "lib/net9.0-ios18.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net9.0-ios18.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net9.0-maccatalyst18.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net9.0-maccatalyst18.0/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net9.0-windows10.0.19041/SkiaSharp.Views.Maui.Core.pdb",
+        "lib/net9.0/SkiaSharp.Views.Maui.Core.dll",
+        "lib/net9.0/SkiaSharp.Views.Maui.Core.pdb",
+        "skiasharp.views.maui.core.4.152.1.nupkg.sha512",
         "skiasharp.views.maui.core.nuspec"
       ]
     },
@@ -4939,10 +5170,26 @@
         "sqlitepclraw.provider.e_sqlite3.nuspec"
       ]
     },
-    "Svg.Custom/3.4.1": {
-      "sha512": "ksHa7Zv8X1InxSWAeM0sSSvZM2W6FWgneXjU0bdYrQ20Q6q0nl3g0uaSWe53i/CC1OmR+/JAxsp8E3/wigtcng==",
+    "Svg.Animation/5.2.3": {
+      "sha512": "mlbLFKzSVL2wMvDxnlMKLbdbbCbZBjDwSgmCZ7dHE4l0DtVUX5kHixngZlUP8AuBoikzqsXZt4+IXJhbeJjAdA==",
       "type": "package",
-      "path": "svg.custom/3.4.1",
+      "path": "svg.animation/5.2.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net10.0/Svg.Animation.dll",
+        "lib/net461/Svg.Animation.dll",
+        "lib/net6.0/Svg.Animation.dll",
+        "lib/net8.0/Svg.Animation.dll",
+        "lib/netstandard2.0/Svg.Animation.dll",
+        "svg.animation.5.2.3.nupkg.sha512",
+        "svg.animation.nuspec"
+      ]
+    },
+    "Svg.Custom/5.2.3": {
+      "sha512": "epicuKTb55l7Y6c3f9pdP0RkoifVieS9sWvA9HsppTfYyV7RFZg89+fUA9TTPcuccqi0GUGwiPEi+9b881zlDw==",
+      "type": "package",
+      "path": "svg.custom/5.2.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4950,14 +5197,14 @@
         "lib/net6.0/Svg.Custom.dll",
         "lib/net8.0/Svg.Custom.dll",
         "lib/netstandard2.0/Svg.Custom.dll",
-        "svg.custom.3.4.1.nupkg.sha512",
+        "svg.custom.5.2.3.nupkg.sha512",
         "svg.custom.nuspec"
       ]
     },
-    "Svg.Model/3.4.1": {
-      "sha512": "Zn04CWWIwV+qlJ4x4vg8FdCYNew5dRcsvkcCpzZggFKHGExIn4WTBtJMuLH8htuiLnbbgF6woIYpUll+seHfjw==",
+    "Svg.Model/5.2.3": {
+      "sha512": "iZInP4/48rIkpFxVJNMmxDDjIBaUcGOHrzancQ3cmneHXrtH4MYkm6bzggL9hCiS2dxfLhk3JCiERoGf8j0MlA==",
       "type": "package",
-      "path": "svg.model/3.4.1",
+      "path": "svg.model/5.2.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4966,14 +5213,30 @@
         "lib/net6.0/Svg.Model.dll",
         "lib/net8.0/Svg.Model.dll",
         "lib/netstandard2.0/Svg.Model.dll",
-        "svg.model.3.4.1.nupkg.sha512",
+        "svg.model.5.2.3.nupkg.sha512",
         "svg.model.nuspec"
       ]
     },
-    "Svg.Skia/3.4.1": {
-      "sha512": "fNGHIeIUtEDo41P4MYfVqjNL902t8EP5/tBY9vYDg8VbKSOD84ZlBfCL4KSxjf//HcJi1Uz4uZCUXuEAKJirCw==",
+    "Svg.SceneGraph/5.2.3": {
+      "sha512": "t9HrB1n499YCvziq+sdapDjMvgY7iSzyldEDalWnoZCP3cncu92gEktBqzhUgo8A+r9mfow2TNf0u5jgV5FvlQ==",
       "type": "package",
-      "path": "svg.skia/3.4.1",
+      "path": "svg.scenegraph/5.2.3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net10.0/Svg.SceneGraph.dll",
+        "lib/net461/Svg.SceneGraph.dll",
+        "lib/net6.0/Svg.SceneGraph.dll",
+        "lib/net8.0/Svg.SceneGraph.dll",
+        "lib/netstandard2.0/Svg.SceneGraph.dll",
+        "svg.scenegraph.5.2.3.nupkg.sha512",
+        "svg.scenegraph.nuspec"
+      ]
+    },
+    "Svg.Skia/5.2.3": {
+      "sha512": "slGSy5Aje/30Ou2a5aezbGGWLZspBIBYlEzqgtaIVex4FUYAR3mxaYrvMZj1tHy+ESDFCGY7+2FjF6UzqGUZew==",
+      "type": "package",
+      "path": "svg.skia/5.2.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -4982,7 +5245,7 @@
         "lib/net6.0/Svg.Skia.dll",
         "lib/net8.0/Svg.Skia.dll",
         "lib/netstandard2.0/Svg.Skia.dll",
-        "svg.skia.3.4.1.nupkg.sha512",
+        "svg.skia.5.2.3.nupkg.sha512",
         "svg.skia.nuspec"
       ]
     },
@@ -5024,11 +5287,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/user_info.csproj",
+      "projectUniqueName": "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/user_info.csproj",
       "projectName": "user_info",
-      "projectPath": "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/user_info.csproj",
+      "projectPath": "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/user_info.csproj",
       "packagesPath": "/home/playme/.nuget/packages/",
-      "outputPath": "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/flex-card/obj/",
+      "outputPath": "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/flex-card/obj/",
       "projectStyle": "PackageReference",
       "crossTargeting": true,
       "configFilePaths": [
@@ -5038,12 +5301,11 @@
         "net10.0"
       ],
       "sources": {
-        "/home/playme/.dotnet/library-packs": {},
+        "/usr/share/dotnet/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "net10.0": {
-          "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {}
         }
@@ -5058,11 +5320,10 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.300"
+      "SdkAnalysisLevel": "10.0.100"
     },
     "frameworks": {
       "net10.0": {
-        "framework": "net10.0",
         "targetAlias": "net10.0",
         "dependencies": {
           "CommunityToolkit.Maui": {
@@ -5119,24 +5380,32 @@
         "warn": true,
         "downloadDependencies": [
           {
+            "name": "Microsoft.AspNetCore.App.Ref",
+            "version": "[10.0.13, 10.0.13]"
+          },
+          {
             "name": "Microsoft.AspNetCore.App.Runtime.linux-arm64",
-            "version": "[10.0.9, 10.0.9]"
+            "version": "[10.0.13, 10.0.13]"
           },
           {
             "name": "Microsoft.AspNetCore.App.Runtime.linux-x64",
-            "version": "[10.0.9, 10.0.9]"
+            "version": "[10.0.13, 10.0.13]"
           },
           {
             "name": "Microsoft.NETCore.App.Host.linux-arm64",
-            "version": "[10.0.9, 10.0.9]"
+            "version": "[10.0.13, 10.0.13]"
+          },
+          {
+            "name": "Microsoft.NETCore.App.Host.linux-x64",
+            "version": "[10.0.13, 10.0.13]"
           },
           {
             "name": "Microsoft.NETCore.App.Runtime.linux-arm64",
-            "version": "[10.0.9, 10.0.9]"
+            "version": "[10.0.13, 10.0.13]"
           },
           {
             "name": "Microsoft.NETCore.App.Runtime.linux-x64",
-            "version": "[10.0.9, 10.0.9]"
+            "version": "[10.0.13, 10.0.13]"
           }
         ],
         "frameworkReferences": {
@@ -5144,7 +5413,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/home/playme/.dotnet/sdk/10.0.301/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.113/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.CSharp": "(,4.7.32767]",
           "Microsoft.VisualBasic": "(,10.4.32767]",

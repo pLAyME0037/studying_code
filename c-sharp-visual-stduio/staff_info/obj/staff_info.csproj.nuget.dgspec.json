@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/staff_info/staff_info.csproj": {}
+    "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/staff_info/staff_info.csproj": {}
   },
   "projects": {
-    "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/staff_info/staff_info.csproj": {
+    "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/staff_info/staff_info.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/staff_info/staff_info.csproj",
+        "projectUniqueName": "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/staff_info/staff_info.csproj",
         "projectName": "staff_info",
-        "projectPath": "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/staff_info/staff_info.csproj",
+        "projectPath": "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/staff_info/staff_info.csproj",
         "packagesPath": "/home/playme/.nuget/packages/",
-        "outputPath": "/mnt/disk2/mythings/study_my_code/c-sharp-visual-stduio/staff_info/obj/",
+        "outputPath": "/mnt/disk2/mythings/studying_code/c-sharp-visual-stduio/staff_info/obj/",
         "projectStyle": "PackageReference",
         "crossTargeting": true,
         "configFilePaths": [
@@ -21,12 +21,11 @@
           "net10.0"
         ],
         "sources": {
-          "/home/playme/.dotnet/library-packs": {},
+          "/usr/share/dotnet/library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net10.0": {
-            "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {}
           }
@@ -41,11 +40,10 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net10.0": {
-          "framework": "net10.0",
           "targetAlias": "net10.0",
           "dependencies": {
             "CommunityToolkit.Mvvm": {
@@ -86,24 +84,32 @@
           "warn": true,
           "downloadDependencies": [
             {
+              "name": "Microsoft.AspNetCore.App.Ref",
+              "version": "[10.0.13, 10.0.13]"
+            },
+            {
               "name": "Microsoft.AspNetCore.App.Runtime.linux-arm64",
-              "version": "[10.0.9, 10.0.9]"
+              "version": "[10.0.13, 10.0.13]"
             },
             {
               "name": "Microsoft.AspNetCore.App.Runtime.linux-x64",
-              "version": "[10.0.9, 10.0.9]"
+              "version": "[10.0.13, 10.0.13]"
             },
             {
               "name": "Microsoft.NETCore.App.Host.linux-arm64",
-              "version": "[10.0.9, 10.0.9]"
+              "version": "[10.0.13, 10.0.13]"
+            },
+            {
+              "name": "Microsoft.NETCore.App.Host.linux-x64",
+              "version": "[10.0.13, 10.0.13]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.linux-arm64",
-              "version": "[10.0.9, 10.0.9]"
+              "version": "[10.0.13, 10.0.13]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.linux-x64",
-              "version": "[10.0.9, 10.0.9]"
+              "version": "[10.0.13, 10.0.13]"
             }
           ],
           "frameworkReferences": {
@@ -111,7 +117,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/home/playme/.dotnet/sdk/10.0.301/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.113/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",

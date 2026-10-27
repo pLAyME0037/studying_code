@@ -10,9 +10,9 @@
         "dependencies": {
           "CommunityToolkit.Mvvm": "8.4.2",
           "Microsoft.Extensions.Logging.Debug": "10.0.0",
-          "Microsoft.Maui.Controls.Compatibility": "10.0.80",
-          "OpenMaui.Controls.Linux": "10.0.70.4",
-          "OpenMaui.Hosting": "10.0.70.4"
+          "Microsoft.Maui.Controls.Compatibility": "10.0.120",
+          "OpenMaui.Controls.Linux": "10.0.120.1",
+          "OpenMaui.Hosting": "10.0.120.1"
         },
         "runtime": {
           "staff_info.dll": {}
@@ -34,19 +34,19 @@
           }
         }
       },
-      "HarfBuzzSharp/8.3.1.3": {
+      "HarfBuzzSharp/14.2.1.201": {
         "dependencies": {
-          "HarfBuzzSharp.NativeAssets.Win32": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.macOS": "8.3.1.3"
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.1.201"
         },
         "runtime": {
-          "lib/net8.0/HarfBuzzSharp.dll": {
+          "lib/net10.0/HarfBuzzSharp.dll": {
             "assemblyVersion": "1.0.0.0",
-            "fileVersion": "8.3.1.3"
+            "fileVersion": "14.2.1.201"
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.Linux/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Linux/14.2.1.201": {
         "runtimeTargets": {
           "runtimes/linux-arm/native/libHarfBuzzSharp.so": {
             "rid": "linux-arm",
@@ -55,6 +55,16 @@
           },
           "runtimes/linux-arm64/native/libHarfBuzzSharp.so": {
             "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-bionic-arm64/native/libHarfBuzzSharp.so": {
+            "rid": "linux-bionic-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-bionic-x64/native/libHarfBuzzSharp.so": {
+            "rid": "linux-bionic-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           },
@@ -105,7 +115,7 @@
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.macOS/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.macOS/14.2.1.201": {
         "runtimeTargets": {
           "runtimes/osx/native/libHarfBuzzSharp.dylib": {
             "rid": "osx",
@@ -114,7 +124,7 @@
           }
         }
       },
-      "HarfBuzzSharp.NativeAssets.Win32/8.3.1.3": {
+      "HarfBuzzSharp.NativeAssets.Win32/14.2.1.201": {
         "runtimeTargets": {
           "runtimes/win-arm64/native/libHarfBuzzSharp.dll": {
             "rid": "win-arm64",
@@ -293,32 +303,32 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Compatibility/10.0.80": {
+      "Microsoft.Maui.Controls.Compatibility/10.0.120": {
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.80",
-          "Microsoft.Maui.Controls.Xaml": "10.0.80"
+          "Microsoft.Maui.Controls.Core": "10.0.120",
+          "Microsoft.Maui.Controls.Xaml": "10.0.120"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Maui.Controls.Compatibility.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.8026.31904"
+            "fileVersion": "10.1.2026.52007"
           }
         }
       },
-      "Microsoft.Maui.Controls.Core/10.0.80": {
+      "Microsoft.Maui.Controls.Core/10.0.120": {
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Core": "10.0.80"
+          "Microsoft.Maui.Core": "10.0.120"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Maui.Controls.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.8026.31904"
+            "fileVersion": "10.1.2026.52007"
           }
         },
         "resources": {
@@ -426,81 +436,82 @@
           }
         }
       },
-      "Microsoft.Maui.Controls.Xaml/10.0.80": {
+      "Microsoft.Maui.Controls.Xaml/10.0.120": {
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
-          "Microsoft.Maui.Controls.Core": "10.0.80",
-          "Microsoft.Maui.Core": "10.0.80"
+          "Microsoft.Maui.Controls.Core": "10.0.120",
+          "Microsoft.Maui.Core": "10.0.120"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Maui.Controls.Xaml.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.8026.31904"
+            "fileVersion": "10.1.2026.52007"
           }
         }
       },
-      "Microsoft.Maui.Core/10.0.80": {
+      "Microsoft.Maui.Core/10.0.120": {
         "dependencies": {
           "Microsoft.Extensions.Configuration": "10.0.0",
           "Microsoft.Extensions.DependencyInjection": "10.0.0",
           "Microsoft.Extensions.Hosting.Abstractions": "10.0.0",
           "Microsoft.Extensions.Logging": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0",
-          "Microsoft.Maui.Essentials": "10.0.80",
-          "Microsoft.Maui.Graphics": "10.0.80"
+          "Microsoft.Maui.Essentials": "10.0.120",
+          "Microsoft.Maui.Graphics": "10.0.120"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Maui.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.8026.31904"
+            "fileVersion": "10.1.2026.52007"
           }
         }
       },
-      "Microsoft.Maui.Essentials/10.0.80": {
+      "Microsoft.Maui.Essentials/10.0.120": {
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.80"
+          "Microsoft.Maui.Graphics": "10.0.120"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Maui.Essentials.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.8026.31904"
+            "fileVersion": "10.1.2026.52007"
           }
         }
       },
-      "Microsoft.Maui.Graphics/10.0.80": {
+      "Microsoft.Maui.Graphics/10.0.120": {
         "runtime": {
           "lib/net10.0/Microsoft.Maui.Graphics.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.8026.31904"
+            "fileVersion": "10.1.2026.52007"
           }
         }
       },
-      "Microsoft.Maui.Graphics.Skia/10.0.70": {
+      "Microsoft.Maui.Graphics.Skia/10.0.120": {
         "dependencies": {
-          "Microsoft.Maui.Graphics": "10.0.80",
-          "SkiaSharp": "3.119.2"
+          "Microsoft.Maui.Graphics": "10.0.120",
+          "SkiaSharp": "4.152.1"
         },
         "runtime": {
           "lib/net10.0/Microsoft.Maui.Graphics.Skia.dll": {
             "assemblyVersion": "10.0.0.0",
-            "fileVersion": "10.0.7026.26908"
+            "fileVersion": "10.1.2026.52007"
           }
         }
       },
-      "OpenMaui.Controls.Linux/10.0.70.4": {
+      "OpenMaui.Controls.Linux/10.0.120.1": {
         "dependencies": {
-          "HarfBuzzSharp": "8.3.1.3",
-          "HarfBuzzSharp.NativeAssets.Linux": "8.3.1.3",
+          "HarfBuzzSharp": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.1.201",
           "Lib.Harmony": "2.4.2",
-          "Microsoft.Maui.Graphics": "10.0.80",
-          "Microsoft.Maui.Graphics.Skia": "10.0.70",
-          "OpenMaui.Hosting": "10.0.70.4",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.NativeAssets.Linux": "3.119.2",
-          "SkiaSharp.Views.Desktop.Common": "3.119.2",
-          "SkiaSharp.Views.Maui.Controls": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2",
-          "Svg.Skia": "3.4.1"
+          "Microsoft.Maui.Graphics": "10.0.120",
+          "Microsoft.Maui.Graphics.Skia": "10.0.120",
+          "OpenMaui.Hosting": "10.0.120.1",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.NativeAssets.Linux": "4.152.1",
+          "SkiaSharp.Views.Desktop.Common": "4.152.1",
+          "SkiaSharp.Views.Maui.Controls": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1",
+          "Svg.Skia": "5.2.3",
+          "Tmds.DBus": "0.94.2"
         },
         "runtime": {
           "lib/net10.0/OpenMaui.Controls.Linux.dll": {
@@ -509,6 +520,11 @@
           }
         },
         "runtimeTargets": {
+          "runtimes/linux-arm64/native/libopenmaui_wl.so": {
+            "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
           "runtimes/linux-x64/native/libopenmaui_wl.so": {
             "rid": "linux-x64",
             "assetType": "native",
@@ -516,35 +532,35 @@
           }
         }
       },
-      "OpenMaui.Hosting/10.0.70.4": {
+      "OpenMaui.Hosting/10.0.120.1": {
         "runtime": {
           "lib/net10.0/OpenMaui.Hosting.dll": {
-            "assemblyVersion": "10.0.70.4",
-            "fileVersion": "10.0.70.4"
+            "assemblyVersion": "10.0.120.1",
+            "fileVersion": "10.0.120.1"
           }
         }
       },
-      "ShimSkiaSharp/3.4.1": {
+      "ShimSkiaSharp/5.2.3": {
         "runtime": {
           "lib/net10.0/ShimSkiaSharp.dll": {
-            "assemblyVersion": "3.4.1.0",
-            "fileVersion": "3.4.1.0"
+            "assemblyVersion": "5.2.3.0",
+            "fileVersion": "5.2.3.0"
           }
         }
       },
-      "SkiaSharp/3.119.2": {
+      "SkiaSharp/4.152.1": {
         "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "3.119.2",
-          "SkiaSharp.NativeAssets.macOS": "3.119.2"
+          "SkiaSharp.NativeAssets.Win32": "4.152.1",
+          "SkiaSharp.NativeAssets.macOS": "4.152.1"
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.dll": {
-            "assemblyVersion": "3.119.0.0",
-            "fileVersion": "3.119.2.0"
+          "lib/net10.0/SkiaSharp.dll": {
+            "assemblyVersion": "4.152.0.0",
+            "fileVersion": "4.152.1.0"
           }
         }
       },
-      "SkiaSharp.NativeAssets.Linux/3.119.2": {
+      "SkiaSharp.NativeAssets.Linux/4.152.1": {
         "runtimeTargets": {
           "runtimes/linux-arm/native/libSkiaSharp.so": {
             "rid": "linux-arm",
@@ -553,6 +569,16 @@
           },
           "runtimes/linux-arm64/native/libSkiaSharp.so": {
             "rid": "linux-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-bionic-arm64/native/libSkiaSharp.so": {
+            "rid": "linux-bionic-arm64",
+            "assetType": "native",
+            "fileVersion": "0.0.0.0"
+          },
+          "runtimes/linux-bionic-x64/native/libSkiaSharp.so": {
+            "rid": "linux-bionic-x64",
             "assetType": "native",
             "fileVersion": "0.0.0.0"
           },
@@ -603,7 +629,7 @@
           }
         }
       },
-      "SkiaSharp.NativeAssets.macOS/3.119.2": {
+      "SkiaSharp.NativeAssets.macOS/4.152.1": {
         "runtimeTargets": {
           "runtimes/osx/native/libSkiaSharp.dylib": {
             "rid": "osx",
@@ -612,7 +638,7 @@
           }
         }
       },
-      "SkiaSharp.NativeAssets.Win32/3.119.2": {
+      "SkiaSharp.NativeAssets.Win32/4.152.1": {
         "runtimeTargets": {
           "runtimes/win-arm64/native/libSkiaSharp.dll": {
             "rid": "win-arm64",
@@ -646,75 +672,116 @@
           }
         }
       },
-      "SkiaSharp.Views.Desktop.Common/3.119.2": {
+      "SkiaSharp.Views.Desktop.Common/4.152.1": {
         "dependencies": {
-          "SkiaSharp": "3.119.2"
+          "SkiaSharp": "4.152.1"
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Desktop.Common.dll": {
-            "assemblyVersion": "3.119.0.0",
-            "fileVersion": "3.119.2.0"
+          "lib/net10.0/SkiaSharp.Views.Desktop.Common.dll": {
+            "assemblyVersion": "4.152.0.0",
+            "fileVersion": "4.152.1.0"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Controls/3.119.2": {
+      "SkiaSharp.Views.Maui.Controls/4.152.1": {
         "dependencies": {
-          "Microsoft.Maui.Core": "10.0.80",
-          "SkiaSharp": "3.119.2",
-          "SkiaSharp.Views.Maui.Core": "3.119.2"
+          "Microsoft.Maui.Core": "10.0.120",
+          "SkiaSharp": "4.152.1",
+          "SkiaSharp.Views.Maui.Core": "4.152.1"
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Controls.dll": {
-            "assemblyVersion": "3.119.0.0",
-            "fileVersion": "3.119.2.0"
+          "lib/net10.0/SkiaSharp.Views.Maui.Controls.dll": {
+            "assemblyVersion": "4.152.0.0",
+            "fileVersion": "4.152.1.0"
           }
         }
       },
-      "SkiaSharp.Views.Maui.Core/3.119.2": {
+      "SkiaSharp.Views.Maui.Core/4.152.1": {
         "dependencies": {
-          "Microsoft.Maui.Core": "10.0.80",
-          "SkiaSharp": "3.119.2"
+          "Microsoft.Maui.Core": "10.0.120",
+          "SkiaSharp": "4.152.1"
         },
         "runtime": {
-          "lib/net8.0/SkiaSharp.Views.Maui.Core.dll": {
-            "assemblyVersion": "3.119.0.0",
-            "fileVersion": "3.119.2.0"
+          "lib/net10.0/SkiaSharp.Views.Maui.Core.dll": {
+            "assemblyVersion": "4.152.0.0",
+            "fileVersion": "4.152.1.0"
           }
         }
       },
-      "Svg.Custom/3.4.1": {
+      "Svg.Animation/5.2.3": {
+        "dependencies": {
+          "ShimSkiaSharp": "5.2.3",
+          "SkiaSharp": "4.152.1",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "runtime": {
+          "lib/net10.0/Svg.Animation.dll": {
+            "assemblyVersion": "5.2.3.0",
+            "fileVersion": "5.2.3.0"
+          }
+        }
+      },
+      "Svg.Custom/5.2.3": {
         "dependencies": {
           "ExCSS": "4.3.1"
         },
         "runtime": {
           "lib/net10.0/Svg.Custom.dll": {
-            "assemblyVersion": "3.4.1.0",
-            "fileVersion": "3.4.1.0"
+            "assemblyVersion": "5.2.3.0",
+            "fileVersion": "5.2.3.0"
           }
         }
       },
-      "Svg.Model/3.4.1": {
+      "Svg.Model/5.2.3": {
         "dependencies": {
-          "ShimSkiaSharp": "3.4.1",
-          "Svg.Custom": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3"
         },
         "runtime": {
           "lib/net10.0/Svg.Model.dll": {
-            "assemblyVersion": "3.4.1.0",
-            "fileVersion": "3.4.1.0"
+            "assemblyVersion": "5.2.3.0",
+            "fileVersion": "5.2.3.0"
           }
         }
       },
-      "Svg.Skia/3.4.1": {
+      "Svg.SceneGraph/5.2.3": {
         "dependencies": {
-          "SkiaSharp": "3.119.2",
-          "Svg.Custom": "3.4.1",
-          "Svg.Model": "3.4.1"
+          "ShimSkiaSharp": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3"
+        },
+        "runtime": {
+          "lib/net10.0/Svg.SceneGraph.dll": {
+            "assemblyVersion": "5.2.3.0",
+            "fileVersion": "5.2.3.0"
+          }
+        }
+      },
+      "Svg.Skia/5.2.3": {
+        "dependencies": {
+          "HarfBuzzSharp": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.Linux": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.Win32": "14.2.1.201",
+          "HarfBuzzSharp.NativeAssets.macOS": "14.2.1.201",
+          "SkiaSharp": "4.152.1",
+          "Svg.Animation": "5.2.3",
+          "Svg.Custom": "5.2.3",
+          "Svg.Model": "5.2.3",
+          "Svg.SceneGraph": "5.2.3"
         },
         "runtime": {
           "lib/net10.0/Svg.Skia.dll": {
-            "assemblyVersion": "3.4.1.0",
-            "fileVersion": "3.4.1.0"
+            "assemblyVersion": "5.2.3.0",
+            "fileVersion": "5.2.3.0"
+          }
+        }
+      },
+      "Tmds.DBus/0.94.2": {
+        "runtime": {
+          "lib/net6.0/Tmds.DBus.dll": {
+            "assemblyVersion": "0.94.2.0",
+            "fileVersion": "0.94.2.0"
           }
         }
       }
@@ -740,33 +807,33 @@
       "path": "excss/4.3.1",
       "hashPath": "excss.4.3.1.nupkg.sha512"
     },
-    "HarfBuzzSharp/8.3.1.3": {
+    "HarfBuzzSharp/14.2.1.201": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-NGZ2+ZVNPM+NdHB/asW0/ykWngyHWwcqjrbN2nDeH1B/aptPGlCUl8wkQ2cSJxw5fdWgdmIPmNuTPWpLwNVXWg==",
-      "path": "harfbuzzsharp/8.3.1.3",
-      "hashPath": "harfbuzzsharp.8.3.1.3.nupkg.sha512"
+      "sha512": "sha512-mWe1Y15EUI2lwQTaDk2TB/j3ESLeDzQRdGVfbUFLPND+8LhxgxBx8xGXSYRwvvU9gt/Fh81FJ+UPxkF037YIqg==",
+      "path": "harfbuzzsharp/14.2.1.201",
+      "hashPath": "harfbuzzsharp.14.2.1.201.nupkg.sha512"
     },
-    "HarfBuzzSharp.NativeAssets.Linux/8.3.1.3": {
+    "HarfBuzzSharp.NativeAssets.Linux/14.2.1.201": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-RI6A1LgmooU30+4QIyFt5rmBCzP0VzTR+587IJSGvYIsHHWlahFufihYxtraLfsIhW7I8dn6+xX+DZGygOPKWQ==",
-      "path": "harfbuzzsharp.nativeassets.linux/8.3.1.3",
-      "hashPath": "harfbuzzsharp.nativeassets.linux.8.3.1.3.nupkg.sha512"
+      "sha512": "sha512-qFGJvyQPXgWPSCtoJFOU38Yor/Ff3WUFibapbxAXmekFjFTNCO81dvjFrWe4nbDYbsP2KNq6EASTvLDCxzt8Wg==",
+      "path": "harfbuzzsharp.nativeassets.linux/14.2.1.201",
+      "hashPath": "harfbuzzsharp.nativeassets.linux.14.2.1.201.nupkg.sha512"
     },
-    "HarfBuzzSharp.NativeAssets.macOS/8.3.1.3": {
+    "HarfBuzzSharp.NativeAssets.macOS/14.2.1.201": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-KPTq0xnslkI6nAo0jh3ptcQPJvZZr7MWYXa2jUe4SnHc9q+JlHElmNXp0sfFoiTgoCX7WOYpYsurypuH9Gehxw==",
-      "path": "harfbuzzsharp.nativeassets.macos/8.3.1.3",
-      "hashPath": "harfbuzzsharp.nativeassets.macos.8.3.1.3.nupkg.sha512"
+      "sha512": "sha512-UCcjHofmlq/7UmGKO8HKRiPB64et4Vqvc4n5qfJ+e0VK3mBbTcfW9xkQ1e4Xae7jO08A0OPRZESLu8MT3mxHaw==",
+      "path": "harfbuzzsharp.nativeassets.macos/14.2.1.201",
+      "hashPath": "harfbuzzsharp.nativeassets.macos.14.2.1.201.nupkg.sha512"
     },
-    "HarfBuzzSharp.NativeAssets.Win32/8.3.1.3": {
+    "HarfBuzzSharp.NativeAssets.Win32/14.2.1.201": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-bx8CE8Js+XGX8PUxAHCBDEORt5aaBYtMN4Hr9QFs57Xithh6yjUyYqksizH6eRDhJkwsGI+SXWmPmMm8lZC9Pw==",
-      "path": "harfbuzzsharp.nativeassets.win32/8.3.1.3",
-      "hashPath": "harfbuzzsharp.nativeassets.win32.8.3.1.3.nupkg.sha512"
+      "sha512": "sha512-KopN0RqiEOJgBTDYnNs3sduxzSRQF0dpG64GeQKCxz3nX3tmn05zk9EN/XqPVy8H5OnQtcxruD1t5Ui05TT+vQ==",
+      "path": "harfbuzzsharp.nativeassets.win32/14.2.1.201",
+      "hashPath": "harfbuzzsharp.nativeassets.win32.14.2.1.201.nupkg.sha512"
     },
     "Lib.Harmony/2.4.2": {
       "type": "package",
@@ -859,145 +926,166 @@
       "path": "microsoft.extensions.primitives/10.0.0",
       "hashPath": "microsoft.extensions.primitives.10.0.0.nupkg.sha512"
     },
-    "Microsoft.Maui.Controls.Compatibility/10.0.80": {
+    "Microsoft.Maui.Controls.Compatibility/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-Es/axWqPDinmrdl4f3gQtpoXJw+UeuR23Fm8Io5LcLkthVfo/HW4KpkazIR1MnsOi/qj7UhxQKmSIvUDEndgFg==",
-      "path": "microsoft.maui.controls.compatibility/10.0.80",
-      "hashPath": "microsoft.maui.controls.compatibility.10.0.80.nupkg.sha512"
+      "sha512": "sha512-CtVJ71DTlVeh4k7wWVem/hgeuVHfSK5DrKsaYFlYdMAlXQbiuCvtoi/2s2Yn1mwnO3oL/wdtnhpNBMUviJV7oQ==",
+      "path": "microsoft.maui.controls.compatibility/10.0.120",
+      "hashPath": "microsoft.maui.controls.compatibility.10.0.120.nupkg.sha512"
     },
-    "Microsoft.Maui.Controls.Core/10.0.80": {
+    "Microsoft.Maui.Controls.Core/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-siuKho4hlIquirjzJqsZ7BchCnw7gpK2ix0NsrJaXVwCfApY8BYPSMBnTN01bnXpuIfUCmq40/B3m7ITuSNT6w==",
-      "path": "microsoft.maui.controls.core/10.0.80",
-      "hashPath": "microsoft.maui.controls.core.10.0.80.nupkg.sha512"
+      "sha512": "sha512-G1zdT4D/VA9i4rHmb8I7hs6TGfSfK8d27GLoRYjsDtlxXqAlQwZAu90YaBnfZRtaloPRTLar9CL651j1kKclCg==",
+      "path": "microsoft.maui.controls.core/10.0.120",
+      "hashPath": "microsoft.maui.controls.core.10.0.120.nupkg.sha512"
     },
-    "Microsoft.Maui.Controls.Xaml/10.0.80": {
+    "Microsoft.Maui.Controls.Xaml/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-KgpojYKhLTG35Angr4U8G/v2lwMVw6gKehienkeF1+LaUjf01A+bDBfZHvDTpl2NJhPXfojLHqMG1zKsVDXhwQ==",
-      "path": "microsoft.maui.controls.xaml/10.0.80",
-      "hashPath": "microsoft.maui.controls.xaml.10.0.80.nupkg.sha512"
+      "sha512": "sha512-xerwAT2s6+oMq4yNaCLHtkZ6ApxVXKo6y79CRuAINzg1UA2q6NmMeoLBg1ciYhep6ijoPMYJgR2ftXj1bDz5Sg==",
+      "path": "microsoft.maui.controls.xaml/10.0.120",
+      "hashPath": "microsoft.maui.controls.xaml.10.0.120.nupkg.sha512"
     },
-    "Microsoft.Maui.Core/10.0.80": {
+    "Microsoft.Maui.Core/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-t3jazbSSNoS+OXv1CzNJUwDs7LbSXf9z0ydxvmZPUWw7JQJ+WIbFSNO1GCVQsc4ufpbn2A0pYH740GlQsfDFlA==",
-      "path": "microsoft.maui.core/10.0.80",
-      "hashPath": "microsoft.maui.core.10.0.80.nupkg.sha512"
+      "sha512": "sha512-00j12+iX7drRJJ3i7pdhJ2bLIAsEwJPXabhHx7VtaX6Xs/q+YP2UkGxH95Lj9GN4J5kUo2q+wflp8J9QuUBoCA==",
+      "path": "microsoft.maui.core/10.0.120",
+      "hashPath": "microsoft.maui.core.10.0.120.nupkg.sha512"
     },
-    "Microsoft.Maui.Essentials/10.0.80": {
+    "Microsoft.Maui.Essentials/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-TPEmubDTO15KRJdlJLSjR8zVVepk6tKiNBXmqpZebez9mvJyi4lmsWwuboFKM56COuGAlY+eVUFDesQlz66Eyw==",
-      "path": "microsoft.maui.essentials/10.0.80",
-      "hashPath": "microsoft.maui.essentials.10.0.80.nupkg.sha512"
+      "sha512": "sha512-xJ+29QLkKVxqz0paMEXic+VUWBUeoasnE0NQFInTSKNNVfsM30+FtS2V0EgOHFyKiixSHiKl1ET96KJ+zGft6Q==",
+      "path": "microsoft.maui.essentials/10.0.120",
+      "hashPath": "microsoft.maui.essentials.10.0.120.nupkg.sha512"
     },
-    "Microsoft.Maui.Graphics/10.0.80": {
+    "Microsoft.Maui.Graphics/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-rB3Tjv/z/uJ4zZLu8HJMNo+YqpAzPlxQ+2HCkjmGbORPAPYcWF2dLP+MsCmYS/HXpFE+8kEt/Md4Oc0MbhYtzQ==",
-      "path": "microsoft.maui.graphics/10.0.80",
-      "hashPath": "microsoft.maui.graphics.10.0.80.nupkg.sha512"
+      "sha512": "sha512-Z1ZkDyUIpMPYH84wC8za4n/OcSXIKU6fGc2EfZ0dWGldPjrJtbYLWqFLBSK3QW80/FbpGDsskhaynDUnC+dOlw==",
+      "path": "microsoft.maui.graphics/10.0.120",
+      "hashPath": "microsoft.maui.graphics.10.0.120.nupkg.sha512"
     },
-    "Microsoft.Maui.Graphics.Skia/10.0.70": {
+    "Microsoft.Maui.Graphics.Skia/10.0.120": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-r0EMV4YjiYCFdp3kV/0QeShKbUdQ/GcmB+0cPSoKBI1rIPzbgNFyQvREJdxLC82aIr4yvHaR02/F/jDLU8Sx7Q==",
-      "path": "microsoft.maui.graphics.skia/10.0.70",
-      "hashPath": "microsoft.maui.graphics.skia.10.0.70.nupkg.sha512"
+      "sha512": "sha512-GufD5J/8fUU4PQ/CgY1nSTaDIKaJjFNSNDr7F+kQ+RnBVyRv+oB7W2I7C4CD6NnuV7o4vwTftJndN1AzJkH3Yw==",
+      "path": "microsoft.maui.graphics.skia/10.0.120",
+      "hashPath": "microsoft.maui.graphics.skia.10.0.120.nupkg.sha512"
     },
-    "OpenMaui.Controls.Linux/10.0.70.4": {
+    "OpenMaui.Controls.Linux/10.0.120.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-CgDly0cMR11sw5jOqpfvNFQSk6j/rtqBQ8JdGdLt837GHsaptgy4dYAB9zGj2eYGEjwdyhN8LginF4MZChjGxA==",
-      "path": "openmaui.controls.linux/10.0.70.4",
-      "hashPath": "openmaui.controls.linux.10.0.70.4.nupkg.sha512"
+      "sha512": "sha512-0tAqeUSxJH4PkjQLi3Gfugd9sSEV8WDwWBYsEFQ+hFNF3G8ciDm9caBgKU2iKORK0vloLrO6NMEa2KuzwdyuHA==",
+      "path": "openmaui.controls.linux/10.0.120.1",
+      "hashPath": "openmaui.controls.linux.10.0.120.1.nupkg.sha512"
     },
-    "OpenMaui.Hosting/10.0.70.4": {
+    "OpenMaui.Hosting/10.0.120.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-MxPdXhDOxiZLqiTAp18kOl8w3zAVWjIr4uEwaHoUN83Xgji1/MWhmv6tX2wlq93VZSMmOLzMgmyKTWFxhQTKVA==",
-      "path": "openmaui.hosting/10.0.70.4",
-      "hashPath": "openmaui.hosting.10.0.70.4.nupkg.sha512"
+      "sha512": "sha512-fe5/DUiKmrPLGEqEo56058Pa5bJIdy8mqKtKGtCQZatBRB801thGFaTdqGcNSs6y3wCKRi3cXSWAVhHY0wo1Xg==",
+      "path": "openmaui.hosting/10.0.120.1",
+      "hashPath": "openmaui.hosting.10.0.120.1.nupkg.sha512"
     },
-    "ShimSkiaSharp/3.4.1": {
+    "ShimSkiaSharp/5.2.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-ab3J5OGdwYLyXnom90OghS9NyRPH9dtsRtW5B3mL+F43YTlxido3nUtiR9NjB/sI3jvG/J744C29bsSBQ28AfQ==",
-      "path": "shimskiasharp/3.4.1",
-      "hashPath": "shimskiasharp.3.4.1.nupkg.sha512"
+      "sha512": "sha512-BBmIvh70WduWEF8C9HeU12LmHkg6+h2SRwJzey/tmztRk4ttAxhyu9eAD/jlsNGlqquYpoCQyyTx+QynavyfVA==",
+      "path": "shimskiasharp/5.2.3",
+      "hashPath": "shimskiasharp.5.2.3.nupkg.sha512"
     },
-    "SkiaSharp/3.119.2": {
+    "SkiaSharp/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-nmy2dOFWPvQKMglfpjz8+/xQQcSrL9jzul3cUyzCJVSwrmSAw+6B1sEgU7jt6NZBptwGq2k/V0kjyu2GizMFtg==",
-      "path": "skiasharp/3.119.2",
-      "hashPath": "skiasharp.3.119.2.nupkg.sha512"
+      "sha512": "sha512-p3rj8SVoa+2Tmx1EITE4jIwCDPcYjwXdZ3c9yM6l9wNn6572hwxzrth6WOBK0iGnAoTGoJBZuZpy8wYjbov6sw==",
+      "path": "skiasharp/4.152.1",
+      "hashPath": "skiasharp.4.152.1.nupkg.sha512"
     },
-    "SkiaSharp.NativeAssets.Linux/3.119.2": {
+    "SkiaSharp.NativeAssets.Linux/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-9WzxSyG/s9Id506j0Ht+Bi5ucOpWKPzd1XXr9TD4fuCafHHy2swRSlbZtC3IDQAsvCH63OerkDJajj43uSv5og==",
-      "path": "skiasharp.nativeassets.linux/3.119.2",
-      "hashPath": "skiasharp.nativeassets.linux.3.119.2.nupkg.sha512"
+      "sha512": "sha512-1bB3eedb+4ZcyWigUzxXCE7LrNOlmyAs1crGCnX8UEHKl0nHOmzDt3E0d53IIgiguS88RKeCPy1ArDXK5FoDCw==",
+      "path": "skiasharp.nativeassets.linux/4.152.1",
+      "hashPath": "skiasharp.nativeassets.linux.4.152.1.nupkg.sha512"
     },
-    "SkiaSharp.NativeAssets.macOS/3.119.2": {
+    "SkiaSharp.NativeAssets.macOS/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-I2jMGQ/26KOnc6iAoR+Mxh9vSJJ2vioJyj9aJ9OL5yEZyXothXJxf4vBMqnSaiXMqiiU1scG7KqtT0CLkmMmWA==",
-      "path": "skiasharp.nativeassets.macos/3.119.2",
-      "hashPath": "skiasharp.nativeassets.macos.3.119.2.nupkg.sha512"
+      "sha512": "sha512-gKaE2zNHsPLjlA88ZClRNmtZlHNGEa/W4iPy5GpP1TtUELIXzrSr2udCbl1GWYFuCdA36IycBk5YhUuK1xi9UA==",
+      "path": "skiasharp.nativeassets.macos/4.152.1",
+      "hashPath": "skiasharp.nativeassets.macos.4.152.1.nupkg.sha512"
     },
-    "SkiaSharp.NativeAssets.Win32/3.119.2": {
+    "SkiaSharp.NativeAssets.Win32/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-uYe+da6+GXVgPKkCopzvIZ83DmC8SXXKeUAPrNcztJNsg0SjPQAxfKMOPZqmVjbzznrq/QUIjLUlJSZV/e0IPA==",
-      "path": "skiasharp.nativeassets.win32/3.119.2",
-      "hashPath": "skiasharp.nativeassets.win32.3.119.2.nupkg.sha512"
+      "sha512": "sha512-MLDP6XT8CHLHF6gZlpW06iswGNBlL/JB2+SKuSLz0Y0k1zzsfofNyUY6J6FC32A4/F67E9S8MwovRBL+ELw0lw==",
+      "path": "skiasharp.nativeassets.win32/4.152.1",
+      "hashPath": "skiasharp.nativeassets.win32.4.152.1.nupkg.sha512"
     },
-    "SkiaSharp.Views.Desktop.Common/3.119.2": {
+    "SkiaSharp.Views.Desktop.Common/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-JDHJZw4aFzPQKsmrCPvsuXcW4Qc4psMqdmOLYPw1dt6iInsErOWTUj22EUyGLwd52WDdslQLmYsUMZ1lVS3u8A==",
-      "path": "skiasharp.views.desktop.common/3.119.2",
-      "hashPath": "skiasharp.views.desktop.common.3.119.2.nupkg.sha512"
+      "sha512": "sha512-W4xIP7HRdWyyRIcD1WXFSCnMt4wRGtSGcsw3nLL5qV3w2BV4R889HSk1wAEZbeiDdghjmCfqqrU89GXKah9NnA==",
+      "path": "skiasharp.views.desktop.common/4.152.1",
+      "hashPath": "skiasharp.views.desktop.common.4.152.1.nupkg.sha512"
     },
-    "SkiaSharp.Views.Maui.Controls/3.119.2": {
+    "SkiaSharp.Views.Maui.Controls/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-rRqgvMAhmXDevPa1ttGBA4gi7/u8EcMjwfkT8BLvugIeW85r/A3GSQBM3yilD2i0RqjvM9dBpCfPhB0hSeIGlg==",
-      "path": "skiasharp.views.maui.controls/3.119.2",
-      "hashPath": "skiasharp.views.maui.controls.3.119.2.nupkg.sha512"
+      "sha512": "sha512-xyqIKBB8CTHi4+nc+mW7IafX5lEBftggOuc1DlgDTlTFnxKQOzlZbBSjZGkXsx5v/p+8i8jyiCprhg9MEyyGKg==",
+      "path": "skiasharp.views.maui.controls/4.152.1",
+      "hashPath": "skiasharp.views.maui.controls.4.152.1.nupkg.sha512"
     },
-    "SkiaSharp.Views.Maui.Core/3.119.2": {
+    "SkiaSharp.Views.Maui.Core/4.152.1": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-vUcC//VB29mY+HmXEnqgEGmkKeR1JDhgw4vZSu9vt10eXPSHSR8F49IhtxnYY+NwB1uXSJKWNEl6uXJnh1bp5A==",
-      "path": "skiasharp.views.maui.core/3.119.2",
-      "hashPath": "skiasharp.views.maui.core.3.119.2.nupkg.sha512"
+      "sha512": "sha512-X6ksBiqQn5yLREIA6nL0a36QzU+MHq8j69btNmUyHACURiEbzZBb/QuPwRG4nZwFHhfS15eoLoYh746bCDU3Ng==",
+      "path": "skiasharp.views.maui.core/4.152.1",
+      "hashPath": "skiasharp.views.maui.core.4.152.1.nupkg.sha512"
     },
-    "Svg.Custom/3.4.1": {
+    "Svg.Animation/5.2.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-ksHa7Zv8X1InxSWAeM0sSSvZM2W6FWgneXjU0bdYrQ20Q6q0nl3g0uaSWe53i/CC1OmR+/JAxsp8E3/wigtcng==",
-      "path": "svg.custom/3.4.1",
-      "hashPath": "svg.custom.3.4.1.nupkg.sha512"
+      "sha512": "sha512-mlbLFKzSVL2wMvDxnlMKLbdbbCbZBjDwSgmCZ7dHE4l0DtVUX5kHixngZlUP8AuBoikzqsXZt4+IXJhbeJjAdA==",
+      "path": "svg.animation/5.2.3",
+      "hashPath": "svg.animation.5.2.3.nupkg.sha512"
     },
-    "Svg.Model/3.4.1": {
+    "Svg.Custom/5.2.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-Zn04CWWIwV+qlJ4x4vg8FdCYNew5dRcsvkcCpzZggFKHGExIn4WTBtJMuLH8htuiLnbbgF6woIYpUll+seHfjw==",
-      "path": "svg.model/3.4.1",
-      "hashPath": "svg.model.3.4.1.nupkg.sha512"
+      "sha512": "sha512-epicuKTb55l7Y6c3f9pdP0RkoifVieS9sWvA9HsppTfYyV7RFZg89+fUA9TTPcuccqi0GUGwiPEi+9b881zlDw==",
+      "path": "svg.custom/5.2.3",
+      "hashPath": "svg.custom.5.2.3.nupkg.sha512"
     },
-    "Svg.Skia/3.4.1": {
+    "Svg.Model/5.2.3": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-fNGHIeIUtEDo41P4MYfVqjNL902t8EP5/tBY9vYDg8VbKSOD84ZlBfCL4KSxjf//HcJi1Uz4uZCUXuEAKJirCw==",
-      "path": "svg.skia/3.4.1",
-      "hashPath": "svg.skia.3.4.1.nupkg.sha512"
+      "sha512": "sha512-iZInP4/48rIkpFxVJNMmxDDjIBaUcGOHrzancQ3cmneHXrtH4MYkm6bzggL9hCiS2dxfLhk3JCiERoGf8j0MlA==",
+      "path": "svg.model/5.2.3",
+      "hashPath": "svg.model.5.2.3.nupkg.sha512"
+    },
+    "Svg.SceneGraph/5.2.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-t9HrB1n499YCvziq+sdapDjMvgY7iSzyldEDalWnoZCP3cncu92gEktBqzhUgo8A+r9mfow2TNf0u5jgV5FvlQ==",
+      "path": "svg.scenegraph/5.2.3",
+      "hashPath": "svg.scenegraph.5.2.3.nupkg.sha512"
+    },
+    "Svg.Skia/5.2.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-slGSy5Aje/30Ou2a5aezbGGWLZspBIBYlEzqgtaIVex4FUYAR3mxaYrvMZj1tHy+ESDFCGY7+2FjF6UzqGUZew==",
+      "path": "svg.skia/5.2.3",
+      "hashPath": "svg.skia.5.2.3.nupkg.sha512"
+    },
+    "Tmds.DBus/0.94.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-7tKdC4X6yhGnAFyRmZ4OAAF9pVccZ0qn+2tYZfDlF2B8I74ehXBedhtd74nM4J5vapDew/5hlXdhtAnqdeKsIA==",
+      "path": "tmds.dbus/0.94.2",
+      "hashPath": "tmds.dbus.0.94.2.nupkg.sha512"
     }
   }
 }
