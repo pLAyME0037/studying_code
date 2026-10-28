@@ -1,1 +1,18 @@
-<div class="flex flex-col leading-tight text-xs"><c> if (created && *created) { </c><span class="text-overlay0">Joined <span class="text-text font-medium"><c> STR(md_date_human(created)); </c></span></span><c> } </c><c> if (updated && *updated && (!created || strcmp(updated, created) != 0)) { </c><span class="text-overlay0">Edited <span class="text-subtext0"><c> STR(md_date_human(updated)); </c></span></span><c> } </c><c> if (deleted && *deleted) { </c><span class="text-red font-semibold">DELETED <span class="font-normal"><c> STR(md_date_human(deleted)); </c></span></span><c> } </c><c> if (!wrote) { </c>&nbsp;<c> } </c></div>
+<div class="flex flex-col leading-tight text-xs">
+    <c> if (created && *created) { </c>
+    <span class="text-overlay0">
+        Joined <span class="text-text font-medium"><c> STR(md_date_human(created)); </c></span>
+    </span>
+    <c> } </c>
+    <c> if (updated && *updated && (!created || strcmp(updated, created) != 0)) { </c>
+    <span class="text-overlay0">
+        Edited <span class="text-subtext0"><c> STR(md_date_human(updated)); </c></span>
+    </span>
+    <c> } </c>
+    <c> if (deleted && *deleted) { </c>
+    <span class="text-red font-semibold">
+        DELETED <span class="font-normal"><c> STR(md_date_human(deleted)); </c></span>
+    </span>
+    <c> } </c>
+    <c> if (!wrote) { </c>&nbsp;<c> } </c>
+</div>

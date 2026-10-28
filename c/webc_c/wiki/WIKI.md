@@ -725,6 +725,37 @@ vanilla JS only.
 - Suite: 892 PASS (http 120 / pos 384 / shop 118 / role 48 /
   crud_contract 175 / mysql 41 / https 6).
 
+## Phase 25 - Child add-form 404: single-line action URLs (suite 893 PASS)
+- Bug: confirming an inline child add row flashed "Request failed (HTTP
+  404) - your input was kept". The <c></c> tt conversion (84b74d95)
+  reflowed the child form's action attribute in md_child_tab.h.tt over
+  several source lines, so the rendered HTML kept a newline + indent
+  spaces between crud_path and /create. WHATWG URL parsing strips the
+  newline but percent-encodes the spaces, so the browser POSTed to
+  /pos/x%20...%20/create -> no route -> 404.
+- Why the suite never caught it: tests POST to hand-built URLs; only a
+  browser uses the parsed action. Fix = the action is one line again
+  (plus &amp; for the redirect), exactly like the master forms.
+- Sweep: a scan of every action=/href=/formaction=/src= value in
+  display/**.tt for embedded newlines found this as the only offender.
+- Tests: new pin on /pos/roles - any form action carrying whitespace
+  fails (currently []). The 3 tab-strip pins (Live active, ?live=1,
+  Trash active) went whitespace-tolerant (re.search with \s*): the same
+  conversion moved the Live/Trash labels onto their own lines and HTML
+  collapses that text whitespace. Rule: whitespace in an attribute URL
+  is a hard error; whitespace between an attribute and its text content
+  is harmless - pin accordingly.
+- Also in this commit: md_child_query_row.h.tt's legacy ?q+?qcol
+  ternary un-nested into an if/else (shown/shown_s), keeping the
+  queryable guard open around the select/input so shown_s stays in
+  scope and non-queryable columns still render an empty cell; the
+  <option> start tag regained its closing > (dropped in the reformat -
+  without it the label and selected were swallowed as malformed
+  attributes) and the 3 dropdown pins became whitespace-tolerant for
+  the same reason as the tab pins.
+- Suite: 893 PASS (http 120 / pos 385 / shop 118 / role 48 /
+  crud_contract 175 / mysql 41 / https 6).
+
 ## Gotchas
 - String_View: use designated initializers { .data=..., .count=... }.
 - String_View with data=NULL binds SQL NULL (not '') - initialize

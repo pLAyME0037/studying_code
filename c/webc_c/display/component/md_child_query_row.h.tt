@@ -2,48 +2,69 @@
     <c> for (size_t ci = 0; ci < config->column_count; ++ci) { </c>
     <c> const MD_Column *fcol = &config->columns[ci]; </c>
     <td class="pl-3 py-1">
-        <c> if (fcol->name && md_col_queryable(fcol)) { </c>
-        <c> String_View cbox = sv_from_cstr("");
-           form_find(query, temp_sprintf("q_%s", fcol->name), &cbox);
-           String_View shown = cbox.count ? cbox
-               : (qcol_name[0] && strcmp(qcol_name, fcol->name) == 0
-                  ? sv_from_cstr(q_text) : sv_from_cstr(""));
-           const char *shown_s = shown.count
-               ? temp_sprintf("%.*s", (int)shown.count, shown.data) : ""; </c>
+        <c>
+        if (fcol->name && md_col_queryable(fcol)) {
+            String_View cbox = sv_from_cstr("");
+            String_View shown;
+            const char *shown_s;
+            form_find(query, temp_sprintf("q_%s", fcol->name), &cbox);
+            if (cbox.count) {
+                shown = cbox;
+            } else {
+                shown = sv_from_cstr("");
+                if (qcol_name[0] && strcmp(qcol_name, fcol->name) == 0) {
+                    shown = sv_from_cstr(q_text);
+                }
+            }
+            shown_s = "";
+            if (shown.count) {
+                shown_s = temp_sprintf("%.*s", (int)shown.count, shown.data);
+            }
+        </c>
         <c> if (fcol->type == COL_TYPE_FK_SELECT) { </c>
         <select name="q_<c> STR(fcol->name); </c>" form="md-query-form"
                 data-md-qbox aria-label="Filter <c> ESCAPED(fcol->label); </c>"
-                class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+                class="w-full px-1 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
             <option value=""><c> ESCAPED(fcol->label); </c></option>
-            <c> for (size_t fi = 0; fi < form_cols->count; ++fi) { </c>
-            <c> if (form_cols->items[fi].col == fcol) { </c>
-            <c> for (size_t o = 0; o < form_cols->items[fi].count; ++o) { </c>
-            <option value="<c> ESCAPED(form_cols->items[fi].items[o].label); </c>"<c> if (shown_s[0] && strcmp(form_cols->items[fi].items[o].label, shown_s) == 0) { </c> selected<c> } </c>><c> ESCAPED(form_cols->items[fi].items[o].label); </c></option>
-            <c> } </c>
-            <c> } </c>
-            <c> } </c>
+            <c>
+            for (size_t fi = 0; fi < form_cols->count; ++fi) {
+                if (form_cols->items[fi].col == fcol) {
+                    for (size_t o = 0; o < form_cols->items[fi].count; ++o) {
+            </c>
+            <option value="<c> ESCAPED(form_cols->items[fi].items[o].label); </c>"
+                <c>
+                if (shown_s[0] &&
+                    strcmp(form_cols->items[fi].items[o].label, shown_s) == 0) { 
+                </c> selected<c> } </c>>
+                <c> ESCAPED(form_cols->items[fi].items[o].label); </c>
+            </option>
+            <c>     } 
+                } 
+            } </c>
         </select>
         <c> } else { </c>
         <input type="search" name="q_<c> STR(fcol->name); </c>"
                form="md-query-form" data-md-qbox
                value="<c> ESCAPED(shown_s); </c>"
-               placeholder="<c> if (fcol->cell && fcol->cell->part_count > 1) { </c><c> ESCAPED(md_cell_part_label(fcol->cell, 0)); </c><c> } else { </c><c> ESCAPED(fcol->label); </c><c> } </c>"
+               placeholder="<c> if (fcol->cell && fcol->cell->part_count > 1) { </c> <c> ESCAPED(md_cell_part_label(fcol->cell, 0)); </c> <c> } else { </c> <c> ESCAPED(fcol->label); </c> <c> } </c>"
                aria-label="Search <c> ESCAPED(fcol->label); </c>"
-               class="w-full px-1 py-0.5 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-        <c> } </c>
-        <c> } </c>
+               class="w-full px-1 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
+        <c> }
+        } </c>
     </td>
     <c> } </c>
-    <td class="pl-3 py-1">
+    <td class="px-3">
         <div class="flex items-center gap-1 justify-end">
             <button type="submit" form="md-query-form"
                     title="Search" aria-label="Search"
                     class="shrink-0 text-gray-500 hover:text-gray-900 dark:hover:text-white">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"/></svg>
             </button>
             <c> if (search_active) { </c>
             <a href="<c> STR(md_path); </c>" title="Clear the search"
-               class="shrink-0 px-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">&#10005;</a>
+               class="shrink-0 px-1 text-sm text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+               &#10005;
+            </a>
             <c> } </c>
         </div>
     </td>

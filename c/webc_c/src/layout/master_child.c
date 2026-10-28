@@ -529,10 +529,11 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
         const MD_Column *col = &config->columns[ci];
         if (!col->name || !md_col_queryable(col)) continue;
         String_View cv = sv_from_cstr("");
-        if (form_find(sc->query_string, temp_sprintf("q_%s", col->name), &cv))
+        if (form_find(sc->query_string, temp_sprintf("q_%s", col->name), &cv)) {
             md_search_add(&search, col, cv);
+        }
     }
-    Page_Info page_info = {0};                    // master list window
+    Page_Info page_info = {0}; // master list window
     page_info_parse(sc->query_string, "page", &page_info);
     bool windowed = !fragment;
     if (windowed && !md_count_masters(db, config, show_deleted, &search,
@@ -561,7 +562,7 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     bool ok = md_load_master_with_children(db, config, rows,
                                            windowed ? &page_info : NULL,
                                            show_deleted, &search)
-        && md_form_cols_load(db, config, &form_cols);
+              && md_form_cols_load(db, config, &form_cols);
     if (ok) {
         for (size_t i = 0; i < config->column_count; ++i) {
             md_col_load_options(db, &config->columns[i]);

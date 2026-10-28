@@ -48,13 +48,13 @@
         }
     </c>();
     </script>
-<c> if (show_deleted) { </c>
+    <c> if (show_deleted) { </c>
     <div class="mb-3 px-2 py-1 flex justify-between items-center text-sm bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
         <span>Deleted rows &mdash; restore to bring them back, or leave them here.</span>
         <a href="<c> STR(md_path); </c>" class="underline">Back to list</a>
     </div>
-<c> } </c>
-<c> if (!config->read_only && !config->no_create && !show_deleted) { </c>
+    <c> } </c>
+    <c> if (!config->read_only && !config->no_create && !show_deleted) { </c>
     <form method="POST"
           action="<c> STR(config->crud_path); </c>/create?redirect=<c> STR(md_path); </c>"
           data-md-kind="master"
@@ -70,7 +70,7 @@
                 <c> if (form_cols.items[fi].col->cell) { </c>
                 <div>
                     <c> for (size_t pi = 0; pi < form_cols.items[fi].col->cell->part_count; ++pi) { </c>
-                        <label class="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">
                             <c> ESCAPED(md_cell_part_label(form_cols.items[fi].col->cell, pi)); </c>
                         </label>
                         <c> if (form_cols.items[fi].col->cell->part_choices
@@ -87,8 +87,8 @@
                         <input name="<c> ESCAPED(form_cols.items[fi].col->cell->parts[pi]); </c>"
                                type="text"
                                class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                        <c> } </c>
-                    <c> } </c>
+                        <c> }
+                        } </c>
                 </div>
                 <c> } else { </c>
                 <div>
@@ -119,21 +119,23 @@
                            class="w-full px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
                     <c> } </c>
                 </div>
-                <c> } </c>
-                <c> } </c>
-            <c> } </c>
+                <c> }
+                }
+            } </c>
         </div>
-        <button type="submit"
-            class="bg-gray-200 dark:bg-gray-700 text-sky-900 dark:text-sky-200 border-b-3 border-b-sky-200 hover:border-b-blue-700 p-1 font-medium">
-            Confirm
-        </button>
-        <button type="reset"
-            class="bg-gray-200 dark:bg-gray-700 text-orange-900 dark:text-orange-200 border-b-3 border-b-orange-200 hover:border-b-red-700 p-1">
-            Discard
-        </button>
+        <div class="flex items-center gap-3 justify-end">
+            <button type="submit"
+                    class="bg-gray-200 hover:bg-gray-200/30 dark:bg-gray-700 hover:dark:bg-gray-700/30 text-sky-900 hover:text-sky-950 dark:text-sky-200 hover:dark:text-sky-700 border-b-3 border-b-sky-200 hover:border-b-sky-700 mt-1 px-1 py-0.5 font-medium">
+                Confirm
+            </button>
+            <button type="reset"
+                    class="bg-gray-200 hover:bg-gray-200/30 dark:bg-gray-700 hover:dark:bg-gray-700/30 text-orange-900 hover:text-orange-950 dark:text-orange-200 hover:dark:text-orange-700 border-b-3 border-b-orange-200 hover:border-b-orange-700 mt-1 px-1 py-0.5">
+                Discard
+            </button>
+        </div>
     </form>
-    <c> } </c>
-<c> } </c>
+    <c> }
+    } </c>
 
 <c> if (fragment) { </c>
 <div id="pg-store" hidden>
@@ -213,10 +215,13 @@
                             <c> } </c>
                             <button
                                 type="button"
-                                class="expand-btn p-1 text-xs hover:bg-indigo-900/30 text-indigo-600"
+                                class="expand-btn p-1 text-sm hover:bg-indigo-900/30 text-indigo-600"
                                 data-master-id="<c> STR(rows->items[ri].id); </c>"
                                 aria-expanded="false">
-                                󰈈
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg> 
                             </button>
                             <c> if (!config->read_only && !config->create_only) { </c>
                             <form method="POST"
@@ -256,7 +261,7 @@
                         <c> } else if (config->columns[ci].cell) { </c>
                         <div class="flex flex-col gap-1 min-w-35">
                             <c> for (size_t pi = 0; pi < config->columns[ci].cell->part_count; ++pi) { </c>
-                            <label class="text-xs text-gray-500 dark:text-gray-400">
+                            <label class="text-sm text-gray-500 dark:text-gray-400">
                                 <c> ESCAPED(md_cell_part_label(config->columns[ci].cell, pi)); </c>
                             </label>
                             <c> if (config->columns[ci].cell->part_choices
@@ -286,7 +291,7 @@
                         </div>
                     <c> } else { </c>
                     <div class="flex flex-col gap-1 min-w-35">
-                        <label class="text-xs text-gray-500 dark:text-gray-400">
+                        <label class="text-sm text-gray-500 dark:text-gray-400">
                             <c> ESCAPED(config->columns[ci].label); </c>
                         </label>
                         <c> if (config->columns[ci].type == COL_TYPE_FK_SELECT) { </c>

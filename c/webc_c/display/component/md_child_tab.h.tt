@@ -71,13 +71,7 @@
 
     <form id="mdf-a-<c> STR(config->children[ti].table); </c>-<c> STR(rows->items[ri].id); </c>"
           method="POST"
-          action="<c> STR(config->children[ti].crud_path); </c>
-                     /create?
-                  <c> STR(config->children[ti].fk_column); </c>
-                     =
-                  <c> STR(rows->items[ri].id); </c>
-                     &redirect=
-                  <c> STR(md_path); </c>"
+          action="<c> STR(config->children[ti].crud_path); </c>/create?<c> STR(config->children[ti].fk_column); </c>=<c> STR(rows->items[ri].id); </c>&amp;redirect=<c> STR(md_path); </c>"
           data-md-kind="child"
           data-md-scope="<c> STR(config->children[ti].table); </c>"
           data-md-op="create"

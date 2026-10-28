@@ -309,8 +309,13 @@ def main():
     # the database has.
     n_del = db_row(
         "SELECT COUNT(*) FROM provinces WHERE deleted_at IS NOT NULL")[0]
+    # The tab pins allow whitespace between the closing quote and the
+    # label: the <c></c> conversion (84b74d95) reflowed "Live"/"Trash"
+    # onto their own source lines, and HTML collapses that whitespace.
+    # (Whitespace inside an *attribute URL* stays a hard error - see the
+    # child add-form pin below.)
     t.chk("tab strip Live+Trash + filter row + Trash count = db",
-          ('bg-blue text-onbase">Live' in html
+          (bool(re.search(r'bg-blue text-onbase">\s*Live', html))
            and "Data query" not in html
            and 'data-md-qbox' in html
            and f"data-trash-total>{n_del}<" in html
@@ -318,7 +323,7 @@ def main():
     st, body, _ = c.get("/pos/provinces?live=1")
     live_html = body.decode()
     t.chk("?live=1 is the plain list (Live active, filter row stays)",
-          (st, 'bg-blue text-onbase">Live' in live_html,
+          (st, bool(re.search(r'bg-blue text-onbase">\s*Live', live_html)),
            'data-md-qbox' in live_html), (200, True, True))
     # Phase 20: per-column filter boxes -- each filled box is its own
     # ANDed ?q_<col> term; the legacy ?q + ?qcol pair fills the matching
@@ -351,7 +356,7 @@ def main():
     t.chk("trash rows tinted", "hover:bg-red-100" in html, True)
     t.chk("trash row has restore button", 'data-md-op="restore"' in row, True)
     t.chk("trash tab active on the trash view",
-          'bg-red text-onbase">Trash' in html, True)
+          bool(re.search(r'bg-red text-onbase">\s*Trash', html)), True)
     t.chk("trash banner + no add form",
           ("Deleted rows" in html, 'data-md-op="create"' not in html),
           (True, True))
@@ -623,7 +628,8 @@ def main():
     fhtml = body.decode()
     t.chk("filter row: dropdown value filters and stays selected",
           (fhtml.count('id="md-m-products-') == 1
-           and '<option value="Kid Renamed" selected>' in fhtml), True)
+           and bool(re.search(r'<option value="Kid Renamed"\s*selected\s*>',
+                              fhtml))), True)
 
     st, _, _ = c.post_urlencoded(
         f"/pos/products/{pid}/update?redirect=/pos/products",
@@ -944,13 +950,15 @@ def main():
     t.chk("search: FK label query (no scope) finds only DELIVERED orders",
           (html.count('id="md-m-orders-') == n_dl and n_dl >= 1), True)
     t.chk("search: status dropdown offers the DELIVERED label",
-          ('<option value="' + dl_label + '">' in html), True)
+          (bool(re.search(r'<option value="' + re.escape(dl_label)
+                          + r'"\s*>', html))), True)
     st, body, _ = c.get("/pos/orders?q_order_status_dict_id="
                         + urllib.parse.quote(dl_label))
     html = body.decode()
     t.chk("search: dropdown value filters and stays selected",
           (html.count('id="md-m-orders-') == n_dl
-           and '<option value="' + dl_label + '" selected>' in html), True)
+           and bool(re.search(r'<option value="' + re.escape(dl_label)
+                              + r'"\s*selected\s*>', html))), True)
     st, body, _ = c.get("/pos/orders?live=1")
     live_html = body.decode()
     t.chk("orders has no Live tab; ?live=1 is the plain list + filter row",
@@ -1399,6 +1407,15 @@ def main():
     html = body.decode()
     t.chk("grant row under role (permission label)",
           (f'data-row-id="{rpid}"' in html and "Sell renamed" in html), True)
+    # Phase 25: child add-form actions must be single-line URLs. The
+    # multiline action attribute (since 84b74d95) put indentation spaces
+    # between crud_path and /create; browsers keep those spaces
+    # (percent-encoding them), so the POST hit /pos/x%20.../create and
+    # 404'd ("Request failed (HTTP 404)"). Tests POST to hand-built
+    # URLs, so only an HTML-level pin catches this.
+    t.chk("child add-form actions carry no whitespace",
+          [a for a in re.findall(r'action="([^"]*)"', html)
+           if re.search(r"\s", a)], [])
     st, _, _ = c.post_urlencoded(
         f"/pos/role_permissions/create?role_id={rid}&redirect=/pos/roles",
         {"permission_id": permid, "created_at": ""})
