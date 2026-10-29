@@ -9,8 +9,9 @@
 void serve_pos_roles(Serve_Context *sc);
 void serve_pos_roles_create(Serve_Context *sc);
 void serve_pos_roles_update(Serve_Context *sc);
-void serve_pos_roles_delete(Serve_Context *sc);
+void serve_pos_roles_soft_delete(Serve_Context *sc);
 void serve_pos_roles_restore(Serve_Context *sc);
+void serve_pos_roles_delete(Serve_Context *sc);
 
 extern MD_Column md_roles_columns[];
 extern const size_t md_roles_columns_count;

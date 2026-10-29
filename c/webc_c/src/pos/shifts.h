@@ -9,8 +9,9 @@
 void serve_pos_shifts(Serve_Context *sc);
 void serve_pos_shifts_create(Serve_Context *sc);
 void serve_pos_shifts_update(Serve_Context *sc);
-void serve_pos_shifts_delete(Serve_Context *sc);
+void serve_pos_shifts_soft_delete(Serve_Context *sc);
 void serve_pos_shifts_restore(Serve_Context *sc);
+void serve_pos_shifts_delete(Serve_Context *sc);
 
 extern MD_Column md_shifts_columns[];
 extern const size_t md_shifts_columns_count;

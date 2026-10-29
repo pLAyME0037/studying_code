@@ -13,8 +13,82 @@ Status vocabulary:
 
 ---
 
+## 2026-10-29 — Soft-delete rename finished; 5 failures the build could not see — **done**
+
+`SERVE_SOFT_DELETE` now generates `serve_<plural>_soft_delete` (plus
+`_restore`) instead of the old `serve_<plural>_delete`. 21 routes were
+migrated; 8 were not, so `./build/bin/nob` failed at link with
+`undefined reference to serve_pos_*_delete`. Finishing that rename
+surfaced five test failures that the compiler had been blind to the whole
+time — every one of them a **SQL string or HTML text**, neither of which
+is type-checked.
+
+### The link error (route.c + 8 headers)
+
+Stale `/delete` routes pointed at a symbol nothing generates any more:
+
+| module | route.c | header |
+|---|---|---|
+| geo (provinces / districts / communes) | 3 lines | `geo.h` ×3 |
+| ledger, staff, org, i18n, config | 1 line each | one decl each |
+
+Pointed all 8 at `serve_x_soft_delete`, matching the products/orders/
+stocks/shifts shape. **Did not** re-add `SERVE_DELETE`: no route calls it
+and it would need `delete_<singular>()` SQL that several of these tables
+don't ship. `notes` needed nothing — `SERVE_CRUD` emits both symbols.
+
+### The 5 hidden failures
+
+1. **`soft_delete_user` SQLite** — `strftime('%Y-%m-%dT%H:%M:%fZ', now)`
+   with a **bare `now`**. SQLite reads that as a column name and answers
+   `no such column: now` → `/users/{id}/delete` 500. Every other module
+   already used the string literal `'now'`; this one file didn't.
+2. **`soft_delete_user` MySQL** — called **`UTF_TIMESTAMP()`**, which is
+   not a function anywhere in the tree (a typo for `UTC_TIMESTAMP()`,
+   the spelling every other module uses).
+3. **users hard→soft delete left 2 stale pins** — `http_test` and
+   `mysql_test` both asserted the row was *physically gone*
+   (`COUNT(*) … WHERE id=?` → 0). Users now stamps `deleted_at`, so the
+   pins were rewritten to `… AND deleted_at IS NULL` — "gone from the
+   live list", which is the soft-delete contract.
+4. **`placeholder=" SKU "`** on the filter row — stray spaces inside the
+   attribute value in `md_child_query_row.h.tt`, visible as padding in
+   the input box. Template fixed.
+5. **Avatar initials** — the reformat put the initial on its own line
+   (`>` ⏎ indent `ប` ⏎ `</span>`), breaking the `>N</span>` pin. The
+   flexbox still centers it, so this is harmless whitespace → pin made
+   tolerant.
+
+### The rule this keeps proving
+
+Whitespace is only a bug **inside an attribute URL** (Phase 25's child
+add-form 404: a multi-line `action=` put spaces between `crud_path` and
+`/create`, the browser percent-encoded them, and the POST 404'd).
+Between an attribute and its text content it is invisible to the browser
+— so pin the first hard, tolerate the second. Both today's template fixes
+were the harmless kind; both today's *test* fixes were pins that had been
+written against pre-reformat markup.
+
+Suite: **893 PASS / 0 FAIL** (http 120 / pos 385 / shop 118 / role 48 /
+crud_contract 175 / mysql 41 / https 6) — same count as the last green
+run, so the rename is behaviour-neutral.
+
+**Open:** `/users/{id}/delete` soft-deletes with **no undo** — the module
+gained `soft_delete_user` + `restore_user`, but only `/pos/users/…/restore`
+is routed; the bare `/users` page has no restore route. Also this whole
+batch is **uncommitted**.
+
+## 2026-10-28 — Font Size increase to 14 for miner case and 16 for main case & change eye to svg
+### done
+- Font Size is change for more visibility in master_child in a whole.
+- [ListExpandSwitcher.js](js/ListExpandSwitcher.js)
+    ```js
+    btn.innerHTML = open ? EYE_OPEN : EYE_CLOSE;
+    ```
+    more safter render for html icon
+
 ## 2026-10-27 — Refactor tt template to use <c> for opening and </c> for closing instead of ({})
-### wip
+### done
 More html like parttern to use.
 All document will be update including:
 - [README.md](README.md)

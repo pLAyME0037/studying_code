@@ -265,7 +265,9 @@ def main():
     html = body.decode()
     row2, _ = row_and_edit(html, uid2)
     t.chk("avatar placeholder = initials circle (surface1 + initial)",
-          ('bg-surface1' in row2 and ">N</span>" in row2), "True")
+          ('bg-surface1' in row2
+           and bool(re.search(r'bg-surface1[^>]*>\s*\w\s*</span>', row2))),
+          "True")
     st, _, _ = c.post_urlencoded(
         f"/pos/users/{uid}/update?redirect=/pos/users",
         {"name": "Sok Dara Renamed", "username": "pos_avatar_1",

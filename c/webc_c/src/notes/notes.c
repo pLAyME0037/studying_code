@@ -18,9 +18,23 @@
 
 // ---- /people child column shape (composed in people.c) -----------------
 MD_Column md_notes_columns[] = {
-    { .name = "title",      .label = "Title",   .type = COL_TYPE_TEXT,     .nullable = false },
-    { .name = "body",       .label = "Body",    .type = COL_TYPE_TEXTAREA, .nullable = true  },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,     .nullable = false, .computed = 1 },
+    {
+        .name     = "title",
+        .label    = "Title",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "body",
+        .label    = "Body",
+        .type     = COL_TYPE_TEXTAREA,
+        .nullable = true
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_notes_columns_count = ARRAY_LEN(md_notes_columns);
 
@@ -48,13 +62,6 @@ void render_notes_edit_page(Serve_Context *sc, Note note) {
 #include "build/h_to_html/notes_edit.h"
     PAGE_END(sc);
 }
-
-static const char *fields[] = { "title", "body" };
-// Optional: written only on create; the /people child form supplies it as
-// ?user_id=<uuid>, the plain /notes form and the JSON API leave it NULL.
-// Updates never touch user_id (update_note reads only title/body).
-static const char *opt_fields[] = { "user_id" };
-SERVE_CRUD(notes, note, Notes, Note, fields, opt_fields)
 
 static void serve_notes_json(Serve_Context *sc) {
     Notes notes = {0};
@@ -344,6 +351,43 @@ defer:
     return result;
 }
 
+bool soft_delete_note(db_t *db, String_View id) {
+    bool result = true;
+    sql_stmt stmt = {0};
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE Notes "
+                         "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
+                         "WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE notes SET deleted_at = UTC_TIMESTAMP() "
+                         "WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE notes SET deleted_at = now() WHERE id = $1;",
+    };
+
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
+
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
+static bool restore_note(db_t *db, String_View id) {
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "UPDATE notes SET deleted_at = NULL WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE notes SET deleted_at = NULL WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE notes SET deleted_at = NULL WHERE id = $1;",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
 bool delete_note(db_t *db, String_View id) {
     bool result = true;
     sql_stmt stmt = {0};
@@ -361,3 +405,10 @@ defer:
     sql_finalize(&stmt);
     return result;
 }
+
+static const char *fields[] = { "title", "body" };
+// Optional: written only on create; the /people child form supplies it as
+// ?user_id=<uuid>, the plain /notes form and the JSON API leave it NULL.
+// Updates never touch user_id (update_note reads only title/body).
+static const char *opt_fields[] = { "user_id" };
+SERVE_CRUD(notes, note, Notes, Note, fields, opt_fields)

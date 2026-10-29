@@ -8,8 +8,9 @@
 void serve_pos_permissions(Serve_Context *sc);
 void serve_pos_permissions_create(Serve_Context *sc);
 void serve_pos_permissions_update(Serve_Context *sc);
-void serve_pos_permissions_delete(Serve_Context *sc);
+void serve_pos_permissions_soft_delete(Serve_Context *sc);
 void serve_pos_permissions_restore(Serve_Context *sc);
+void serve_pos_permissions_delete(Serve_Context *sc);
 
 extern MD_Column md_permissions_columns[];
 extern const size_t md_permissions_columns_count;

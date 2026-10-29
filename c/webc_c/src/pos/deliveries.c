@@ -37,22 +37,19 @@ static bool create_delivery(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[6]))) return_defer(false);   // order
-    if (!sql_bind(&stmt, 2, pos_sv(fields[5]))) return_defer(false);   // driver
-    // delivery_status CHECKs pending/in_transit/delivered/cancelled: blank
-    // input falls back to the column default.
-    String_View status =
-        fields[3].count ? fields[3] : sv_from_cstr("pending");
-    if (!sql_bind(&stmt, 3, SQL_SV(status)))    return_defer(false);
-    if (!sql_bind(&stmt, 4, SQL_SV(fields[0]))) return_defer(false);   // name
-    if (!sql_bind(&stmt, 5, SQL_SV(fields[1]))) return_defer(false);   // phone
-    if (!sql_bind(&stmt, 6, SQL_SV(fields[2]))) return_defer(false);   // address
-    if (!sql_bind(&stmt, 7, pos_num(fields[4]))) return_defer(false);  // cost
-    if (!sql_bind(&stmt, 8, pos_sv(fields[8]))) return_defer(false);   // dispatched
-    if (!sql_bind(&stmt, 9, pos_sv(fields[9]))) return_defer(false);   // delivered
-    if (!sql_bind(&stmt, 10, pos_sv(fields[7]))) return_defer(false);  // metadata
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))    return_defer(false);
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[6])))  return_defer(false); // order
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[5])))  return_defer(false); // driver
+    String_View status = fields[3].count ? fields[3] : sv_from_cstr("pending");
+    if (!sql_bind(&stmt, 3, SQL_SV(status)))     return_defer(false);
+    if (!sql_bind(&stmt, 4, SQL_SV(fields[0])))  return_defer(false); // name
+    if (!sql_bind(&stmt, 5, SQL_SV(fields[1])))  return_defer(false); // phone
+    if (!sql_bind(&stmt, 6, SQL_SV(fields[2])))  return_defer(false); // address
+    if (!sql_bind(&stmt, 7, sql_num(fields[4]))) return_defer(false); // cost
+    if (!sql_bind(&stmt, 8, sql_fgsv(fields[8])))  return_defer(false); // dispatched
+    if (!sql_bind(&stmt, 9, sql_fgsv(fields[9])))  return_defer(false); // delivered
+    if (!sql_bind(&stmt, 10, sql_fgsv(fields[7]))) return_defer(false); // metadata
+    if (!sql_final_step(&stmt))                  return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -93,7 +90,7 @@ static bool update_delivery(db_t *db, String_View *fields, size_t count,
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[5]))) return_defer(false);   // driver
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[5]))) return_defer(false);   // driver
     if (!sql_bind(&stmt, 2, SQL_SV(fields[3]))) return_defer(false);   // status
     if (!sql_bind(&stmt, 3, SQL_SV(fields[0]))) return_defer(false);   // name
     if (!sql_bind(&stmt, 4, SQL_SV(fields[1]))) return_defer(false);   // phone

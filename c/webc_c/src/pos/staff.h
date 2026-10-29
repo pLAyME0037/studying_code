@@ -10,7 +10,7 @@
 void serve_pos_staff(Serve_Context *sc);
 void serve_pos_staff_create(Serve_Context *sc);
 void serve_pos_staff_update(Serve_Context *sc);
-void serve_pos_staff_delete(Serve_Context *sc);
+void serve_pos_staff_soft_delete(Serve_Context *sc);
 void serve_pos_staff_restore(Serve_Context *sc);
 
 extern MD_Column md_staff_columns[];

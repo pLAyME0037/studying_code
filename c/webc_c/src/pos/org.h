@@ -9,7 +9,7 @@
 void serve_pos_org(Serve_Context *sc);
 void serve_pos_org_create(Serve_Context *sc);
 void serve_pos_org_update(Serve_Context *sc);
-void serve_pos_org_delete(Serve_Context *sc);
+void serve_pos_org_soft_delete(Serve_Context *sc);
 void serve_pos_org_restore(Serve_Context *sc);
 
 extern MD_Column md_org_columns[];

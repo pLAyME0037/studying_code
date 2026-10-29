@@ -9,7 +9,8 @@
 void serve_pos_stocks(Serve_Context *sc);
 void serve_pos_stocks_create(Serve_Context *sc);
 void serve_pos_stocks_update(Serve_Context *sc);
-void serve_pos_stocks_delete(Serve_Context *sc);
+void serve_pos_stocks_soft_delete(Serve_Context *sc);
 void serve_pos_stocks_restore(Serve_Context *sc);
+void serve_pos_stocks_delete(Serve_Context *sc);
 
 #endif // !POS_STOCKS_H_

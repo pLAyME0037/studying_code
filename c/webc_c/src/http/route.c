@@ -209,13 +209,14 @@ void route_initialize(void) {
     route_new(&routes, "/notes/create", NULL, "POST", ROUTE_EXACT,   serve_notes_create);
     route_new(&routes, "/notes", "/edit",   "GET",  ROUTE_ID_ACTION, serve_notes_edit);
     route_new(&routes, "/notes", "/update", "POST", ROUTE_ID_ACTION, serve_notes_update);
+    route_new(&routes, "/notes", "/softdel", "POST", ROUTE_ID_ACTION, serve_notes_soft_delete);
     route_new(&routes, "/notes", "/delete", "POST", ROUTE_ID_ACTION, serve_notes_delete);
 
     route_new(&routes, "/users", NULL,      "GET",  ROUTE_EXACT,     serve_users_read);
     route_new(&routes, "/users/create", NULL, "POST", ROUTE_EXACT,   serve_users_create);
     route_new(&routes, "/users", "/edit",   "GET",  ROUTE_ID_ACTION, serve_users_edit);
     route_new(&routes, "/users", "/update", "POST", ROUTE_ID_ACTION, serve_users_update);
-    route_new(&routes, "/users", "/delete", "POST", ROUTE_ID_ACTION, serve_users_delete);
+    route_new(&routes, "/users", "/delete", "POST", ROUTE_ID_ACTION, serve_users_soft_delete);
 
     // POS showcase pages (composite multi-field columns), same route shape
     // Phase 16: the geo redo - four admin-area masters replace the old
@@ -223,19 +224,19 @@ void route_initialize(void) {
     route_new(&routes, "/pos/provinces", NULL,       "GET",  ROUTE_EXACT,     serve_pos_provinces);
     route_new(&routes, "/pos/provinces/create", NULL, "POST", ROUTE_EXACT,    serve_pos_provinces_create);
     route_new(&routes, "/pos/provinces", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_provinces_update);
-    route_new(&routes, "/pos/provinces", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_provinces_delete);
+    route_new(&routes, "/pos/provinces", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_provinces_soft_delete);
     route_new(&routes, "/pos/provinces", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_provinces_restore);
 
     route_new(&routes, "/pos/districts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_districts);
     route_new(&routes, "/pos/districts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_districts_create);
     route_new(&routes, "/pos/districts", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_districts_update);
-    route_new(&routes, "/pos/districts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_districts_delete);
+    route_new(&routes, "/pos/districts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_districts_soft_delete);
     route_new(&routes, "/pos/districts", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_districts_restore);
 
     route_new(&routes, "/pos/communes", NULL,       "GET",  ROUTE_EXACT,     serve_pos_communes);
     route_new(&routes, "/pos/communes/create", NULL, "POST", ROUTE_EXACT,    serve_pos_communes_create);
     route_new(&routes, "/pos/communes", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_communes_update);
-    route_new(&routes, "/pos/communes", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_communes_delete);
+    route_new(&routes, "/pos/communes", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_communes_soft_delete);
     route_new(&routes, "/pos/communes", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_communes_restore);
 
     route_new(&routes, "/pos/villages", NULL, "GET", ROUTE_EXACT, serve_pos_villages);
@@ -243,7 +244,7 @@ void route_initialize(void) {
     route_new(&routes, "/pos/users", NULL,       "GET",  ROUTE_EXACT,     serve_pos_users);
     route_new(&routes, "/pos/users/create", NULL, "POST", ROUTE_EXACT,    serve_pos_users_create);
     route_new(&routes, "/pos/users", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_users_update);
-    route_new(&routes, "/pos/users", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_users_delete);
+    route_new(&routes, "/pos/users", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_users_soft_delete);
     route_new(&routes, "/pos/users", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_users_restore);
 
     // create-only: the add form + /create (no update/delete/restore)
@@ -254,37 +255,37 @@ void route_initialize(void) {
     route_new(&routes, "/pos/categories", NULL,       "GET",  ROUTE_EXACT,     serve_pos_categories);
     route_new(&routes, "/pos/categories/create", NULL, "POST", ROUTE_EXACT,    serve_pos_categories_create);
     route_new(&routes, "/pos/categories", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_categories_update);
-    route_new(&routes, "/pos/categories", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_categories_delete);
+    route_new(&routes, "/pos/categories", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_categories_soft_delete);
     route_new(&routes, "/pos/categories", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_categories_restore);
 
     route_new(&routes, "/pos/products", NULL,       "GET",  ROUTE_EXACT,     serve_pos_products);
     route_new(&routes, "/pos/products/create", NULL, "POST", ROUTE_EXACT,    serve_pos_products_create);
     route_new(&routes, "/pos/products", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_products_update);
-    route_new(&routes, "/pos/products", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_products_delete);
+    route_new(&routes, "/pos/products", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_products_soft_delete);
     route_new(&routes, "/pos/products", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_products_restore);
 
     // child entities: write routes only (child forms carry fk + redirect)
     route_new(&routes, "/pos/variants/create", NULL, "POST", ROUTE_EXACT,    serve_pos_variants_create);
     route_new(&routes, "/pos/variants", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_variants_update);
-    route_new(&routes, "/pos/variants", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_variants_delete);
+    route_new(&routes, "/pos/variants", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_variants_soft_delete);
     route_new(&routes, "/pos/variants", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_variants_restore);
 
     route_new(&routes, "/pos/stocks", NULL,       "GET",  ROUTE_EXACT,     serve_pos_stocks);
     route_new(&routes, "/pos/stocks/create", NULL, "POST", ROUTE_EXACT,    serve_pos_stocks_create);
     route_new(&routes, "/pos/stocks", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_update);
-    route_new(&routes, "/pos/stocks", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_delete);
+    route_new(&routes, "/pos/stocks", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_stocks_soft_delete);
     route_new(&routes, "/pos/stocks", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_stocks_restore);
 
     route_new(&routes, "/pos/ledger/create", NULL, "POST", ROUTE_EXACT,    serve_pos_ledger_create);
     route_new(&routes, "/pos/ledger", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_update);
-    route_new(&routes, "/pos/ledger", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_delete);
+    route_new(&routes, "/pos/ledger", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_ledger_soft_delete);
     route_new(&routes, "/pos/ledger", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_ledger_restore);
 
     // Phase 5c SALES
     route_new(&routes, "/pos/orders", NULL,       "GET",  ROUTE_EXACT,     serve_pos_orders);
     route_new(&routes, "/pos/orders/create", NULL, "POST", ROUTE_EXACT,    serve_pos_orders_create);
     route_new(&routes, "/pos/orders", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_orders_update);
-    route_new(&routes, "/pos/orders", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_orders_delete);
+    route_new(&routes, "/pos/orders", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_orders_soft_delete);
     route_new(&routes, "/pos/orders", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_orders_restore);
 
     // Dedicated in-store sale: session staff/org, computed money, PAID.
@@ -294,7 +295,7 @@ void route_initialize(void) {
     route_new(&routes, "/pos/shifts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_shifts);
     route_new(&routes, "/pos/shifts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_shifts_create);
     route_new(&routes, "/pos/shifts", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_shifts_update);
-    route_new(&routes, "/pos/shifts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_shifts_delete);
+    route_new(&routes, "/pos/shifts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_shifts_soft_delete);
     route_new(&routes, "/pos/shifts", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_shifts_restore);
 
     // read_only view: GET only
@@ -303,94 +304,94 @@ void route_initialize(void) {
     // order children: write routes only
     route_new(&routes, "/pos/order_items/create", NULL, "POST", ROUTE_EXACT,    serve_pos_order_items_create);
     route_new(&routes, "/pos/order_items", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_order_items_update);
-    route_new(&routes, "/pos/order_items", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_order_items_delete);
+    route_new(&routes, "/pos/order_items", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_order_items_soft_delete);
     route_new(&routes, "/pos/order_items", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_order_items_restore);
 
     route_new(&routes, "/pos/payments/create", NULL, "POST", ROUTE_EXACT,    serve_pos_payments_create);
     route_new(&routes, "/pos/payments", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_payments_update);
-    route_new(&routes, "/pos/payments", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_payments_delete);
+    route_new(&routes, "/pos/payments", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_payments_soft_delete);
     route_new(&routes, "/pos/payments", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_payments_restore);
 
     route_new(&routes, "/pos/deliveries/create", NULL, "POST", ROUTE_EXACT,    serve_pos_deliveries_create);
     route_new(&routes, "/pos/deliveries", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_update);
-    route_new(&routes, "/pos/deliveries", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_delete);
+    route_new(&routes, "/pos/deliveries", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_deliveries_soft_delete);
     route_new(&routes, "/pos/deliveries", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_deliveries_restore);
 
     // Phase 5d PARTY
     route_new(&routes, "/pos/customers", NULL,       "GET",  ROUTE_EXACT,     serve_pos_customers);
     route_new(&routes, "/pos/customers/create", NULL, "POST", ROUTE_EXACT,    serve_pos_customers_create);
     route_new(&routes, "/pos/customers", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_customers_update);
-    route_new(&routes, "/pos/customers", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_customers_delete);
+    route_new(&routes, "/pos/customers", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_customers_soft_delete);
     route_new(&routes, "/pos/customers", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_customers_restore);
 
     route_new(&routes, "/pos/staff", NULL,       "GET",  ROUTE_EXACT,     serve_pos_staff);
     route_new(&routes, "/pos/staff/create", NULL, "POST", ROUTE_EXACT,    serve_pos_staff_create);
     route_new(&routes, "/pos/staff", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_staff_update);
-    route_new(&routes, "/pos/staff", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_staff_delete);
+    route_new(&routes, "/pos/staff", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_staff_soft_delete);
     route_new(&routes, "/pos/staff", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_staff_restore);
 
     route_new(&routes, "/pos/org", NULL,       "GET",  ROUTE_EXACT,     serve_pos_org);
     route_new(&routes, "/pos/org/create", NULL, "POST", ROUTE_EXACT,    serve_pos_org_create);
     route_new(&routes, "/pos/org", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_org_update);
-    route_new(&routes, "/pos/org", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_org_delete);
+    route_new(&routes, "/pos/org", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_org_soft_delete);
     route_new(&routes, "/pos/org", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_org_restore);
 
     route_new(&routes, "/pos/customer_interactions/create", NULL, "POST", ROUTE_EXACT,    serve_pos_customer_interactions_create);
     route_new(&routes, "/pos/customer_interactions", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_update);
-    route_new(&routes, "/pos/customer_interactions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_delete);
+    route_new(&routes, "/pos/customer_interactions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_soft_delete);
     route_new(&routes, "/pos/customer_interactions", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_customer_interactions_restore);
 
     route_new(&routes, "/pos/user_roles/create", NULL, "POST", ROUTE_EXACT,    serve_pos_user_roles_create);
     route_new(&routes, "/pos/user_roles", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_update);
-    route_new(&routes, "/pos/user_roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_delete);
+    route_new(&routes, "/pos/user_roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_user_roles_soft_delete);
     route_new(&routes, "/pos/user_roles", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_user_roles_restore);
 
     // Phase 5e ACCESS
     route_new(&routes, "/pos/roles", NULL,       "GET",  ROUTE_EXACT,     serve_pos_roles);
     route_new(&routes, "/pos/roles/create", NULL, "POST", ROUTE_EXACT,    serve_pos_roles_create);
     route_new(&routes, "/pos/roles", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_roles_update);
-    route_new(&routes, "/pos/roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_roles_delete);
+    route_new(&routes, "/pos/roles", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_roles_soft_delete);
     route_new(&routes, "/pos/roles", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_roles_restore);
 
     route_new(&routes, "/pos/permissions", NULL,       "GET",  ROUTE_EXACT,     serve_pos_permissions);
     route_new(&routes, "/pos/permissions/create", NULL, "POST", ROUTE_EXACT,    serve_pos_permissions_create);
     route_new(&routes, "/pos/permissions", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_permissions_update);
-    route_new(&routes, "/pos/permissions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_permissions_delete);
+    route_new(&routes, "/pos/permissions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_permissions_soft_delete);
     route_new(&routes, "/pos/permissions", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_permissions_restore);
 
     route_new(&routes, "/pos/role_permissions/create", NULL, "POST", ROUTE_EXACT,    serve_pos_role_permissions_create);
     route_new(&routes, "/pos/role_permissions", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_update);
-    route_new(&routes, "/pos/role_permissions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_delete);
+    route_new(&routes, "/pos/role_permissions", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_soft_delete);
     route_new(&routes, "/pos/role_permissions", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_role_permissions_restore);
 
     route_new(&routes, "/pos/role_members/create", NULL, "POST", ROUTE_EXACT,    serve_pos_role_members_create);
     route_new(&routes, "/pos/role_members", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_update);
-    route_new(&routes, "/pos/role_members", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_delete);
+    route_new(&routes, "/pos/role_members", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_role_members_soft_delete);
     route_new(&routes, "/pos/role_members", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_role_members_restore);
 
     // Phase 5f CONFIG
     route_new(&routes, "/pos/i18n", NULL,       "GET",  ROUTE_EXACT,     serve_pos_i18n);
     route_new(&routes, "/pos/i18n/create", NULL, "POST", ROUTE_EXACT,    serve_pos_i18n_create);
     route_new(&routes, "/pos/i18n", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_i18n_update);
-    route_new(&routes, "/pos/i18n", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_i18n_delete);
+    route_new(&routes, "/pos/i18n", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_i18n_soft_delete);
     route_new(&routes, "/pos/i18n", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_i18n_restore);
 
     route_new(&routes, "/pos/config", NULL,       "GET",  ROUTE_EXACT,     serve_pos_config);
     route_new(&routes, "/pos/config/create", NULL, "POST", ROUTE_EXACT,    serve_pos_config_create);
     route_new(&routes, "/pos/config", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_config_update);
-    route_new(&routes, "/pos/config", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_config_delete);
+    route_new(&routes, "/pos/config", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_config_soft_delete);
     route_new(&routes, "/pos/config", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_config_restore);
 
     route_new(&routes, "/pos/translations/create", NULL, "POST", ROUTE_EXACT,    serve_pos_translations_create);
     route_new(&routes, "/pos/translations", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_translations_update);
-    route_new(&routes, "/pos/translations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_translations_delete);
+    route_new(&routes, "/pos/translations", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_translations_soft_delete);
     route_new(&routes, "/pos/translations", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_translations_restore);
 
     // Phase 5g MONITOR
     route_new(&routes, "/pos/alerts", NULL,       "GET",  ROUTE_EXACT,     serve_pos_alerts);
     route_new(&routes, "/pos/alerts/create", NULL, "POST", ROUTE_EXACT,    serve_pos_alerts_create);
     route_new(&routes, "/pos/alerts", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_alerts_update);
-    route_new(&routes, "/pos/alerts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_alerts_delete);
+    route_new(&routes, "/pos/alerts", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_alerts_soft_delete);
     route_new(&routes, "/pos/alerts", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_alerts_restore);
 
     // read_only view: GET only

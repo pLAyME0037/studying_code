@@ -5,7 +5,7 @@
 
 #include "src/core/webc_template.h"
 #include "src/db/db.h"
-#include "src/pos/pos_util.h"   // pos_sv/pos_num binders (fk opts)
+#include "src/pos/pos_util.h"
 #include "src/layout/header.h"
 #include "src/layout/footer.h"
 #include "src/http/utils.h"
@@ -328,7 +328,7 @@ static bool create_pos_dict(db_t *db, String_View *fields, size_t count) {
     if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))  return_defer(false);  // category
     if (!sql_bind(&stmt, 2, SQL_SV(fields[1])))  return_defer(false);  // code
     if (!sql_bind(&stmt, 3, SQL_SV(fields[2])))  return_defer(false);  // label
-    if (!sql_bind(&stmt, 4, pos_num(fields[3]))) return_defer(false);  // sort_order
+    if (!sql_bind(&stmt, 4, sql_num(fields[3]))) return_defer(false);  // sort_order
     if (!sql_final_step(&stmt))                  return_defer(false);
 defer:
     sql_finalize(&stmt);

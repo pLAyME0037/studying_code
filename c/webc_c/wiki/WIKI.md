@@ -160,7 +160,7 @@ vanilla JS only.
   module registers only the GET route -- showcase /pos/dictionaries.
   Suite: 204 PASS (pos_test now 63).
 - Phase 5a DONE: CATALOG modules in src/pos/ (categories.c, products.c,
-  variants.c, stocks.c + pos_util.h pos_sv/pos_num bind helpers).
+  variants.c, stocks.c + pos_util.h sql_fgsv/sql_num bind helpers).
   /pos/products = 5 cols (name, codes cell {sku,barcode}, prices cell
   {base,cost,tax}, category FK, type FK) + children product_variants +
   inventory_stocks; /pos/categories = self-FK parent select + products

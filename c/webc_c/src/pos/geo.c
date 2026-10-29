@@ -19,14 +19,28 @@
 // ---- /pos/provinces -----------------------------------------------------
 
 MD_Column md_provinces_columns[] = {
-    { .name = "prov_id",  .label = "Code",         .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_kh",  .label = "Khmer Name",   .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_en",  .label = "English Name", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "prov_id",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_kh",
+        .label    = "Khmer Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_en",
+        .label    = "English Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_provinces_columns_count = ARRAY_LEN(md_provinces_columns);
 
@@ -142,18 +156,40 @@ SERVE_SOFT_DELETE(pos_provinces, province)
 // ---- /pos/districts -----------------------------------------------------
 
 MD_Column md_districts_columns[] = {
-    { .name = "dist_id",  .label = "Code",         .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_kh",  .label = "Khmer Name",   .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_en",  .label = "English Name", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "type",     .label = "Type",         .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "province_id", .label = "Province", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "provinces", .fk_label = "name_kh" },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "dist_id",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_kh",
+        .label    = "Khmer Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_en",
+        .label    = "English Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "type",
+        .label    = "Type",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "province_id",
+        .label    = "Province",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = false,
+        .fk_table = "provinces",
+        .fk_label = "name_kh"
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_districts_columns_count = ARRAY_LEN(md_districts_columns);
 
@@ -269,8 +305,9 @@ void serve_pos_districts(Serve_Context *sc) {
     serve_master_child(sc, &config);
 }
 
-static const char *dist_fields[]     = { "dist_id", "name_kh", "name_en",
-                                         "type" };
+static const char *dist_fields[] = {
+    "dist_id", "name_kh", "name_en", "type"
+};
 static const char *dist_opt_fields[] = { "province_id" };
 SERVE_CREATE(pos_districts, district, dist_fields, dist_opt_fields)
 SERVE_UPDATE(pos_districts, district, dist_fields, dist_opt_fields)
@@ -279,16 +316,35 @@ SERVE_SOFT_DELETE(pos_districts, district)
 // ---- /pos/communes ------------------------------------------------------
 
 MD_Column md_communes_columns[] = {
-    { .name = "comm_id",  .label = "Code",         .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_kh",  .label = "Khmer Name",   .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_en",  .label = "English Name", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "district_id", .label = "District", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "districts", .fk_label = "name_kh" },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "comm_id",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_kh",
+        .label    = "Khmer Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_en",
+        .label    = "English Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "district_id",
+        .label    = "District",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = false,
+        .fk_table = "districts",
+        .fk_label = "name_kh"
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_communes_columns_count = ARRAY_LEN(md_communes_columns);
 
@@ -409,30 +465,52 @@ SERVE_SOFT_DELETE(pos_communes, commune)
 // registers the GET route alone (same contract as /pos/dictionaries).
 
 MD_Column md_villages_columns[] = {
-    { .name = "vill_id",  .label = "Code",         .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_kh",  .label = "Khmer Name",   .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name_en",  .label = "English Name", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "is_not_active", .label = "Inactive", .type = COL_TYPE_TEXT,
-      .nullable = true },
-    { .name = "commune_id", .label = "Commune", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "communes", .fk_label = "name_kh" },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "vill_id",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_kh",
+        .label    = "Khmer Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name_en",
+        .label    = "English Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "is_not_active",
+        .label    = "Inactive",
+        .type     = COL_TYPE_TEXT,
+        .nullable = true
+    }, {
+        .name     = "commune_id",
+        .label    = "Commune",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = false,
+        .fk_table = "communes",
+        .fk_label = "name_kh"
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_villages_columns_count = ARRAY_LEN(md_villages_columns);
 
 void serve_pos_villages(Serve_Context *sc) {
     MD_MasterConfig config = {
-        .table          = "villages",
-        .title          = "Villages",
-        .id_column      = "id",
-        .crud_path      = "/pos/villages",
-        .columns        = md_villages_columns,
-        .column_count   = md_villages_columns_count,
-        .read_only      = 1,
+        .table        = "villages",
+        .title        = "Villages",
+        .id_column    = "id",
+        .crud_path    = "/pos/villages",
+        .columns      = md_villages_columns,
+        .column_count = md_villages_columns_count,
+        .read_only    = 1,
     };
     serve_master_child(sc, &config);
 }

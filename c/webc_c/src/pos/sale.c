@@ -250,7 +250,7 @@ void serve_pos_sale_post(Serve_Context *sc) {
         double base = 0, cost = 0, delta = 0;
         bool got = false;
         if (sql_prepare(db, price_q[db->lang], &st)
-            && sql_bind(&st, 1, pos_sv(sv_from_cstr(posted[i].vid)))
+            && sql_bind(&st, 1, sql_fgsv(sv_from_cstr(posted[i].vid)))
             && sql_bind(&st, 2, SQL_SV(sv_from_cstr(posted[i].pid)))
             && sql_step(&st) == SQL_ROW) {
             const char *b = sql_col_text(&st, 0);
@@ -373,7 +373,7 @@ void serve_pos_sale_post(Serve_Context *sc) {
             if (sql_prepare(db, iq[db->lang], &st)
                 && sql_bind(&st, 1, SQL_SV(sv_from_cstr(order_id)))
                 && sql_bind(&st, 2, SQL_SV(sv_from_cstr(res[i].pid)))
-                && sql_bind(&st, 3, pos_sv(sv_from_cstr(res[i].vid)))
+                && sql_bind(&st, 3, sql_fgsv(sv_from_cstr(res[i].vid)))
                 && sql_bind(&st, 4, SQL_SV(sv_from_cstr(unit)))
                 && sql_bind(&st, 5, SQL_SV(sv_from_cstr(cost)))
                 && sql_bind(&st, 6, SQL_SV(sv_from_cstr(qty)))

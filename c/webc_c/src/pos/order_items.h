@@ -7,7 +7,8 @@
  * forms' query string). Write routes only -- no master page. */
 void serve_pos_order_items_create(Serve_Context *sc);
 void serve_pos_order_items_update(Serve_Context *sc);
-void serve_pos_order_items_delete(Serve_Context *sc);
+void serve_pos_order_items_soft_delete(Serve_Context *sc);
 void serve_pos_order_items_restore(Serve_Context *sc);
+void serve_pos_order_items_delete(Serve_Context *sc);
 
 #endif // !POS_ORDER_ITEMS_H_

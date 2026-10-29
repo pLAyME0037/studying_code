@@ -73,18 +73,17 @@ static bool create_cash_shift(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);  // org
-    if (!sql_bind(&stmt, 2, pos_sv(fields[2]))) return_defer(false);  // staff (opt)
-    // status CHECKs OPEN/CLOSED/AUDITED: blank input -> column default.
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))   return_defer(false); // org
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[2]))) return_defer(false); // staff (opt)
     String_View status = fields[1].count ? fields[1] : sv_from_cstr("OPEN");
-    if (!sql_bind(&stmt, 3, SQL_SV(status)))    return_defer(false);
-    if (!sql_bind(&stmt, 4, pos_sv(fields[3])))  return_defer(false);  // closed_at
-    if (!sql_bind(&stmt, 5, pos_num(fields[4]))) return_defer(false);  // opening
-    if (!sql_bind(&stmt, 6, pos_sv(fields[5])))  return_defer(false);  // closing
-    if (!sql_bind(&stmt, 7, pos_sv(fields[6])))  return_defer(false);  // expected
-    if (!sql_bind(&stmt, 8, pos_sv(fields[7])))  return_defer(false);  // notes
-    if (!sql_final_step(&stmt))                  return_defer(false);
+    if (!sql_bind(&stmt, 3, SQL_SV(status)))      return_defer(false); // status
+    if (!sql_bind(&stmt, 4, sql_fgsv(fields[3]))) return_defer(false); // closed_at
+    if (!sql_bind(&stmt, 5, sql_num(fields[4])))  return_defer(false); // opening
+    if (!sql_bind(&stmt, 6, sql_fgsv(fields[5]))) return_defer(false); // closing
+    if (!sql_bind(&stmt, 7, sql_fgsv(fields[6]))) return_defer(false); // expected
+    if (!sql_bind(&stmt, 8, sql_fgsv(fields[7]))) return_defer(false); // notes
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;

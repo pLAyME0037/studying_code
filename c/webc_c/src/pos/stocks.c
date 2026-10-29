@@ -69,11 +69,11 @@ static bool create_pos_stock(db_t *db, String_View *fields, size_t count) {
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
     if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))  return_defer(false);   // org
-    if (!sql_bind(&stmt, 2, pos_sv(fields[1])))  return_defer(false);   // variant
-    if (!sql_bind(&stmt, 3, pos_num(fields[2]))) return_defer(false);   // qty
-    if (!sql_bind(&stmt, 4, pos_num(fields[3]))) return_defer(false);   // min
-    if (!sql_bind(&stmt, 5, pos_num(fields[4]))) return_defer(false);   // max
-    if (!sql_bind(&stmt, 6, pos_sv(fields[5])))  return_defer(false);   // product
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[1])))  return_defer(false);   // variant
+    if (!sql_bind(&stmt, 3, sql_num(fields[2]))) return_defer(false);   // qty
+    if (!sql_bind(&stmt, 4, sql_num(fields[3]))) return_defer(false);   // min
+    if (!sql_bind(&stmt, 5, sql_num(fields[4]))) return_defer(false);   // max
+    if (!sql_bind(&stmt, 6, sql_fgsv(fields[5])))  return_defer(false);   // product
     if (!sql_final_step(&stmt))                  return_defer(false);
 defer:
     sql_finalize(&stmt);

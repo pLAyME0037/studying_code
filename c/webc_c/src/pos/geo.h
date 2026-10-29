@@ -10,19 +10,19 @@
 void serve_pos_provinces(Serve_Context *sc);
 void serve_pos_provinces_create(Serve_Context *sc);
 void serve_pos_provinces_update(Serve_Context *sc);
-void serve_pos_provinces_delete(Serve_Context *sc);
+void serve_pos_provinces_soft_delete(Serve_Context *sc);
 void serve_pos_provinces_restore(Serve_Context *sc);
 
 void serve_pos_districts(Serve_Context *sc);
 void serve_pos_districts_create(Serve_Context *sc);
 void serve_pos_districts_update(Serve_Context *sc);
-void serve_pos_districts_delete(Serve_Context *sc);
+void serve_pos_districts_soft_delete(Serve_Context *sc);
 void serve_pos_districts_restore(Serve_Context *sc);
 
 void serve_pos_communes(Serve_Context *sc);
 void serve_pos_communes_create(Serve_Context *sc);
 void serve_pos_communes_update(Serve_Context *sc);
-void serve_pos_communes_delete(Serve_Context *sc);
+void serve_pos_communes_soft_delete(Serve_Context *sc);
 void serve_pos_communes_restore(Serve_Context *sc);
 
 void serve_pos_villages(Serve_Context *sc);   /* read_only: GET route only */

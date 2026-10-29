@@ -4,7 +4,7 @@
 #include "src/core/webc_template.h"
 #include "src/db/db.h"
 #include "src/pos/pos_util.h"
-#include "src/pos/products.h"   // child tab columns (products under a category)
+#include "src/pos/products.h"
 #include "src/http/utils.h"
 
 // =========================================================================
@@ -12,14 +12,30 @@
 // =========================================================================
 
 MD_Column md_categories_columns[] = {
-    { .name = "cat_code",   .label = "Code",   .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "name",       .label = "Name",   .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "parent_id",  .label = "Parent", .type = COL_TYPE_FK_SELECT,
-      .nullable = true, .fk_table = "categories", .fk_label = "name" },
-    { .name = "created_at", .label = "Created", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "cat_code",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "name",
+        .label    = "Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "parent_id",
+        .label    = "Parent",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = true,
+        .fk_table = "categories",
+        .fk_label = "name"
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_categories_columns_count = ARRAY_LEN(md_categories_columns);
 
@@ -36,11 +52,11 @@ static bool create_category(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);
-    if (!sql_bind(&stmt, 2, SQL_SV(fields[1]))) return_defer(false);
-    if (!sql_bind(&stmt, 3, pos_sv(fields[2]))) return_defer(false);
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))   return_defer(false);
+    if (!sql_bind(&stmt, 2, SQL_SV(fields[1])))   return_defer(false);
+    if (!sql_bind(&stmt, 3, sql_fgsv(fields[2]))) return_defer(false);
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -82,14 +98,13 @@ defer:
     return result;
 }
 
-// Soft delete: the row stays, deleted_at is stamped and the live list
-// filters it out; /restore clears the column.
 static bool soft_delete_category(db_t *db, String_View id) {
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "UPDATE categories "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE categories SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE categories SET deleted_at = UTC_TIMESTAMP() "
+                         "WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE categories SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};
@@ -107,6 +122,22 @@ static bool restore_category(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE categories SET deleted_at = NULL WHERE id = ?;",
         [SQL_MYSQL]    = "UPDATE categories SET deleted_at = NULL WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE categories SET deleted_at = NULL WHERE id = $1;",
+    };
+    sql_stmt stmt = {0};
+    bool result = true;
+    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
+defer:
+    sql_finalize(&stmt);
+    return result;
+}
+
+static bool delete_category(db_t *db, String_View id) {
+    static const char *const q[SQL_LANG_COUNT] = {
+        [SQL_SQLITE]   = "DELETE categories WHERE id = ?;",
+        [SQL_MYSQL]    = "DELETE categories WHERE id = ?;",
+        [SQL_POSTGRES] = "DELETE categories WHERE id = $1;",
     };
     sql_stmt stmt = {0};
     bool result = true;
@@ -154,3 +185,4 @@ static const char *cat_opt_fields[] = { "parent_id" };
 SERVE_CREATE(pos_categories, category, cat_fields, cat_opt_fields)
 SERVE_UPDATE(pos_categories, category, cat_fields, cat_opt_fields)
 SERVE_SOFT_DELETE(pos_categories, category)
+SERVE_DELETE(pos_categories, category)

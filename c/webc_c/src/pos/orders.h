@@ -8,8 +8,9 @@
 void serve_pos_orders(Serve_Context *sc);
 void serve_pos_orders_create(Serve_Context *sc);
 void serve_pos_orders_update(Serve_Context *sc);
-void serve_pos_orders_delete(Serve_Context *sc);
+void serve_pos_orders_soft_delete(Serve_Context *sc);
 void serve_pos_orders_restore(Serve_Context *sc);
+void serve_pos_orders_delete(Serve_Context *sc);
 
 extern MD_Column md_orders_columns[];
 extern const size_t md_orders_columns_count;

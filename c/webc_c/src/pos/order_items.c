@@ -30,16 +30,16 @@ static bool create_order_item(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[8])))   return_defer(false);  // order
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[8]))) return_defer(false);  // order
     if (!sql_bind(&stmt, 2, SQL_SV(fields[0])))   return_defer(false);  // product
-    if (!sql_bind(&stmt, 3, pos_sv(fields[1])))   return_defer(false);  // variant
-    if (!sql_bind(&stmt, 4, pos_num(fields[2])))  return_defer(false);  // unit price
-    if (!sql_bind(&stmt, 5, pos_num(fields[5])))  return_defer(false);  // unit cost (opt)
-    if (!sql_bind(&stmt, 6, pos_num(fields[3])))  return_defer(false);  // quantity
-    if (!sql_bind(&stmt, 7, pos_num(fields[6])))  return_defer(false);  // discount (opt)
-    if (!sql_bind(&stmt, 8, pos_num(fields[7])))  return_defer(false);  // tax (opt)
-    if (!sql_bind(&stmt, 9, pos_num(fields[4])))  return_defer(false);  // total
+    if (!sql_bind(&stmt, 3, sql_fgsv(fields[1]))) return_defer(false);  // variant
+    if (!sql_bind(&stmt, 4, sql_num(fields[2])))  return_defer(false);  // unit price
+    if (!sql_bind(&stmt, 5, sql_num(fields[5])))  return_defer(false);  // unit cost (opt)
+    if (!sql_bind(&stmt, 6, sql_num(fields[3])))  return_defer(false);  // quantity
+    if (!sql_bind(&stmt, 7, sql_num(fields[6])))  return_defer(false);  // discount (opt)
+    if (!sql_bind(&stmt, 8, sql_num(fields[7])))  return_defer(false);  // tax (opt)
+    if (!sql_bind(&stmt, 9, sql_num(fields[4])))  return_defer(false);  // total
     if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
@@ -77,14 +77,14 @@ static bool update_order_item(db_t *db, String_View *fields, size_t count,
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);
-    if (!sql_bind(&stmt, 2, pos_sv(fields[1]))) return_defer(false);
-    if (!sql_bind(&stmt, 3, SQL_SV(fields[2]))) return_defer(false);
-    if (!sql_bind(&stmt, 4, SQL_SV(fields[3]))) return_defer(false);
-    if (!sql_bind(&stmt, 5, SQL_SV(fields[4]))) return_defer(false);
-    if (!sql_bind(&stmt, 6, SQL_SV(id)))        return_defer(false);
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))   return_defer(false);
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[1]))) return_defer(false);
+    if (!sql_bind(&stmt, 3, SQL_SV(fields[2])))   return_defer(false);
+    if (!sql_bind(&stmt, 4, SQL_SV(fields[3])))   return_defer(false);
+    if (!sql_bind(&stmt, 5, SQL_SV(fields[4])))   return_defer(false);
+    if (!sql_bind(&stmt, 6, SQL_SV(id)))          return_defer(false);
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;

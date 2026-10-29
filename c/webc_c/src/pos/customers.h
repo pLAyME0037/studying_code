@@ -9,8 +9,9 @@
 void serve_pos_customers(Serve_Context *sc);
 void serve_pos_customers_create(Serve_Context *sc);
 void serve_pos_customers_update(Serve_Context *sc);
-void serve_pos_customers_delete(Serve_Context *sc);
+void serve_pos_customers_soft_delete(Serve_Context *sc);
 void serve_pos_customers_restore(Serve_Context *sc);
+void serve_pos_customers_delete(Serve_Context *sc);
 
 extern MD_Column md_customers_columns[];
 extern const size_t md_customers_columns_count;

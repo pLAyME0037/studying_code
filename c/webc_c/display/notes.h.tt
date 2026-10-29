@@ -55,9 +55,11 @@
                     <td class="px-4 py-2 whitespace-nowrap">
                         <a href="/notes/<c> STR(notes.items[i].id); </c>/edit"
                            class="mr-2 px-2 py-1 rounded text-xs bg-amber-500 hover:bg-amber-600 text-white">Edit</a>
-                        <form method="POST" action="/notes/<c> STR(notes.items[i].id); </c>/delete" class="inline">
+                        <form method="POST" action="/notes/<c> STR(notes.items[i].id); </c>/softdel" class="inline">
                             <button type="submit"
-                                    class="px-2 py-1 rounded text-xs bg-red-500 hover:bg-red-600 text-white">Delete</button>
+                                    class="px-2 py-1 rounded text-xs bg-red-500 hover:bg-red-600 text-white">
+                                Delete
+                            </button>
                         </form>
                     </td>
                 </tr>

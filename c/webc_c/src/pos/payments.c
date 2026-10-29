@@ -30,17 +30,15 @@ static bool create_payment(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[5]))) return_defer(false);  // order
-    if (!sql_bind(&stmt, 2, pos_sv(fields[3]))) return_defer(false);  // method
-    if (!sql_bind(&stmt, 3, pos_num(fields[0]))) return_defer(false); // amount
-    // payment_status CHECKs PENDING/COMPLETED/FAILED/REFUNDED: blank
-    // input falls back to the column default.
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[5]))) return_defer(false);  // order
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[3]))) return_defer(false);  // method
+    if (!sql_bind(&stmt, 3, sql_num(fields[0])))  return_defer(false); // amount
     String_View status = fields[1].count ? fields[1] : sv_from_cstr("COMPLETED");
-    if (!sql_bind(&stmt, 4, SQL_SV(status)))    return_defer(false);
-    if (!sql_bind(&stmt, 5, pos_sv(fields[2]))) return_defer(false);  // ref
-    if (!sql_bind(&stmt, 6, pos_sv(fields[4]))) return_defer(false);  // payload
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_bind(&stmt, 4, SQL_SV(status)))      return_defer(false);
+    if (!sql_bind(&stmt, 5, sql_fgsv(fields[2]))) return_defer(false);  // ref
+    if (!sql_bind(&stmt, 6, sql_fgsv(fields[4]))) return_defer(false);  // payload
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -76,13 +74,13 @@ static bool update_payment(db_t *db, String_View *fields, size_t count,
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[3]))) return_defer(false);  // method
-    if (!sql_bind(&stmt, 2, SQL_SV(fields[0]))) return_defer(false);  // amount
-    if (!sql_bind(&stmt, 3, SQL_SV(fields[1]))) return_defer(false);  // status
-    if (!sql_bind(&stmt, 4, pos_sv(fields[2]))) return_defer(false);  // ref
-    if (!sql_bind(&stmt, 5, SQL_SV(id)))        return_defer(false);
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[3]))) return_defer(false);  // method
+    if (!sql_bind(&stmt, 2, SQL_SV(fields[0])))   return_defer(false);  // amount
+    if (!sql_bind(&stmt, 3, SQL_SV(fields[1])))   return_defer(false);  // status
+    if (!sql_bind(&stmt, 4, sql_fgsv(fields[2]))) return_defer(false);  // ref
+    if (!sql_bind(&stmt, 5, SQL_SV(id)))          return_defer(false);
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -93,7 +91,8 @@ static bool soft_delete_payment(db_t *db, String_View id) {
         [SQL_SQLITE]   = "UPDATE payments "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE payments SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE payments SET deleted_at = UTC_TIMESTAMP() "
+                         "WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE payments SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};

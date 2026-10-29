@@ -9,6 +9,7 @@ void serve_pos_categories(Serve_Context *sc);
 void serve_pos_categories_create(Serve_Context *sc);
 void serve_pos_categories_update(Serve_Context *sc);
 void serve_pos_categories_delete(Serve_Context *sc);
+void serve_pos_categories_soft_delete(Serve_Context *sc);
 void serve_pos_categories_restore(Serve_Context *sc);
 
 extern MD_Column md_categories_columns[];

@@ -299,7 +299,7 @@
 // soft_delete_<singular>() / restore_<singular>() -- same shape as
 // SERVE_DELETE, only the called statement differs.
 #define SERVE_SOFT_DELETE(plural, singular)                                 \
-    void serve_##plural##_delete(Serve_Context *sc) {                       \
+    void serve_##plural##_soft_delete(Serve_Context *sc) {                  \
         Route_Id id = sc->route_id;   /* parsed once at the route gate */   \
         if (id.kind == ID_NONE) {                                           \
             serve_error(sc, 404);                                           \
@@ -342,12 +342,15 @@
                              http_redirect_target(sc, "/" #plural));        \
     }
 
-#define SERVE_CRUD(plural, singular, Plural_Type, Singular_Type, fields, opt_fields) \
-    SERVE_READ(plural, Plural_Type)                                                  \
-    SERVE_EDIT(plural, singular, Plural_Type, Singular_Type)                         \
-    SERVE_DELETE(plural, singular)                                                   \
-    SERVE_CREATE(plural, singular, fields, opt_fields)                               \
-    SERVE_UPDATE(plural, singular, fields, opt_fields)
+#define SERVE_CRUD(plural,      singular,                    \
+                   Plural_Type, Singular_Type,               \
+                   fields,      opt_fields)                  \
+    SERVE_READ(plural, Plural_Type)                          \
+    SERVE_CREATE(plural, singular, fields, opt_fields)       \
+    SERVE_UPDATE(plural, singular, fields, opt_fields)       \
+    SERVE_EDIT(plural, singular, Plural_Type, Singular_Type) \
+    SERVE_SOFT_DELETE(plural, singular)                      \
+    SERVE_DELETE(plural, singular)
 
 
 #endif // !WEBC_TEMPLATE

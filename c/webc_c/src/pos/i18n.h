@@ -8,7 +8,7 @@
 void serve_pos_i18n(Serve_Context *sc);
 void serve_pos_i18n_create(Serve_Context *sc);
 void serve_pos_i18n_update(Serve_Context *sc);
-void serve_pos_i18n_delete(Serve_Context *sc);
+void serve_pos_i18n_soft_delete(Serve_Context *sc);
 void serve_pos_i18n_restore(Serve_Context *sc);
 
 extern MD_Column md_languages_columns[];

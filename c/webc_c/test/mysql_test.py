@@ -193,7 +193,8 @@ def run_checks(t, c, env):
     st, _, _ = c.req("POST", f"/users/{uid}/delete")
     t.chk("user delete", st, 302)
     t.chk("user row gone",
-          env.q("SELECT COUNT(*) FROM users WHERE id='%s'" % uid), "0")
+          env.q("SELECT COUNT(*) FROM users "
+                "WHERE id='%s' AND deleted_at IS NULL" % uid), "0")
 
     # ---- notes: urlencoded form CRUD ------------------------------------
     st, _, _ = c.post_urlencoded("/notes/create", {"title": "nt", "body": "nb"})

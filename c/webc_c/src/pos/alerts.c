@@ -60,12 +60,12 @@ static bool create_alert(db_t *db, String_View *fields, size_t count) {
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt))   return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[2])))   return_defer(false);  // user
-    if (!sql_bind(&stmt, 2, pos_sv(fields[3])))   return_defer(false);  // order
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[2])))   return_defer(false);  // user
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[3])))   return_defer(false);  // order
     if (!sql_bind(&stmt, 3, SQL_SV(fields[0])))   return_defer(false);  // type
     if (!sql_bind(&stmt, 4, SQL_SV(fields[1])))   return_defer(false);  // payload
-    if (!sql_bind(&stmt, 5, pos_num(fields[4])))  return_defer(false);  // seen
-    if (!sql_bind(&stmt, 6, pos_num(fields[5])))  return_defer(false);  // sent
+    if (!sql_bind(&stmt, 5, sql_num(fields[4])))  return_defer(false);  // seen
+    if (!sql_bind(&stmt, 6, sql_num(fields[5])))  return_defer(false);  // sent
     if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
@@ -104,11 +104,11 @@ static bool update_alert(db_t *db, String_View *fields, size_t count,
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt))   return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
     if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))   return_defer(false);  // type
     if (!sql_bind(&stmt, 2, SQL_SV(fields[1])))   return_defer(false);  // payload
-    if (!sql_bind(&stmt, 3, pos_sv(fields[2])))   return_defer(false);  // user
-    if (!sql_bind(&stmt, 4, pos_sv(fields[3])))   return_defer(false);  // order
+    if (!sql_bind(&stmt, 3, sql_fgsv(fields[2]))) return_defer(false);  // user
+    if (!sql_bind(&stmt, 4, sql_fgsv(fields[3]))) return_defer(false);  // order
     if (!sql_bind(&stmt, 5, SQL_SV(fields[4])))   return_defer(false);  // seen
     if (!sql_bind(&stmt, 6, SQL_SV(fields[5])))   return_defer(false);  // sent
     if (!sql_bind(&stmt, 7, SQL_SV(id)))          return_defer(false);

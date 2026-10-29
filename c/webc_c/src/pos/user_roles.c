@@ -25,7 +25,7 @@ static bool create_user_role(db_t *db, String_View *fields, size_t count) {
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[1]))) return_defer(false);  // user
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[1]))) return_defer(false);  // user
     if (!sql_bind(&stmt, 2, SQL_SV(fields[0]))) return_defer(false);  // role
     if (!sql_final_step(&stmt))                 return_defer(false);
 defer:
@@ -118,8 +118,8 @@ static bool create_role_member(db_t *db, String_View *fields, size_t count) {
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt))  return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[0]))) return_defer(false);  // user
-    if (!sql_bind(&stmt, 2, pos_sv(fields[1]))) return_defer(false);  // role
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[0]))) return_defer(false);  // user
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[1]))) return_defer(false);  // role
     if (!sql_final_step(&stmt))                 return_defer(false);
 defer:
     sql_finalize(&stmt);

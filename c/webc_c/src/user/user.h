@@ -24,6 +24,7 @@ bool read_users(db_t *db, Users *rows, const Page_Info *slice);
 bool count_users(db_t *db, size_t *out);
 bool create_user(db_t *db, String_View *fields, size_t count);
 bool update_user(db_t *db, String_View *fields, size_t count, String_View id);
+bool soft_delete_user(db_t *db, String_View id);
 bool delete_user(db_t *db, String_View id);
 
 #endif // SRC_USER_H_
@@ -38,5 +39,6 @@ void serve_users_create(Serve_Context *sc);
 void serve_users_edit(Serve_Context *sc);
 void serve_users_update(Serve_Context *sc);
 void serve_users_delete(Serve_Context *sc);
+void serve_users_soft_delete(Serve_Context *sc);
 
 #endif // USER_SERVE_H_

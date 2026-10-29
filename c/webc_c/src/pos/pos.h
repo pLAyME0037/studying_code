@@ -13,6 +13,7 @@ void serve_pos_users(Serve_Context *sc);
 void serve_pos_users_create(Serve_Context *sc);
 void serve_pos_users_update(Serve_Context *sc);
 void serve_pos_users_delete(Serve_Context *sc);
+void serve_pos_users_soft_delete(Serve_Context *sc);
 void serve_pos_users_restore(Serve_Context *sc);
 
 /* users view shared by /pos/customers and /pos/org child tabs */

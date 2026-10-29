@@ -8,7 +8,7 @@
 void serve_pos_config(Serve_Context *sc);
 void serve_pos_config_create(Serve_Context *sc);
 void serve_pos_config_update(Serve_Context *sc);
-void serve_pos_config_delete(Serve_Context *sc);
+void serve_pos_config_soft_delete(Serve_Context *sc);
 void serve_pos_config_restore(Serve_Context *sc);
 
 extern MD_Column md_configs_columns[];

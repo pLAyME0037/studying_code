@@ -9,8 +9,9 @@
 void serve_pos_products(Serve_Context *sc);
 void serve_pos_products_create(Serve_Context *sc);
 void serve_pos_products_update(Serve_Context *sc);
-void serve_pos_products_delete(Serve_Context *sc);
+void serve_pos_products_soft_delete(Serve_Context *sc);
 void serve_pos_products_restore(Serve_Context *sc);
+void serve_pos_products_delete(Serve_Context *sc);
 
 extern MD_Column md_products_columns[];
 extern const size_t md_products_columns_count;

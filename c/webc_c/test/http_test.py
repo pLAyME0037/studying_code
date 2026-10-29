@@ -192,7 +192,9 @@ def main():
 
     # ---- delete --------------------------------------------------------
     t.chk("delete uuid", c.req("POST", f"/users/{uid}/delete")[0], 302)
-    t.chk("row gone", db_query(DB, "SELECT count(*) FROM users WHERE id=?",
+    t.chk("row gone", db_query(DB,
+                               "SELECT count(*) FROM users "
+                               "WHERE id=? AND deleted_at IS NULL",
                                (uid,)), 0)
 
     # ---- validation ----------------------------------------------------

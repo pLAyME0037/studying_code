@@ -26,10 +26,10 @@ static bool create_role_permission(db_t *db, String_View *fields,
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt))  return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[1]))) return_defer(false);  // role
-    if (!sql_bind(&stmt, 2, SQL_SV(fields[0]))) return_defer(false);  // permission
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[1]))) return_defer(false);  // role
+    if (!sql_bind(&stmt, 2, SQL_SV(fields[0])))   return_defer(false);  // permission
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;

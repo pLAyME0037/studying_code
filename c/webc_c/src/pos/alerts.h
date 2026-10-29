@@ -8,8 +8,9 @@
 void serve_pos_alerts(Serve_Context *sc);
 void serve_pos_alerts_create(Serve_Context *sc);
 void serve_pos_alerts_update(Serve_Context *sc);
-void serve_pos_alerts_delete(Serve_Context *sc);
+void serve_pos_alerts_soft_delete(Serve_Context *sc);
 void serve_pos_alerts_restore(Serve_Context *sc);
+void serve_pos_alerts_delete(Serve_Context *sc);
 
 extern MD_Column md_alerts_columns[];
 extern const size_t md_alerts_columns_count;

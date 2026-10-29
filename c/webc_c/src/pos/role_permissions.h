@@ -8,7 +8,8 @@
  * Write routes only -- no master page. */
 void serve_pos_role_permissions_create(Serve_Context *sc);
 void serve_pos_role_permissions_update(Serve_Context *sc);
-void serve_pos_role_permissions_delete(Serve_Context *sc);
+void serve_pos_role_permissions_soft_delete(Serve_Context *sc);
 void serve_pos_role_permissions_restore(Serve_Context *sc);
+void serve_pos_role_permissions_delete(Serve_Context *sc);
 
 #endif // !POS_ROLE_PERMISSIONS_H_

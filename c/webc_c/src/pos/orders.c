@@ -148,20 +148,20 @@ static bool create_order(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1,  SQL_SV(fields[0])))  return_defer(false);  // number
-    if (!sql_bind(&stmt, 2,  SQL_SV(fields[1])))  return_defer(false);  // org
-    if (!sql_bind(&stmt, 3,  SQL_SV(fields[2])))  return_defer(false);  // staff
-    if (!sql_bind(&stmt, 4,  pos_sv(fields[3])))  return_defer(false);  // customer
-    if (!sql_bind(&stmt, 5,  pos_sv(fields[4])))  return_defer(false);  // status
-    if (!sql_bind(&stmt, 6,  pos_num(fields[5]))) return_defer(false);  // subtotal
-    if (!sql_bind(&stmt, 7,  pos_num(fields[6]))) return_defer(false);  // discount
-    if (!sql_bind(&stmt, 8,  pos_num(fields[7]))) return_defer(false);  // tax
-    if (!sql_bind(&stmt, 9,  pos_num(fields[10]))) return_defer(false); // delivery
-    if (!sql_bind(&stmt, 10, pos_num(fields[8]))) return_defer(false);  // total
-    if (!sql_bind(&stmt, 11, pos_sv(fields[9])))  return_defer(false);  // shift
-    if (!sql_bind(&stmt, 12, pos_sv(fields[11]))) return_defer(false);  // metadata
-    if (!sql_final_step(&stmt))                   return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))       return_defer(false);
+    if (!sql_bind(&stmt, 1,  SQL_SV(fields[0])))    return_defer(false); // number
+    if (!sql_bind(&stmt, 2,  SQL_SV(fields[1])))    return_defer(false); // org
+    if (!sql_bind(&stmt, 3,  SQL_SV(fields[2])))    return_defer(false); // staff
+    if (!sql_bind(&stmt, 4,  sql_fgsv(fields[3])))  return_defer(false); // customer
+    if (!sql_bind(&stmt, 5,  sql_fgsv(fields[4])))  return_defer(false); // status
+    if (!sql_bind(&stmt, 6,  sql_num(fields[5])))   return_defer(false); // subtotal
+    if (!sql_bind(&stmt, 7,  sql_num(fields[6])))   return_defer(false); // discount
+    if (!sql_bind(&stmt, 8,  sql_num(fields[7])))   return_defer(false); // tax
+    if (!sql_bind(&stmt, 9,  sql_num(fields[10])))  return_defer(false); // delivery
+    if (!sql_bind(&stmt, 10, sql_num(fields[8])))   return_defer(false); // total
+    if (!sql_bind(&stmt, 11, sql_fgsv(fields[9])))  return_defer(false); // shift
+    if (!sql_bind(&stmt, 12, sql_fgsv(fields[11]))) return_defer(false); // metadata
+    if (!sql_final_step(&stmt))                     return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;

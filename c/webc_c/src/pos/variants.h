@@ -7,7 +7,8 @@
  * the child forms' query string). Write routes only -- no master page. */
 void serve_pos_variants_create(Serve_Context *sc);
 void serve_pos_variants_update(Serve_Context *sc);
-void serve_pos_variants_delete(Serve_Context *sc);
+void serve_pos_variants_soft_delete(Serve_Context *sc);
 void serve_pos_variants_restore(Serve_Context *sc);
+void serve_pos_variants_delete(Serve_Context *sc);
 
 #endif // !POS_VARIANTS_H_

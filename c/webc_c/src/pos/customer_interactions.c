@@ -28,8 +28,8 @@ static bool create_interaction(db_t *db, String_View *fields, size_t count) {
     sql_stmt stmt = {0};
     bool result = true;
     if (!sql_prepare(db, q[db->lang], &stmt))   return_defer(false);
-    if (!sql_bind(&stmt, 1, pos_sv(fields[2]))) return_defer(false);  // user
-    if (!sql_bind(&stmt, 2, pos_sv(fields[3]))) return_defer(false);  // customer
+    if (!sql_bind(&stmt, 1, sql_fgsv(fields[2]))) return_defer(false);  // user
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[3]))) return_defer(false);  // customer
     if (!sql_bind(&stmt, 3, SQL_SV(fields[0]))) return_defer(false);  // kind
     if (!sql_bind(&stmt, 4, SQL_SV(fields[1]))) return_defer(false);  // payload
     if (!sql_final_step(&stmt))                 return_defer(false);
@@ -66,12 +66,12 @@ static bool update_interaction(db_t *db, String_View *fields, size_t count,
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt)) return_defer(false);
-    if (!sql_bind(&stmt, 1, SQL_SV(fields[0]))) return_defer(false);  // kind
-    if (!sql_bind(&stmt, 2, SQL_SV(fields[1]))) return_defer(false);  // payload
-    if (!sql_bind(&stmt, 3, pos_sv(fields[2]))) return_defer(false);  // user
-    if (!sql_bind(&stmt, 4, SQL_SV(id)))        return_defer(false);
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
+    if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))   return_defer(false);  // kind
+    if (!sql_bind(&stmt, 2, SQL_SV(fields[1])))   return_defer(false);  // payload
+    if (!sql_bind(&stmt, 3, sql_fgsv(fields[2]))) return_defer(false);  // user
+    if (!sql_bind(&stmt, 4, SQL_SV(id)))          return_defer(false);
+    if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;

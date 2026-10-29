@@ -7,7 +7,7 @@
  * forms' query string). Write routes only -- no master page. */
 void serve_pos_ledger_create(Serve_Context *sc);
 void serve_pos_ledger_update(Serve_Context *sc);
-void serve_pos_ledger_delete(Serve_Context *sc);
+void serve_pos_ledger_soft_delete(Serve_Context *sc);
 void serve_pos_ledger_restore(Serve_Context *sc);
 
 #endif // !POS_LEDGER_H_

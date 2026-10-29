@@ -44,11 +44,11 @@ static bool create_system_config(db_t *db, String_View *fields, size_t count) {
     };
     sql_stmt stmt = {0};
     bool result = true;
-    if (!sql_prepare(db, q[db->lang], &stmt))   return_defer(false);
+    if (!sql_prepare(db, q[db->lang], &stmt))     return_defer(false);
     if (!sql_bind(&stmt, 1, SQL_SV(fields[0])))   return_defer(false);  // key
-    if (!sql_bind(&stmt, 2, pos_sv(fields[1])))   return_defer(false);  // value
-    if (!sql_bind(&stmt, 3, pos_sv(fields[2])))   return_defer(false);  // json
-    if (!sql_bind(&stmt, 4, pos_num(fields[3])))  return_defer(false);  // flag
+    if (!sql_bind(&stmt, 2, sql_fgsv(fields[1]))) return_defer(false);  // value
+    if (!sql_bind(&stmt, 3, sql_fgsv(fields[2]))) return_defer(false);  // json
+    if (!sql_bind(&stmt, 4, sql_num(fields[3])))  return_defer(false);  // flag
     if (!sql_final_step(&stmt))                   return_defer(false);
 defer:
     sql_finalize(&stmt);
