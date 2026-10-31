@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -o ./build/bin/webc -isystem/usr/include/mysql/ src/version/version.c src/http/route.c src/http/utils.c src/http/serve.c src/report/report.c src/layout/paging.c src/layout/footer.c src/layout/header.c src/layout/dashboard.c src/layout/master_child.c src/helper/cells.c src/auth/auth.c src/webc.c src/i18n/i18n.c src/people/people.c src/user/user.c src/dashboard/dashboard.c src/shop/checkout.c src/shop/cart.c src/shop/shop.c src/pos/pos.c src/pos/ledger.c src/pos/shifts.c src/pos/user_roles.c src/pos/org.c src/pos/stocks.c src/pos/categories.c src/pos/roles.c src/pos/finance.c src/pos/permissions.c src/pos/sale.c src/pos/order_items.c src/pos/staff.c src/pos/config.c src/pos/deliveries.c src/pos/customer_interactions.c src/pos/customers.c src/pos/audit.c src/pos/variants.c src/pos/alerts.c src/pos/translations.c src/pos/orders.c src/pos/geo.c src/pos/i18n.c src/pos/products.c src/pos/role_permissions.c src/pos/payments.c src/notes/notes.c src/db/driver_mysql.c src/db/driver_postgres.c src/db/sql.c src/db/db.c src/db/driver_sqlite.c src/crud/crud.c ./build/sqlite3.o ./build/coroutine.o -L/usr/lib/ -lmariadb -lssl -lcrypto",
+    "file": "main.c"
+  }
+]

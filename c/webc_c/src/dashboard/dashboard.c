@@ -141,9 +141,9 @@ static const char *const q_counts[SQL_LANG_COUNT] = {
           "WHERE deleted_at IS NULL AND quantity <= min_threshold), "
         "(SELECT COUNT(*) FROM inventory_stocks "
           "WHERE deleted_at IS NULL AND quantity <= 0), "
-        "(SELECT COUNT(*) FROM cash_shifts "
+        "(SELECT COUNT(*) FROM cash "
           "WHERE deleted_at IS NULL AND closed_at IS NULL), "
-        "(SELECT COUNT(*) FROM cash_shifts "
+        "(SELECT COUNT(*) FROM cash "
           "WHERE deleted_at IS NULL AND closed_at IS NULL "
            "AND substr(opened_at, 1, 10) < ?), "
         "(SELECT COUNT(*) FROM orders "
@@ -153,9 +153,9 @@ static const char *const q_counts[SQL_LANG_COUNT] = {
           "WHERE deleted_at IS NULL AND quantity <= min_threshold), "
         "(SELECT COUNT(*) FROM inventory_stocks "
           "WHERE deleted_at IS NULL AND quantity <= 0), "
-        "(SELECT COUNT(*) FROM cash_shifts "
+        "(SELECT COUNT(*) FROM cash "
           "WHERE deleted_at IS NULL AND closed_at IS NULL), "
-        "(SELECT COUNT(*) FROM cash_shifts "
+        "(SELECT COUNT(*) FROM cash "
           "WHERE deleted_at IS NULL AND closed_at IS NULL "
            "AND substr(opened_at, 1, 10) < $1), "
         "(SELECT COUNT(*) FROM orders "
@@ -189,14 +189,14 @@ static const char *const q_recent_mine[SQL_LANG_COUNT] = {
 static const char *const q_shift[SQL_LANG_COUNT] = {
     Q_DIA(
         "SELECT s.opened_at, s.opening_cash, COALESCE(o.ou_name, '') "
-        "FROM cash_shifts s "
+        "FROM cash s "
         "LEFT JOIN org_units o ON o.id = s.org_unit_id "
                              "AND o.deleted_at IS NULL "
         "WHERE s.staff_id = ? AND s.closed_at IS NULL "
           "AND s.deleted_at IS NULL "
         "ORDER BY s.opened_at DESC LIMIT 1;",
         "SELECT s.opened_at, s.opening_cash, COALESCE(o.ou_name, '') "
-        "FROM cash_shifts s "
+        "FROM cash s "
         "LEFT JOIN org_units o ON o.id = s.org_unit_id "
                              "AND o.deleted_at IS NULL "
         "WHERE s.staff_id = $1 AND s.closed_at IS NULL "
@@ -207,9 +207,9 @@ static const char *const q_shift[SQL_LANG_COUNT] = {
 
 static const char *const q_open_shifts[SQL_LANG_COUNT] = {
     Q_DIA(
-        "SELECT COUNT(*) FROM cash_shifts "
+        "SELECT COUNT(*) FROM cash "
         "WHERE deleted_at IS NULL AND closed_at IS NULL;",
-        "SELECT COUNT(*) FROM cash_shifts "
+        "SELECT COUNT(*) FROM cash "
         "WHERE deleted_at IS NULL AND closed_at IS NULL;"
     ),
 };

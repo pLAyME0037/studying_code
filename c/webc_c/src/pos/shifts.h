@@ -3,7 +3,7 @@
 
 #include "src/layout/master_child.h"
 
-/* /pos/shifts: cash_shifts master-only page (no children). opened_at
+/* /pos/shifts: cash master-only page (no children). opened_at
  * rides its column default (form-less); closing happens via the cash
  * cell + status column. */
 void serve_pos_shifts(Serve_Context *sc);

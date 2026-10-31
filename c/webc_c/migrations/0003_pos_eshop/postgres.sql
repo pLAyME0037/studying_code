@@ -343,7 +343,7 @@ CREATE TABLE IF NOT EXISTS customer_interactions (
 -- 5. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS cash_shifts (
+CREATE TABLE IF NOT EXISTS cash (
     id TEXT PRIMARY KEY DEFAULT ((gen_random_uuid()::text)),
     org_unit_id TEXT NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
     staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
@@ -362,7 +362,7 @@ CREATE TABLE IF NOT EXISTS cash_shifts (
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY DEFAULT ((gen_random_uuid()::text)),
     org_unit_id TEXT NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
-    shift_id TEXT REFERENCES cash_shifts(id) ON DELETE RESTRICT,
+    shift_id TEXT REFERENCES cash(id) ON DELETE RESTRICT,
     customer_id TEXT REFERENCES customers(id) ON DELETE RESTRICT,
     staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
     order_number TEXT NOT NULL UNIQUE,

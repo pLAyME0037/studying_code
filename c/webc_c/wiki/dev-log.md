@@ -78,6 +78,52 @@ gained `soft_delete_user` + `restore_user`, but only `/pos/users/…/restore`
 is routed; the bare `/users` page has no restore route. Also this whole
 batch is **uncommitted**.
 
+### Later the same day — a security audit, and its scariest finding is not SQL
+
+After the suite went green we went looking for vulnerabilities, leaks and
+memory-safety bugs, and wrote the result down as a permanent check:
+[audit_test.py](test/audit_test.py) (a static regex/structural leg that
+runs with no server, plus a dynamic leg of **non-destructive** SQLi probes
+against a live server — detection payloads only, never
+DROP/DELETE/UPDATE).
+
+**SQL injection: the tree is disciplined.** ~150 `sql_prepare` sites, and
+every user-controllable value is bound via `sql_bind`, not concatenated.
+Two exceptions, neither reachable from HTTP today:
+
+- **F1** — [master_child.c](src/layout/master_child.c) builds SQL with a
+  hand-rolled `md_sql_quote` (doubles `'`) spliced as `'%s'`. The ids it
+  quotes are server-generated UUIDs, so nothing user-supplied reaches it.
+  But quote-doubling is *not* sufficient on MySQL's default escapes —
+  the one place in the tree not using the bind layer. Fix: bind it.
+- **F2** — `LIKE` patterns wrap user text without escaping `%`/`_` and
+  with no `ESCAPE` clause (master_child.c, shop.c). A user typing `%`
+  in a filter box widens their own match. Low — it affects only the
+  caller's own query, but it's a correctness bug at minimum.
+
+**Memory safety: the real find.** `temp_sprintf`/`temp_strdup` (nob's
+arena) allocate from an **8 MB static buffer** (`nob_temp`), and
+`nob_temp_size` only ever *grows* — `nob_temp_reset()` is not called
+anywhere in `src/`. The serve loop is a single-threaded `accept` with no
+fork/pthread, so the arena is shared across *all* requests and never
+rewinds. The server therefore crawls monotonically toward
+`NOB_ASSERT(… "Increase NOB_TEMP_CAPACITY")`, which **aborts the whole
+process**. This is a slow, request-driven DoS — not a leak ASan would
+even flag (nothing is lost; the arena is simply never reused). Fix:
+`nob_temp_reset()` at the top of each request; safe because the loop is
+single-threaded.
+
+Verified **fine**: request-body reads are bounded (`MAX_REQUEST_BODY`
+8 MB), upload filenames are server-generated `stamp/seq` (no path
+traversal), `ffmpeg` runs via argv array not a shell, `hash_hex`'s
+`hex[65]` is correctly sized, `MD_ChildRow` mallocs are paired with
+`md_master_rows_free`, and `strcat(perms,…)` is length-guarded.
+
+`test/audit_test.py` is written but **not yet run**; wiring it into
+[test/run.sh](test/run.sh) is the next step. The `md_sql_quote` and
+`nob_temp_reset` fixes are not applied — decision pending on fix-vs-
+document-as-accepted-risk.
+
 ## 2026-10-28 — Font Size increase to 14 for miner case and 16 for main case & change eye to svg
 ### done
 - Font Size is change for more visibility in master_child in a whole.

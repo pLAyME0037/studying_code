@@ -5,17 +5,22 @@
 -- synthetic address any more.  sqlite cannot ALTER nullability, so the
 -- 0003 swap pattern repeats: backfill any missing phone from the unique
 -- username, build the new shape beside the old, copy every column, drop,
--- rename, then recreate the three users triggers.  Two extra schema
--- objects name `users` inside their own bodies - the org_units cascade
--- triggers and the users views.  DROP TABLE tolerates those dangling
--- references but the RENAME re-validates every trigger and view, so all
--- four are dropped first and recreated verbatim afterwards.  db.c runs
--- migrations with foreign_keys=OFF, so the table swap keeps every
--- REFERENCES users(id) clause valid at transaction end.
+-- rename, then recreate the three users triggers.  Every schema object that
+-- names `users` inside its own body - the org_units cascade triggers, the
+-- customers cascade triggers and the users views - is dropped first and
+-- recreated verbatim afterwards: DROP TABLE tolerates those dangling
+-- references but the RENAME re-validates every trigger and view, so any
+-- left in place aborts the whole migration with "no such table: main.users".
+-- Whenever 0003 gains a new trigger whose body mentions `users`, add it to
+-- both lists below.  db.c runs migrations with foreign_keys=OFF, so the
+-- table swap keeps every REFERENCES users(id) clause valid at transaction
+-- end.
 -- ===========================================================================
 
 DROP TRIGGER IF EXISTS trg_soft_del_org_units;
 DROP TRIGGER IF EXISTS trg_restore_org_units;
+DROP TRIGGER IF EXISTS trg_soft_del_customers;
+DROP TRIGGER IF EXISTS trg_restore_customers;
 DROP VIEW IF EXISTS v_active_users;
 DROP VIEW IF EXISTS v_pos_sales_delivery_report;
 
@@ -81,18 +86,86 @@ CREATE TRIGGER IF NOT EXISTS trg_soft_del_org_units
 AFTER UPDATE OF deleted_at ON org_units
 WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
 BEGIN
-    UPDATE users SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
-    UPDATE staff SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
-    UPDATE inventory_stocks SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
+    UPDATE org_units SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE users SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE staff SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE inventory_stocks SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
 END;
 
 CREATE TRIGGER IF NOT EXISTS trg_restore_org_units
 AFTER UPDATE OF deleted_at ON org_units
 WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
 BEGIN
-    UPDATE users SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
-    UPDATE staff SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
-    UPDATE inventory_stocks SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE org_units SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE users SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE staff SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE inventory_stocks SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+END;
+
+-- customers cascade triggers (verbatim from 0003, dropped above: their
+-- bodies name `users` too)
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_customers
+AFTER UPDATE OF deleted_at ON customers
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE users SET deleted_at = NEW.deleted_at WHERE customer_id = OLD.id AND deleted_at IS NULL;
+    UPDATE customer_interactions SET deleted_at = NEW.deleted_at WHERE customer_id = OLD.id AND deleted_at IS NULL;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_restore_customers
+AFTER UPDATE OF deleted_at ON customers
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE users SET deleted_at = NULL WHERE customer_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE customer_interactions SET deleted_at = NULL WHERE customer_id = OLD.id AND deleted_at = OLD.deleted_at;
 END;
 
 -- users views (verbatim from 0003, dropped above)

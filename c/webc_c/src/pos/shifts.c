@@ -58,15 +58,15 @@ const size_t md_shifts_child_columns_count = ARRAY_LEN(md_shifts_child_columns);
 static bool create_cash_shift(db_t *db, String_View *fields, size_t count) {
     if (count < 8) return false;
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "INSERT INTO cash_shifts "
+        [SQL_SQLITE]   = "INSERT INTO cash "
                          "(org_unit_id, staff_id, status, closed_at, "
                           "opening_cash, closing_cash, expected_cash, notes) "
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
-        [SQL_MYSQL]    = "INSERT INTO cash_shifts "
+        [SQL_MYSQL]    = "INSERT INTO cash "
                          "(org_unit_id, staff_id, status, closed_at, "
                           "opening_cash, closing_cash, expected_cash, notes) "
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?);",
-        [SQL_POSTGRES] = "INSERT INTO cash_shifts "
+        [SQL_POSTGRES] = "INSERT INTO cash "
                          "(org_unit_id, staff_id, status, closed_at, "
                           "opening_cash, closing_cash, expected_cash, notes) "
                          "VALUES ($1, $2, $3, $4, $5, $6, $7, $8);",
@@ -94,7 +94,7 @@ static bool update_cash_shift(db_t *db, String_View *fields, size_t count,
 {
     if (count < 8) return false;
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "UPDATE cash_shifts SET "
+        [SQL_SQLITE]   = "UPDATE cash SET "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
                          "staff_id = COALESCE(NULLIF(?, ''), staff_id), "
                          "status = COALESCE(NULLIF(?, ''), status), "
@@ -104,7 +104,7 @@ static bool update_cash_shift(db_t *db, String_View *fields, size_t count,
                          "expected_cash = COALESCE(NULLIF(?, ''), expected_cash), "
                          "notes = COALESCE(NULLIF(?, ''), notes) "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE cash_shifts SET "
+        [SQL_MYSQL]    = "UPDATE cash SET "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
                          "staff_id = COALESCE(NULLIF(?, ''), staff_id), "
                          "status = COALESCE(NULLIF(?, ''), status), "
@@ -114,7 +114,7 @@ static bool update_cash_shift(db_t *db, String_View *fields, size_t count,
                          "expected_cash = COALESCE(NULLIF(?, ''), expected_cash), "
                          "notes = COALESCE(NULLIF(?, ''), notes) "
                          "WHERE id = ?;",
-        [SQL_POSTGRES] = "UPDATE cash_shifts SET "
+        [SQL_POSTGRES] = "UPDATE cash SET "
                          "org_unit_id = COALESCE(NULLIF($1, ''), org_unit_id), "
                          "staff_id = COALESCE(NULLIF($2, ''), staff_id), "
                          "status = COALESCE(NULLIF($3, ''), status), "
@@ -145,11 +145,11 @@ defer:
 
 static bool soft_delete_cash_shift(db_t *db, String_View id) {
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "UPDATE cash_shifts "
+        [SQL_SQLITE]   = "UPDATE cash "
                          "SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') "
                          "WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE cash_shifts SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
-        [SQL_POSTGRES] = "UPDATE cash_shifts SET deleted_at = now() WHERE id = $1;",
+        [SQL_MYSQL]    = "UPDATE cash SET deleted_at = UTC_TIMESTAMP() WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE cash SET deleted_at = now() WHERE id = $1;",
     };
     sql_stmt stmt = {0};
     bool result = true;
@@ -163,9 +163,9 @@ defer:
 
 static bool restore_cash_shift(db_t *db, String_View id) {
     static const char *const q[SQL_LANG_COUNT] = {
-        [SQL_SQLITE]   = "UPDATE cash_shifts SET deleted_at = NULL WHERE id = ?;",
-        [SQL_MYSQL]    = "UPDATE cash_shifts SET deleted_at = NULL WHERE id = ?;",
-        [SQL_POSTGRES] = "UPDATE cash_shifts SET deleted_at = NULL WHERE id = $1;",
+        [SQL_SQLITE]   = "UPDATE cash SET deleted_at = NULL WHERE id = ?;",
+        [SQL_MYSQL]    = "UPDATE cash SET deleted_at = NULL WHERE id = ?;",
+        [SQL_POSTGRES] = "UPDATE cash SET deleted_at = NULL WHERE id = $1;",
     };
     sql_stmt stmt = {0};
     bool result = true;
@@ -179,7 +179,7 @@ defer:
 
 void serve_pos_shifts(Serve_Context *sc) {
     MD_MasterConfig config = {
-        .table          = "cash_shifts",
+        .table          = "cash",
         .title          = "Shifts",
         .id_column      = "id",
         .crud_path      = "/pos/shifts",

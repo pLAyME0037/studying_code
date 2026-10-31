@@ -53,9 +53,9 @@ typedef struct {
     int         nullable;
     const char *fk_table;
     const char *fk_label;
-    const char *fk_where;    /* raw WHERE fragment scoping the option query,
-                              * e.g. "category = 'ORDER_STATUS'" -- keeps
-                              * dict-backed selects to their own category */
+    const char *fk_where;   /* raw WHERE fragment scoping the option query,
+                             * e.g. "category = 'ORDER_STATUS'" -- keeps
+                             * dict-backed selects to their own category */
     const char *fk_value;
     MD_Option  *opt;        /* runtime: FK dropdown options */
     size_t      opt_count;
@@ -97,7 +97,7 @@ typedef struct {
     size_t      column_count;
     const char **sum_columns;
     size_t      sum_column_count;
-    int         soft_delete;  /* rows carry deleted_at: loader hides them, add-row/edit gated */
+    int         soft_delete;
 } MD_ChildTab;
 
 typedef struct {

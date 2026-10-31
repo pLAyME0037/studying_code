@@ -4,7 +4,7 @@
 #include "src/layout/master_child.h"
 
 /* /pos/staff: staff master (code + name cell + user/org/location FKs +
- * phone/hire_date/staff_type) with a cash_shifts child tab. Staff is a
+ * phone/hire_date/staff_type) with a cash child tab. Staff is a
  * master table (Phase 13): the former staff child tabs under /pos/users
  * and /pos/org are gone - users/org show their own FK columns instead. */
 void serve_pos_staff(Serve_Context *sc);

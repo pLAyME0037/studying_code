@@ -82,7 +82,7 @@ static char *build_column_list(const MD_ChildTab *child) {
     return sb.items;
 }
 
-static bool load_child_rows(db_t *db,
+static bool load_child_rows(db_t              *db,
                             const MD_ChildTab *child,
                             const char        *master_id,
                             bool               show_deleted,
@@ -96,10 +96,11 @@ static bool load_child_rows(db_t *db,
         trash = show_deleted ? " AND deleted_at IS NOT NULL"
                              : " AND deleted_at IS NULL";
     }
-    char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s = '%s'%s ORDER BY %s DESC;",
-            cols, child->table, child->fk_column, md_sql_quote(master_id),
-            trash,
-            child->id_column);
+    char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s = '%s'%s "
+                             "ORDER BY %s DESC;",
+                             cols, child->table, child->fk_column,
+                             md_sql_quote(master_id),
+                             trash, child->id_column);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
         return false;
@@ -126,11 +127,20 @@ static bool load_child_rows(db_t *db,
     return true;
 }
 
+// WHERE clause offering only LIVE parents to a FK dropdown / header filter:
+// a soft-deleted staff member is not a valid cashier to pick. The fk_where
+// filter (e.g. "user_type_dict_id = 'CUSTOMER'") is ANDed in, never replaced.
+// Note md_fk_display deliberately does NOT use this gate - see there.
+static const char *md_fk_options_where(const MD_Column *col) {
+    return col->fk_where
+        ? temp_sprintf(" WHERE (%s) AND deleted_at IS NULL", col->fk_where)
+        : " WHERE deleted_at IS NULL";
+}
+
 static void md_col_load_options(db_t *db, MD_Column *col) {
     if (!col || col->type != COL_TYPE_FK_SELECT || !col->fk_table) return;
     char *sql = temp_sprintf("SELECT id, %s FROM %s%s ORDER BY %s ASC;",
-            col->fk_label, col->fk_table,
-            col->fk_where ? temp_sprintf(" WHERE %s", col->fk_where) : "",
+            col->fk_label, col->fk_table, md_fk_options_where(col),
             col->fk_label);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
@@ -155,12 +165,27 @@ static void md_col_load_options(db_t *db, MD_Column *col) {
     col->opt_count = count;
 }
 
-static const char *md_fk_display(const MD_Column *col, const char *id) {
+// Label for one FK cell. Looks in the (live-only) option list first, then
+// falls back to its own ungated query: a row that still points at a
+// soft-deleted parent - pre-cascade legacy data, or a parent the fk_where
+// filter hides - must render its name, not a raw uuid.
+static const char *md_fk_display(db_t *db, const MD_Column *col, const char *id) {
     if (!col || col->type != COL_TYPE_FK_SELECT || !id || !id[0]) return id;
     for (size_t i = 0; i < col->opt_count; ++i) {
         if (strcmp(id, col->opt[i].id) == 0) return col->opt[i].label;
     }
-    return id;
+    if (!db || !col->fk_label) return id;
+    char *sql = temp_sprintf("SELECT %s FROM %s WHERE id = '%s';",
+                             col->fk_label, col->fk_table, md_sql_quote(id));
+    sql_stmt stmt = {0};
+    if (!sql_prepare(db, sql, &stmt)) return id;
+    const char *result = id;
+    if (sql_step(&stmt) == SQL_ROW) {
+        const char *l = sql_column_text(&stmt, 0);
+        if (l && l[0]) result = temp_strdup(l);
+    }
+    sql_finalize(&stmt);
+    return result;
 }
 
 static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCols *out) {
@@ -169,8 +194,7 @@ static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCo
         if (fc.col->type == COL_TYPE_FK_SELECT && fc.col->fk_table) {
             char *sql = temp_sprintf("SELECT id, %s FROM %s%s ORDER BY %s ASC;",
                     fc.col->fk_label, fc.col->fk_table,
-                    fc.col->fk_where ? temp_sprintf(" WHERE %s", fc.col->fk_where) : "",
-                    fc.col->fk_label);
+                    md_fk_options_where(fc.col), fc.col->fk_label);
             sql_stmt stmt = {0};
             if (!sql_prepare(db, sql, &stmt)) {
                 return false;
@@ -298,7 +322,10 @@ static const char *md_where(db_t *db, const MD_MasterConfig *config,
                     sb_append_cstr(&cond, md_ph(db, &n));
                     sb_append_cstr(&cond, " OR EXISTS (SELECT 1 FROM ");
                     sb_append_cstr(&cond, col->fk_table);
-                    sb_append_cstr(&cond, " mdq WHERE mdq.id = ");
+                    // Live parents only: typing the name of a soft-deleted
+                    // staff member must not surface its rows.
+                    sb_append_cstr(&cond, " mdq WHERE mdq.deleted_at IS NULL "
+                                          "AND mdq.id = ");
                     sb_append_cstr(&cond, config->table);
                     sb_append_cstr(&cond, ".");
                     sb_append_cstr(&cond, col->name);
@@ -584,7 +611,8 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
                 size_t slot = md_col_slot(config->columns, ci);
                 r->disp[slot] = config->columns[ci].type == COL_TYPE_DATE
                     ? (char *)md_date_human(r->values[slot])
-                    : (char *)md_fk_display(&config->columns[ci], r->values[slot]);
+                    : (char *)md_fk_display(db, &config->columns[ci],
+                                            r->values[slot]);
             }
             for (size_t ti = 0; ti < config->children_count; ++ti) {
                 const MD_ChildTab *ct = &config->children[ti];
@@ -596,7 +624,8 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
                         cr->items[cj].disp[slot] =
                             ct->columns[cci].type == COL_TYPE_DATE
                                 ? (char *)md_date_human(cr->items[cj].values[slot])
-                                : (char *)md_fk_display(&ct->columns[cci],
+                                : (char *)md_fk_display(db,
+                                                        &ct->columns[cci],
                                                         cr->items[cj].values[slot]);
                     }
                 }

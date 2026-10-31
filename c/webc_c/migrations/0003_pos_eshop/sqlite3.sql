@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS customer_interactions (
 -- 5. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS cash_shifts (
+CREATE TABLE IF NOT EXISTS cash (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
     org_unit_id TEXT NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
     staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS cash_shifts (
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
     org_unit_id TEXT NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
-    shift_id TEXT REFERENCES cash_shifts(id) ON DELETE RESTRICT,
+    shift_id TEXT REFERENCES cash(id) ON DELETE RESTRICT,
     customer_id TEXT REFERENCES customers(id) ON DELETE RESTRICT,
     staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
     order_number TEXT NOT NULL UNIQUE,
@@ -516,25 +516,92 @@ END;
 -- ============================================================================
 -- 9. CASCADE SOFT-DELETE & RESTORE TRIGGERS
 -- ============================================================================
+-- One pair per master that owns child rows. Every edge here mirrors an
+-- MD_ChildTab in src/pos/*.c, so soft-deleting a parent hides its children
+-- (and restoring brings them back) instead of leaving orphans selectable.
+--
+-- The two self-referencing masters (org_units.parent_id,
+-- categories.parent_id) walk their WHOLE subtree with WITH RECURSIVE: a
+-- plain "UPDATE parent SET ... WHERE parent_id = OLD.id" only reaches the
+-- first level, because SQLite never re-fires the trigger that is already
+-- running (recursive_triggers is off) - grandchildren would stay live.
+--
+-- The restore side matches children on deleted_at = OLD.deleted_at, i.e.
+-- "put back only what MY delete stamped": a child deleted earlier by hand
+-- keeps its own timestamp and is not resurrected by its parent.
+--
+-- notes (0001) has no deleted_at column at all, so the users -> notes edge
+-- cannot cascade and is intentionally absent.
 
--- ORG UNIT SOFT DELETE -> CASCADE TO USERS, STAFF, STOCKS
+-- ORG UNIT SOFT DELETE -> CASCADE DOWN THE WHOLE SUBTREE (self-ref) TO
+-- USERS, STAFF, STOCKS
 CREATE TRIGGER IF NOT EXISTS trg_soft_del_org_units
 AFTER UPDATE OF deleted_at ON org_units
 WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
 BEGIN
-    UPDATE users SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
-    UPDATE staff SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
-    UPDATE inventory_stocks SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
+    UPDATE org_units SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE users SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE staff SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE inventory_stocks SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
 END;
 
--- ORG UNIT RESTORE -> CASCADE RESTORE
+-- ORG UNIT RESTORE -> CASCADE RESTORE DOWN THE SUBTREE
 CREATE TRIGGER IF NOT EXISTS trg_restore_org_units
 AFTER UPDATE OF deleted_at ON org_units
 WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
 BEGIN
-    UPDATE users SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
-    UPDATE staff SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
-    UPDATE inventory_stocks SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE org_units SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE users SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE staff SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE inventory_stocks SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
 END;
 
 -- USER SOFT DELETE -> CASCADE TO USER_ROLES, ALERTS, INTERACTIONS
@@ -593,6 +660,132 @@ BEGIN
     UPDATE order_items SET deleted_at = NULL WHERE order_id = OLD.id AND deleted_at = OLD.deleted_at;
     UPDATE deliveries SET deleted_at = NULL WHERE order_id = OLD.id AND deleted_at = OLD.deleted_at;
     UPDATE payments SET deleted_at = NULL WHERE order_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- CATEGORY SOFT DELETE -> CASCADE DOWN THE WHOLE SUBTREE (self-ref) TO PRODUCTS
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_categories
+AFTER UPDATE OF deleted_at ON categories
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE categories SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE products SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND category_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+END;
+
+-- CATEGORY RESTORE -> CASCADE RESTORE DOWN THE SUBTREE
+CREATE TRIGGER IF NOT EXISTS trg_restore_categories
+AFTER UPDATE OF deleted_at ON categories
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE categories SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE products SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND category_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+END;
+
+-- LANGUAGE SOFT DELETE -> CASCADE TO TRANSLATIONS
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_languages
+AFTER UPDATE OF deleted_at ON languages
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE translations SET deleted_at = NEW.deleted_at WHERE language_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- LANGUAGE RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_languages
+AFTER UPDATE OF deleted_at ON languages
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE translations SET deleted_at = NULL WHERE language_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- CUSTOMER SOFT DELETE -> CASCADE TO USERS, CUSTOMER_INTERACTIONS
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_customers
+AFTER UPDATE OF deleted_at ON customers
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE users SET deleted_at = NEW.deleted_at WHERE customer_id = OLD.id AND deleted_at IS NULL;
+    UPDATE customer_interactions SET deleted_at = NEW.deleted_at WHERE customer_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- CUSTOMER RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_customers
+AFTER UPDATE OF deleted_at ON customers
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE users SET deleted_at = NULL WHERE customer_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE customer_interactions SET deleted_at = NULL WHERE customer_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- ROLE SOFT DELETE -> CASCADE TO ROLE_PERMISSIONS, USER_ROLES
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_roles
+AFTER UPDATE OF deleted_at ON roles
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE role_permissions SET deleted_at = NEW.deleted_at WHERE role_id = OLD.id AND deleted_at IS NULL;
+    UPDATE user_roles SET deleted_at = NEW.deleted_at WHERE role_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- ROLE RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_roles
+AFTER UPDATE OF deleted_at ON roles
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE role_permissions SET deleted_at = NULL WHERE role_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE user_roles SET deleted_at = NULL WHERE role_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- STAFF SOFT DELETE -> CASCADE TO CASH
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_staff
+AFTER UPDATE OF deleted_at ON staff
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE cash SET deleted_at = NEW.deleted_at WHERE staff_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- STAFF RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_staff
+AFTER UPDATE OF deleted_at ON staff
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE cash SET deleted_at = NULL WHERE staff_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- INVENTORY STOCK SOFT DELETE -> CASCADE TO STOCK_LEDGER
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_stock_ledger
+AFTER UPDATE OF deleted_at ON inventory_stocks
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE stock_ledger SET deleted_at = NEW.deleted_at WHERE stock_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- INVENTORY STOCK RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_stock_ledger
+AFTER UPDATE OF deleted_at ON inventory_stocks
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE stock_ledger SET deleted_at = NULL WHERE stock_id = OLD.id AND deleted_at = OLD.deleted_at;
 END;
 
 -- ============================================================================

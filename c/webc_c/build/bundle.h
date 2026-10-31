@@ -1,7 +1,7 @@
 #ifndef BUNDLE_H_ // nob.c:108
 #define BUNDLE_H_ // nob.c:109
 #include <stddef.h> // nob.c:110
-#define WEBC_BUILD_TIME "Thu, 29 Oct 2026 09:52:52 GMT" // nob.c:111
+#define WEBC_BUILD_TIME "Sat, 31 Oct 2026 12:50:02 GMT" // nob.c:111
 typedef struct { // nob.c:112
     const char *file_path; // nob.c:113
     size_t offset; // nob.c:114

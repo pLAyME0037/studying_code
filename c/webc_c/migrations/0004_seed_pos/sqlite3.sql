@@ -188,7 +188,7 @@ INSERT OR IGNORE INTO user_roles (id, user_id, role_id, created_at) VALUES
 -- ---------------------------------------------------------------------------
 -- 11. Cash shifts (one closed, one still open)
 -- ---------------------------------------------------------------------------
-INSERT OR IGNORE INTO cash_shifts (id, org_unit_id, staff_id, opened_at, closed_at,
+INSERT OR IGNORE INTO cash (id, org_unit_id, staff_id, opened_at, closed_at,
                                    opening_cash, closing_cash, expected_cash,
                                    status, notes, created_at) VALUES
     ('sd-shift-1', 'sd-ou-phm', 'sd-stf-1',

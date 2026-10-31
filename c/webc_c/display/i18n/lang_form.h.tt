@@ -2,11 +2,16 @@
     <input type="hidden" name="back" value="<c> ESCAPED(back); </c>">
     <select name="code" onchange="this.form.submit()" 
             aria-label="Language"
-            class="border border-surface0 bg-mantle text-text px-1 py-1.5 text-xs"><c> for (size_t i = 0; i < g_i18n.nlangs; ++i) { </c><c> Lang_Row *L = &g_i18n.langs[i]; </c>
-            <option value="<c> ESCAPED(L->code); </c>"<c> if (strcmp(L->code, g_i18n.active) == 0) { </c> selected<c> } </c>><c> ESCAPED(L->name[0] ? L->name : L->code); </c>
-            </option><c> } </c>
+            class="border border-surface0 bg-mantle text-text px-1 py-1.5 text-xs">
+      <c> for (size_t i = 0; i < g_i18n.nlangs; ++i) { </c><c> Lang_Row *L = &g_i18n.langs[i]; </c>
+        <option value="<c> ESCAPED(L->code); </c>"
+          <c> if (strcmp(L->code, g_i18n.active) == 0) { </c> selected<c> } </c>><c> ESCAPED(L->name[0] ? L->name : L->code); </c>
+</option><c> } </c>
     </select>
     <noscript>
         <button type="submit"
-                class="border border-surface0 bg-mantle text-text px-1 py-1.5 text-xs">&#8629;</button>
-    </noscript></form>
+                class="border border-surface0 bg-mantle text-text px-1 py-1.5 text-xs">
+          &#8629;
+        </button>
+    </noscript>
+</form>

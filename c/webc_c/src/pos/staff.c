@@ -189,7 +189,7 @@ defer:
 void serve_pos_staff(Serve_Context *sc) {
     MD_ChildTab children[] = {
         {
-            .table        = "cash_shifts",
+            .table        = "cash",
             .title        = "Shifts",
             .fk_column    = "staff_id",
             .id_column    = "id",

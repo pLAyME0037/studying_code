@@ -348,7 +348,7 @@ CREATE TABLE IF NOT EXISTS customer_interactions (
 -- 5. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS cash_shifts (
+CREATE TABLE IF NOT EXISTS cash (
     id VARCHAR(36) PRIMARY KEY DEFAULT ((UUID())),
     org_unit_id VARCHAR(36) NOT NULL,
     staff_id VARCHAR(36) NOT NULL,
