@@ -1,6 +1,7 @@
 -- ============================================================================
 -- SQLITE3 POS + E-SHOP SCHEMA (migration 0003_pos_eshop)
--- Generated from migrations/pos_and_eshop_db_schema.sql with deltas:
+-- Originally generated from migrations/pos_and_eshop_db_schema.sql (since
+-- deleted, see wiki/dev-log.md) with deltas:
 --   - PRAGMA lines stripped (db.c runs them at open, not in the txn)
 --   - dictionary + language rows seeded (FK defaults reference literal
 --     ids such as 'CUSTOMER' and 'TEIR_1')
@@ -64,21 +65,64 @@ CREATE TABLE IF NOT EXISTS translations (
 );
 
 -- ============================================================================
--- 2. Location
 -- ============================================================================
-
-CREATE TABLE IF NOT EXISTS locations (
+-- 2. GEO ADMIN AREAS (CAMBODIA)
+-- ============================================================================
+-- The four official admin-area tables. users/staff carry village_id ->
+-- villages(id), so these MUST exist before them (SQLite and MySQL both
+-- reject a forward REFERENCES). The tables live here; the 16k seed rows
+-- load in 0009_geo_admin.
+--
+-- `id` is the surrogate key the engine addresses rows by - the seed uses
+-- sequential '1'..'n' and the column default covers rows the app creates
+-- later. The official MOC code rides along as prov_id / dist_id / comm_id
+-- / vill_id and is deliberately NOT the key: the source export ships a
+-- renumbered duplicate district (Odongkmeachey, codes 505 and 509, same
+-- province) so commune codes are unique only within a district, and
+-- village codes only within a commune.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS provinces (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-    province TEXT NOT NULL,
-    district TEXT NOT NULL,
-    commune TEXT NOT NULL,
-    village TEXT NOT NULL,
+    prov_id TEXT NOT NULL UNIQUE,
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS districts (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    dist_id TEXT NOT NULL UNIQUE,
+    province_id TEXT NOT NULL REFERENCES provinces(id),
+    type TEXT NOT NULL,
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS communes (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    comm_id TEXT NOT NULL,
+    district_id TEXT NOT NULL REFERENCES districts(id),
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS villages (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    vill_id TEXT NOT NULL,
+    commune_id TEXT NOT NULL REFERENCES communes(id),
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    is_not_active TEXT NULL,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     deleted_at TEXT DEFAULT NULL
 );
 
--- ============================================================================
 -- 3. ORGANIZATIONAL UNITS & RBAC (USERS, STAFF, ROLES, PERMISSIONS)
 -- ============================================================================
 
@@ -104,7 +148,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -120,7 +164,7 @@ CREATE TABLE IF NOT EXISTS staff (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone TEXT,
-    location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NOT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     hire_date TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -169,7 +213,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
 );
 
 -- ============================================================================
--- 3. PRODUCT CATALOG & INVENTORY STOCK
+-- 4. PRODUCT CATALOG & INVENTORY STOCK
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -238,7 +282,7 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
 );
 
 -- ============================================================================
--- 4. CUSTOMERS & INTERACTION JSON DATA
+-- 5. CUSTOMERS & INTERACTION JSON DATA
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -263,7 +307,7 @@ CREATE TABLE IF NOT EXISTS customer_interactions (
 );
 
 -- ============================================================================
--- 5. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
+-- 6. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS cash (
@@ -364,7 +408,7 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
 );
 
 -- ============================================================================
--- 6. SYSTEM ALERTS (JSON STORAGE) & AUDIT LOGS
+-- 7. SYSTEM ALERTS (JSON STORAGE) & AUDIT LOGS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS system_alerts (
@@ -450,7 +494,7 @@ CREATE TABLE users_pos (
     password_hash TEXT NOT NULL DEFAULT '',
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     profile_pic BLOB NULL, -- kept from the demo schema (superset of vision)
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -475,7 +519,7 @@ DROP TABLE users;
 ALTER TABLE users_pos RENAME TO users;
 
 -- ============================================================================
--- 7. INDEXES (PERFORMANCE TUNING)
+-- 8. INDEXES (PERFORMANCE TUNING)
 -- ============================================================================
 
 CREATE INDEX IF NOT EXISTS idx_orders_org_unit ON orders(org_unit_id, deleted_at);
@@ -489,7 +533,7 @@ CREATE INDEX IF NOT EXISTS idx_alerts_user ON system_alerts(user_id, is_seen, de
 CREATE INDEX IF NOT EXISTS idx_translations_lookup ON translations(language_id, trans_key, deleted_at);
 
 -- ============================================================================
--- 8. AUTO UPDATED_AT TRIGGERS
+-- 9. AUTO UPDATED_AT TRIGGERS
 -- ============================================================================
 
 CREATE TRIGGER IF NOT EXISTS trg_upd_users BEFORE UPDATE ON users BEGIN
@@ -514,7 +558,7 @@ CREATE TRIGGER IF NOT EXISTS trg_upd_stocks BEFORE UPDATE ON inventory_stocks BE
 END;
 
 -- ============================================================================
--- 9. CASCADE SOFT-DELETE & RESTORE TRIGGERS
+-- 10. CASCADE SOFT-DELETE & RESTORE TRIGGERS
 -- ============================================================================
 -- One pair per master that owns child rows. Every edge here mirrors an
 -- MD_ChildTab in src/pos/*.c, so soft-deleting a parent hides its children
@@ -789,7 +833,7 @@ BEGIN
 END;
 
 -- ============================================================================
--- 10. ACTIVE VIEWS & FINANCIAL REPORTING VIEW
+-- 11. ACTIVE VIEWS & FINANCIAL REPORTING VIEW
 -- ============================================================================
 
 CREATE VIEW IF NOT EXISTS v_active_users AS 

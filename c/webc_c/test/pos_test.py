@@ -875,17 +875,15 @@ def main():
           'data-pg-container="mc-tbody"' in html, True)
 
     # ---- Phase 5c: SALES (/pos/orders, /pos/shifts, /pos/finance) --------
-    # fixtures: a location + a staff member (orders.staff_id NOT NULL)
-    db_exec("INSERT INTO locations (province, district, commune, village) "
-            "VALUES (?, ?, ?, ?)",
-            ("Phnom Penh", "Chamkarmon", "Boeung Keng Kang", "BKK1"))
-    loc_id = db_row("SELECT id FROM locations "
-                    "ORDER BY created_at DESC LIMIT 1")[0]
+    # fixtures: a village + a staff member (orders.staff_id NOT NULL).
+    # The geo hierarchy is seeded by 0009, so this points at a real
+    # villages row (id 7426, Phnom Penh) instead of inventing a location.
+    loc_id = db_row("SELECT id FROM villages WHERE id = '7426'")[0]
     user_id = db_row("SELECT id FROM users "
                      "WHERE id NOT IN (SELECT user_id FROM staff) "
                      "LIMIT 1")[0]
     db_exec("INSERT INTO staff (id, user_id, org_unit_id, staff_code, "
-            "first_name, last_name, location_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            "first_name, last_name, village_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
             ("pos-stf-1", user_id, "pos-ou-1", "POS-STF-1",
              "Sok", "Dara", loc_id))
 
@@ -1090,11 +1088,11 @@ def main():
          "opening_cash": "500", "closing_cash": "", "expected_cash": "",
          "notes": "morning"})
     t.chk("shift create (blank status -> OPEN)", st, 302)
-    shid = db_row("SELECT id FROM cash_shifts WHERE notes = 'morning'")[0]
+    shid = db_row("SELECT id FROM cash WHERE notes = 'morning'")[0]
     t.chk("shift db (status default, cash, opened_at default)",
-          (db_row("SELECT status, opening_cash FROM cash_shifts WHERE id = ?",
+          (db_row("SELECT status, opening_cash FROM cash WHERE id = ?",
                   (shid,)),
-           db_row("SELECT opened_at FROM cash_shifts WHERE id = ?",
+           db_row("SELECT opened_at FROM cash WHERE id = ?",
                   (shid,))[0] is not None),
           (("OPEN", 500.0), True))
 
@@ -1115,7 +1113,7 @@ def main():
     t.chk("shift close update", st, 302)
     t.chk("shift close saved",
           db_row("SELECT status, closing_cash, expected_cash "
-                 "FROM cash_shifts WHERE id = ?", (shid,)),
+                 "FROM cash WHERE id = ?", (shid,)),
           ("CLOSED", 480.0, 490.0))
 
     # ---- /pos/finance (read_only) ----------------------------------------
@@ -1240,11 +1238,11 @@ def main():
         f"/pos/staff/create?user_id={uid5d}&redirect=/pos/staff",
         {"staff_code": "POS-STF-5D", "first_name": "Vanny",
          "last_name": "Ly", "org_unit_id": "pos-ou-1",
-         "location_id": loc_id, "created_at": ""})
+         "village_id": loc_id, "created_at": ""})
     t.chk("staff create with user fk via query", st, 302)
     stf5d = db_row("SELECT id FROM staff WHERE staff_code = 'POS-STF-5D'")[0]
-    t.chk("staff db (user/org/location, type/hire/phone null)",
-          db_row("SELECT user_id, org_unit_id, location_id, "
+    t.chk("staff db (user/org/village, type/hire/phone null)",
+          db_row("SELECT user_id, org_unit_id, village_id, "
                  "staff_type_dict_id, hire_date, phone FROM staff "
                  "WHERE id = ?", (stf5d,)),
           (uid5d, "pos-ou-1", loc_id, None, None, None))
@@ -1253,7 +1251,7 @@ def main():
           (f'data-row-id="{stf5d}"' not in body.decode()
            and 'data-tab="staff"' not in body.decode()), True)
 
-    # ---- /pos/staff master + cash_shifts child ----------------------------
+    # ---- /pos/staff master + cash child ----------------------------
     st, body, _ = c.get("/pos/staff")
     html = body.decode()
     t.chk("staff page", st, 200)
@@ -1272,7 +1270,7 @@ def main():
           ("phone" in sei and 'name="hire_date"' in edit), True)
     t.chk("staff edit row has STAFF_TYPE select",
           'name="staff_type_dict_id"' in edit, True)
-    t.chk("staff child tab (shifts)", 'data-tab="cash_shifts"' in html, True)
+    t.chk("staff child tab (shifts)", 'data-tab="cash"' in html, True)
 
     # shift child under the staff member (staff_id via query)
     st, _, _ = c.post_urlencoded(
@@ -1280,9 +1278,9 @@ def main():
         {"org_unit_id": "pos-ou-1", "status": "", "opening_cash": "300",
          "closing_cash": "", "expected_cash": "", "notes": "eve"})
     t.chk("shift child create under staff", st, 302)
-    shid5d = db_row("SELECT id FROM cash_shifts WHERE notes = 'eve'")[0]
+    shid5d = db_row("SELECT id FROM cash WHERE notes = 'eve'")[0]
     t.chk("shift child db (staff from query, status default OPEN)",
-          db_row("SELECT staff_id, status, opening_cash FROM cash_shifts "
+          db_row("SELECT staff_id, status, opening_cash FROM cash "
                  "WHERE id = ?", (shid5d,)),
           (stf5d, "OPEN", 300.0))
 
@@ -1441,17 +1439,18 @@ def main():
           db_row("SELECT role_name FROM roles WHERE id = ?", (rid,)),
           ("Manager Renamed",))
 
-    # roles have NO soft-delete cascade in the schema: links stay live
-    # while the role hides from the live list.
+    # roles cascade now (0003 trg_soft_del_roles): deleting the role stamps
+    # its permission grants and member links, restore puts both back.
     st, _, _ = c.post_urlencoded(
         f"/pos/roles/{rid}/delete?redirect=/pos/roles", {})
     t.chk("role soft delete", st, 302)
-    t.chk("links NOT cascaded (schema has no roles trigger)",
+    t.chk("links cascaded (role_permissions + user_roles)",
           (db_row("SELECT deleted_at FROM role_permissions WHERE id = ?",
-                  (rpid,))[0],
+                  (rpid,))[0] is not None,
            db_row("SELECT deleted_at FROM user_roles "
-                  "WHERE user_id = ? AND role_id = ?", (uid5d, rid))[0]),
-          (None, None))
+                  "WHERE user_id = ? AND role_id = ?", (uid5d, rid))[0]
+           is not None),
+          (True, True))
     st, body, _ = c.get("/pos/roles")
     t.chk("role hidden from live list",
           f'data-row-id="{rid}"' not in body.decode(), True)
@@ -1462,6 +1461,12 @@ def main():
         "POST", f"/pos/roles/{rid}/restore?redirect=/pos/roles?deleted=1")
     t.chk("role restore redirects to trash view",
           (st, hdrs.get("Location")), (302, "/pos/roles?deleted=1"))
+    t.chk("links restored with the role",
+          (db_row("SELECT deleted_at FROM role_permissions WHERE id = ?",
+                  (rpid,))[0],
+           db_row("SELECT deleted_at FROM user_roles "
+                  "WHERE user_id = ? AND role_id = ?", (uid5d, rid))[0]),
+          (None, None))
 
     # ---- Phase 5f: CONFIG (/pos/i18n, /pos/config) ------------------------
     st, body, _ = c.get("/pos/i18n")
@@ -1531,7 +1536,26 @@ def main():
     t.chk("config page", st, 200)
     t.chk("config th = key+value+json+encrypted+since+actions",
           th_count(html), 6)
-    t.chk("config empty state", "No Configs yet." in html, True)
+    # 0011_seed_config ships pos.shop_name, so /pos/config is never empty on
+    # a fresh DB: the seeded row is listed instead of the empty state.
+    t.chk("config empty state", "No Configs yet." in html, False)
+    t.chk("config seeded default listed",
+          ("pos.shop_name" in html and "sd-cfg-shop-name" in html), True)
+    # Contract, not a literal: the seed value is a product decision the
+    # operator edits, so pin the wiring instead - live row, non-empty,
+    # not encrypted, and the storefront chrome must render that exact
+    # string (shop_name() reads this row before its C fallback).
+    shop_name_seed = db_row(
+        "SELECT config_value FROM system_configs "
+        "WHERE id = ? AND deleted_at IS NULL", ("sd-cfg-shop-name",))[0]
+    t.chk("config seeded default row db",
+          (bool(shop_name_seed),
+           db_row("SELECT is_encrypted FROM system_configs WHERE id = ?",
+                  ("sd-cfg-shop-name",))[0]),
+          (True, 0))
+    st, body, _ = c.get("/")
+    t.chk("seeded shop name reaches the storefront",
+          shop_name_seed in body.decode(), True)
 
     st, _, _ = c.post_urlencoded(
         "/pos/config/create?redirect=/pos/config",
@@ -1734,10 +1758,10 @@ def main():
 
     # ---- Phase 10/11/13/14/16: schema completeness (0001..0009 + history) --
     want = sorted((
-        "audit_logs", "cash_shifts", "categories", "communes",
+        "audit_logs", "cash", "categories", "communes",
         "customer_interactions", "customers", "deliveries", "dictionaries",
         "districts", "financial_ledgers", "inventory_stocks", "languages",
-        "locations", "notes", "order_items",
+        "notes", "order_items",
         "orders", "org_units", "payments", "permissions", "product_variants",
         "products", "provinces", "role_permissions", "roles", "staff",
         "stock_ledger", "system_alerts", "system_configs", "translations",

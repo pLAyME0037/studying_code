@@ -36,7 +36,7 @@ CREATE TABLE users_pos (
     password_hash TEXT NOT NULL DEFAULT '',
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     profile_pic BLOB NULL, -- kept from the demo schema (superset of vision)
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -46,11 +46,11 @@ CREATE TABLE users_pos (
 
 INSERT INTO users_pos (id, org_unit_id, name, username, email, phone,
                        password_hash, user_type_dict_id, customer_id,
-                       location_id, status, profile_pic,
+                       village_id, status, profile_pic,
                        created_at, updated_at, deleted_at)
 SELECT id, org_unit_id, name, username, email, phone,
        password_hash, user_type_dict_id, customer_id,
-       location_id, status, profile_pic,
+       village_id, status, profile_pic,
        created_at, updated_at, deleted_at
 FROM users;
 

@@ -138,7 +138,17 @@ static const char *md_fk_options_where(const MD_Column *col) {
 }
 
 static void md_col_load_options(db_t *db, MD_Column *col) {
+    // A cascade leaf ships no option list: its template renders only the
+    // stored value and GeoCascade.js fetches the rest per commune. Loading
+    // 14,858 rows here would be pure waste - md_fk_display falls back to a
+    // one-row lookup for the label, which is cheaper than the full table.
+    // Unconditional, including on the ?nojs=1 render: these options feed
+    // the UPDATE form, and the edit button that opens it is a type="button"
+    // toggled by ListExpandSwitcher.js - with scripting off that row never
+    // opens, so the list would be dead weight. The CREATE form loads its
+    // own copy via md_form_cols_load, which is the one no-JS users reach.
     if (!col || col->type != COL_TYPE_FK_SELECT || !col->fk_table) return;
+    if (col->fk_cascade) return;
     char *sql = temp_sprintf("SELECT id, %s FROM %s%s ORDER BY %s ASC;",
             col->fk_label, col->fk_table, md_fk_options_where(col),
             col->fk_label);
@@ -188,10 +198,16 @@ static const char *md_fk_display(db_t *db, const MD_Column *col, const char *id)
     return result;
 }
 
-static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config, MD_FormCols *out) {
+static bool md_form_cols_load(db_t *db, const MD_MasterConfig *config,
+                              bool lazy_cascade, MD_FormCols *out) {
     for (size_t i = 0; i < config->column_count; ++i) {
         MD_FormCol fc = { .col = &config->columns[i] };
-        if (fc.col->type == COL_TYPE_FK_SELECT && fc.col->fk_table) {
+        // Cascade leaves never render their option list (the template emits
+        // only an empty/None choice and GeoCascade.js fills it per commune),
+        // so skip the 14,858-row fetch entirely - unless this is the
+        // ?nojs=1 render, which ships the list because JS never runs there.
+        if (fc.col->type == COL_TYPE_FK_SELECT && fc.col->fk_table
+            && !(fc.col->fk_cascade && lazy_cascade)) {
             char *sql = temp_sprintf("SELECT id, %s FROM %s%s ORDER BY %s ASC;",
                     fc.col->fk_label, fc.col->fk_table,
                     md_fk_options_where(fc.col), fc.col->fk_label);
@@ -517,6 +533,20 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     // ?fragment=all: load everything, render the bare pagination store
     // (no header/footer) -- the payload js/PaginationSwitcher.js caches.
     bool fragment = page_fragment_requested(sc->query_string);
+    // ?nojs=1 - the <noscript> escape hatch on a cascade page: with
+    // scripting off GeoCascade.js never fills the village leaf, so a NOT
+    // NULL village_id could never be satisfied and staff could not be
+    // created at all. Presence of the key makes this render ship the full
+    // option list to the CREATE form instead of the lazy cascade (and
+    // suppress geo_data, so the template's <noscript> meta refresh is not
+    // re-emitted here). The list is deliberately NOT given to the inline
+    // update forms: their edit button is JS-only, so that copy would be
+    // ~680 KB per row that no no-JS user can ever open.
+    // Matched on PRESENCE rather than value: the redirect target is built
+    // by appending nojs=1 to a query that may already carry a nojs key,
+    // and only presence guarantees that target comes back as "on".
+    bool nojs = form_find(sc->query_string, "nojs", NULL);
+    bool lazy_cascade = !nojs;
     // The view strip is Live + Trash on a soft_delete page (?deleted=1 =
     // the trash view; no_live hides Live on tables that are never a
     // directly-filled list, and non-soft_delete pages get no strip). The
@@ -589,7 +619,7 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     bool ok = md_load_master_with_children(db, config, rows,
                                            windowed ? &page_info : NULL,
                                            show_deleted, &search)
-              && md_form_cols_load(db, config, &form_cols);
+              && md_form_cols_load(db, config, lazy_cascade, &form_cols);
     if (ok) {
         for (size_t i = 0; i < config->column_count; ++i) {
             md_col_load_options(db, &config->columns[i]);
@@ -632,6 +662,19 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
             }
         }
     }
+    // A fk_cascade column (village_id) renders ancestor navigation selects
+    // whose options come from this compact dataset - built while the
+    // connection is still open. NULL = no cascade on this page, or the
+    // query failed; the template then falls back to the plain select.
+    // Suppressed on ?nojs=1: there the plain select IS the full list, and
+    // keeping geo_data NULL is also what stops the <noscript> meta
+    // refresh from being re-emitted (no redirect loop).
+    const char *geo_data = NULL;
+    if (!nojs) {
+        for (size_t i = 0; i < config->column_count && !geo_data; ++i) {
+            if (config->columns[i].fk_cascade) geo_data = md_cascade_json(db, rows, config);
+        }
+    }
     db_close(db);
     if (!ok) {
         md_master_rows_free(rows);
@@ -649,6 +692,13 @@ void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config) {
     const char *page_base = md_path;
     const char *page_key = "page";
     const char *page_container = "mc-tbody";
+    // Target of the <noscript> meta refresh on a cascade page: this exact
+    // URL with nojs=1 appended, preserving page/deleted/q/... so the
+    // plain render lands on the same rows the user was looking at.
+    const char *nojs_url = sc->query_string.count
+        ? temp_sprintf("%s?%.*s&nojs=1", md_path,
+                       (int)sc->query_string.count, sc->query_string.data)
+        : temp_sprintf("%s?nojs=1", md_path);
     if (!fragment) render_page_header(sb, config->title, md_path);
 #define OUT(buf, size) sb_append_buf(sb, buf, size);
 #define INT(v) sb_append_cstr(sb, temp_sprintf("%zu", v));

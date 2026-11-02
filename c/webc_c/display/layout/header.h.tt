@@ -16,6 +16,7 @@
     <script src="/js/themeSwitcher.js"></script>
     <script src="/js/ListExpandSwitcher.js"></script>
     <script src="/js/PaginationSwitcher.js"></script>
+    <script src="/js/GeoCascade.js"></script>
 
     <style>
         .no-scrollbar::-webkit-scrollbar {

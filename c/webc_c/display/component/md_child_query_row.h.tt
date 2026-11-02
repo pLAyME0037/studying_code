@@ -21,7 +21,13 @@
                 shown_s = temp_sprintf("%.*s", (int)shown.count, shown.data);
             }
         </c>
-        <c> if (fcol->type == COL_TYPE_FK_SELECT) { </c>
+        <!-- A fk_cascade column filters as free text, not a dropdown: its
+             option list is 14,858 rows (~1.7 MB) and shipping it here
+             would double the page for a control the JS cascade does not
+             fill either. The search builder already matches an FK column
+             against its live parent's LABEL via EXISTS, so typing part of
+             a Khmer village name narrows the list - and it costs nothing. -->
+        <c> if (fcol->type == COL_TYPE_FK_SELECT && !fcol->fk_cascade) { </c>
         <select name="q_<c> STR(fcol->name); </c>" form="md-query-form"
                 data-md-qbox aria-label="Filter <c> ESCAPED(fcol->label); </c>"
                 class="w-full px-1 py-1.5 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">

@@ -74,13 +74,13 @@ MD_Column md_pos_users_columns[] = {
         .fk_table    = "org_units",
         .fk_label    = "ou_name"
     }, {
-        .name        = "location_id",
-        .label       = "Location",
+        .name        = "village_id",
+        .label       = "Village",
         .type        = COL_TYPE_FK_SELECT,
         .nullable    = true,
-        .fk_table    = "locations",
-        .fk_label    = "province",
-        .fk_where    = "locations.id IN (SELECT id FROM provinces)"
+        .fk_table    = "villages",
+        .fk_label    = "name_kh",
+        .fk_cascade  = 1
     }, {
         .name        = "customer_id",
         .label       = "Customer",
@@ -105,7 +105,7 @@ static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
     // Plain INSERT (not OR REPLACE): a colliding username/phone must fail
     // loudly instead of silently dropping the other row. Field order is
     // usr_fields {phone, name, username, email, profile_pic} then
-    // usr_opt_fields {status, customer_id, org_unit_id, location_id,
+    // usr_opt_fields {status, customer_id, org_unit_id, village_id,
     // user_type_dict_id}. phone (values[0]) must be non-empty - the
     // SERVE_* 400 guard enforces it. email/profile_pic/fks store NULL
     // when blank (0007: email is optional, only filled on deliberate
@@ -113,7 +113,7 @@ static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "INSERT INTO users "
                          "(phone, name, username, email, profile_pic, "
-                          "status, customer_id, org_unit_id, location_id, "
+                          "status, customer_id, org_unit_id, village_id, "
                           "user_type_dict_id) "
                          "VALUES (?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), "
                           "COALESCE(NULLIF(?, ''), 'ACTIVE'), "
@@ -121,7 +121,7 @@ static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
                           "COALESCE(NULLIF(?, ''), 'CUSTOMER'));",
         [SQL_MYSQL]    = "INSERT INTO users "
                          "(phone, name, username, email, profile_pic, "
-                          "status, customer_id, org_unit_id, location_id, "
+                          "status, customer_id, org_unit_id, village_id, "
                           "user_type_dict_id) "
                          "VALUES (?, ?, ?, NULLIF(?, ''), NULLIF(?, ''), "
                           "COALESCE(NULLIF(?, ''), 'ACTIVE'), "
@@ -129,7 +129,7 @@ static bool create_pos_user(db_t *db, String_View *fields, size_t count) {
                           "COALESCE(NULLIF(?, ''), 'CUSTOMER'));",
         [SQL_POSTGRES] = "INSERT INTO users "
                          "(phone, name, username, email, profile_pic, "
-                          "status, customer_id, org_unit_id, location_id, "
+                          "status, customer_id, org_unit_id, village_id, "
                           "user_type_dict_id) "
                          "VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, ''), "
                           "COALESCE(NULLIF($6, ''), 'ACTIVE'), "
@@ -164,7 +164,7 @@ static bool update_pos_user(db_t *db, String_View *fields, size_t count,
                          "status = COALESCE(NULLIF(?, ''), status), "
                          "customer_id = COALESCE(NULLIF(?, ''), customer_id), "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
-                         "location_id = COALESCE(NULLIF(?, ''), location_id), "
+                         "village_id = COALESCE(NULLIF(?, ''), village_id), "
                          "user_type_dict_id = COALESCE(NULLIF(?, ''), user_type_dict_id) "
                          "WHERE id = ?;",
         [SQL_MYSQL]    = "UPDATE users SET phone = COALESCE(NULLIF(?, ''), phone), "
@@ -173,7 +173,7 @@ static bool update_pos_user(db_t *db, String_View *fields, size_t count,
                          "status = COALESCE(NULLIF(?, ''), status), "
                          "customer_id = COALESCE(NULLIF(?, ''), customer_id), "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
-                         "location_id = COALESCE(NULLIF(?, ''), location_id), "
+                         "village_id = COALESCE(NULLIF(?, ''), village_id), "
                          "user_type_dict_id = COALESCE(NULLIF(?, ''), user_type_dict_id) "
                          "WHERE id = ?;",
         [SQL_POSTGRES] = "UPDATE users SET phone = COALESCE(NULLIF($1, ''), phone), "
@@ -182,7 +182,7 @@ static bool update_pos_user(db_t *db, String_View *fields, size_t count,
                          "status = COALESCE(NULLIF($6, ''), status), "
                          "customer_id = COALESCE(NULLIF($7, ''), customer_id), "
                          "org_unit_id = COALESCE(NULLIF($8, ''), org_unit_id), "
-                         "location_id = COALESCE(NULLIF($9, ''), location_id), "
+                         "village_id = COALESCE(NULLIF($9, ''), village_id), "
                          "user_type_dict_id = COALESCE(NULLIF($10, ''), user_type_dict_id) "
                          "WHERE id = $11;",
     };
@@ -284,7 +284,7 @@ static const char *usr_fields[] = {
     "phone", "name", "username", "email", "profile_pic",
 };
 static const char *usr_opt_fields[] = {
-    "status", "customer_id", "org_unit_id", "location_id", "user_type_dict_id",
+    "status", "customer_id", "org_unit_id", "village_id", "user_type_dict_id",
 };
 SERVE_CREATE(pos_users, pos_user, usr_fields, usr_opt_fields)
 SERVE_UPDATE(pos_users, pos_user, usr_fields, usr_opt_fields)

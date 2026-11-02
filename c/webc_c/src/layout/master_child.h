@@ -59,6 +59,10 @@ typedef struct {
     const char *fk_value;
     MD_Option  *opt;        /* runtime: FK dropdown options */
     size_t      opt_count;
+    int         fk_cascade; /* leaf of a parent-scoped cascade: render the
+                             * ancestor navigation selects above it (UI only -
+                             * they are never posted; the FK column still holds
+                             * just this one id). See GeoCascade.js. */
     int         hidden;     /* never displayed; preserved via hidden input on edit */
     int         computed;   /* display-only value (server-derived); no form input */
     const MD_Cell *cell;    /* composite: N parts render as one cell (see MD_Cell) */
@@ -73,6 +77,18 @@ static inline size_t md_col_slot(const MD_Column *cols, size_t ci) {
     for (size_t i = 0; i < ci; ++i)
         slot += cols[i].cell ? cols[i].cell->part_count : 1;
     return slot;
+}
+
+/* Is this FK id among the column's offered (LIVE-only) options? The update
+ * form needs it: a row pointing at a soft-deleted parent - pre-cascade
+ * legacy data, or a parent the fk_where filter hides - must keep offering
+ * its own value, or the form renders no `selected` and a plain submit
+ * silently re-points the FK at the first listed parent. */
+static inline int md_opt_has_id(const MD_Column *col, const char *id) {
+    if (!col || !id || !id[0]) return 0;
+    for (size_t i = 0; i < col->opt_count; ++i)
+        if (strcmp(id, col->opt[i].id) == 0) return 1;
+    return 0;
 }
 
 typedef struct {
@@ -156,6 +172,18 @@ typedef struct {
     size_t        count;
     size_t        capacity;
 } MD_MasterRows;
+
+/* JSON payload for a client-side cascade widget on this page: the geo
+ * province/district/commune ancestors, which the engine renders as
+ * navigation selects above a fk_cascade column. `rows`/`config` are only
+ * read to resolve the villages already chosen on THIS page - the edit
+ * form has to walk a stored village back up to its province, and the
+ * 14,858-row village table is deliberately not embedded. Supplied by the
+ * owning domain (src/pos/geo.c defines it) so the layout engine stays
+ * free of domain headers. NULL means "no cascade here" or "query failed" -
+ * the caller falls back to the plain single select. */
+const char *md_cascade_json(db_t *db, const MD_MasterRows *rows,
+                            const MD_MasterConfig *config);
 
 /* Load, render and respond 200 with the master-child page for `config`. */
 void serve_master_child(Serve_Context *sc, const MD_MasterConfig *config);

@@ -36,11 +36,9 @@ MD_Column md_staff_columns[] = {
       .nullable = false, .fk_table = "users", .fk_label = "name" },
     { .name = "org_unit_id", .label = "Org", .type = COL_TYPE_FK_SELECT,
       .nullable = false, .fk_table = "org_units", .fk_label = "ou_name" },
-    { .name = "location_id", .label = "Location", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "locations",
-      .fk_label = "province",
-      // Phase 16 geo: provinces mirror rows only (see /pos/users).
-      .fk_where = "locations.id IN (SELECT id FROM provinces)" },
+    { .name = "village_id", .label = "Village", .type = COL_TYPE_FK_SELECT,
+      .nullable = false, .fk_table = "villages", .fk_label = "name_kh",
+      .fk_cascade = 1 },
     { .name = "phone", .label = "Phone", .type = COL_TYPE_TEXT,
       .nullable = true },
     { .name = "staff_type_dict_id", .label = "Role", .type = COL_TYPE_FK_SELECT,
@@ -53,21 +51,21 @@ const size_t md_staff_columns_count = ARRAY_LEN(md_staff_columns);
 
 // DB mutations only -- list loading lives in the master_child engine.
 // Column order: (user_id, org_unit_id, staff_code, staff_type_dict_id,
-// first_name, last_name, phone, location_id, hire_date).
+// first_name, last_name, phone, village_id, hire_date).
 static bool create_staff_member(db_t *db, String_View *fields, size_t count) {
     if (count < 9) return false;
     static const char *const q[SQL_LANG_COUNT] = {
         [SQL_SQLITE]   = "INSERT INTO staff "
                          "(user_id, org_unit_id, staff_code, staff_type_dict_id, "
-                          "first_name, last_name, phone, location_id, hire_date) "
+                          "first_name, last_name, phone, village_id, hire_date) "
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
         [SQL_MYSQL]    = "INSERT INTO staff "
                          "(user_id, org_unit_id, staff_code, staff_type_dict_id, "
-                          "first_name, last_name, phone, location_id, hire_date) "
+                          "first_name, last_name, phone, village_id, hire_date) "
                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);",
         [SQL_POSTGRES] = "INSERT INTO staff "
                          "(user_id, org_unit_id, staff_code, staff_type_dict_id, "
-                          "first_name, last_name, phone, location_id, hire_date) "
+                          "first_name, last_name, phone, village_id, hire_date) "
                          "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);",
     };
     sql_stmt stmt = {0};
@@ -100,7 +98,7 @@ static bool update_staff_member(db_t *db, String_View *fields, size_t count,
                          "staff_code = COALESCE(NULLIF(?, ''), staff_code), "
                          "first_name = COALESCE(NULLIF(?, ''), first_name), "
                          "last_name = COALESCE(NULLIF(?, ''), last_name), "
-                         "location_id = COALESCE(NULLIF(?, ''), location_id), "
+                         "village_id = COALESCE(NULLIF(?, ''), village_id), "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
                          "user_id = COALESCE(NULLIF(?, ''), user_id), "
                          "staff_type_dict_id = COALESCE(NULLIF(?, ''), "
@@ -112,7 +110,7 @@ static bool update_staff_member(db_t *db, String_View *fields, size_t count,
                          "staff_code = COALESCE(NULLIF(?, ''), staff_code), "
                          "first_name = COALESCE(NULLIF(?, ''), first_name), "
                          "last_name = COALESCE(NULLIF(?, ''), last_name), "
-                         "location_id = COALESCE(NULLIF(?, ''), location_id), "
+                         "village_id = COALESCE(NULLIF(?, ''), village_id), "
                          "org_unit_id = COALESCE(NULLIF(?, ''), org_unit_id), "
                          "user_id = COALESCE(NULLIF(?, ''), user_id), "
                          "staff_type_dict_id = COALESCE(NULLIF(?, ''), "
@@ -124,7 +122,7 @@ static bool update_staff_member(db_t *db, String_View *fields, size_t count,
                          "staff_code = COALESCE(NULLIF($1, ''), staff_code), "
                          "first_name = COALESCE(NULLIF($2, ''), first_name), "
                          "last_name = COALESCE(NULLIF($3, ''), last_name), "
-                         "location_id = COALESCE(NULLIF($4, ''), location_id), "
+                         "village_id = COALESCE(NULLIF($4, ''), village_id), "
                          "org_unit_id = COALESCE(NULLIF($5, ''), org_unit_id), "
                          "user_id = COALESCE(NULLIF($6, ''), user_id), "
                          "staff_type_dict_id = COALESCE(NULLIF($7, ''), "
@@ -215,7 +213,7 @@ void serve_pos_staff(Serve_Context *sc) {
 
 // body keys first (present in all three views), query-driven fks after.
 static const char *stf_fields[] = {
-    "staff_code", "first_name", "last_name", "location_id",
+    "staff_code", "first_name", "last_name", "village_id",
 };
 static const char *stf_opt_fields[] = {
     "user_id", "org_unit_id", "staff_type_dict_id", "hire_date", "phone",

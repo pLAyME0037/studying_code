@@ -8,6 +8,11 @@
 --   * order_items are inserted BEFORE orders (FKs are off during
 --     migrations), so orders can carry a subtotal that really equals the
 --     sum of its lines;
+--   * village_id values (7426 / 941 / 10433) are REAL villages rows seeded
+--     later by 0009_geo_admin. That forward reference is safe only because
+--     db.c runs the whole migration set with PRAGMA foreign_keys=OFF
+--     (db.c:192) and restores it afterwards (db.c:268), so 0004 can name
+--     ids that do not exist yet;
 --   * no dictionaries/system_configs/i18n rows: those are covered by
 --     0003/0005 test fixtures and keep their own empty-state tests.
 -- sqlite3 is the canonical dialect; mysql.sql/postgres.sql document the
@@ -15,24 +20,14 @@
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
--- 1. Locations (Khmer address chain)
--- ---------------------------------------------------------------------------
-INSERT OR IGNORE INTO locations (id, province, district, commune, village, created_at) VALUES
-    ('sd-loc-1', 'ភ្នំពេញ', 'ចំការមន', 'ផ្សារថ្មី', 'ភូមិផលិតផល ១', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')),
-    ('sd-loc-2', 'ភ្នំពេញ', 'ដូនពេញ', 'ទួលគោក', 'ភូមិផលិតផល ២', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')),
-    ('sd-loc-3', 'សៀមរាប', 'សៀមរាប', 'សាលាតិច', 'ភូមិផលិតផល ៣', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')),
-    ('sd-loc-4', 'បាត់ដំបង', 'បាត់ដំបង', 'អូរឫស្សី', 'ភូមិផលិតផល ៤', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days')),
-    ('sd-loc-5', 'កំពង់ចាម', 'កំពង់ចាម', 'កំពង់ចាម', 'ភូមិផលិតផល ៥', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days'));
-
--- ---------------------------------------------------------------------------
--- 2. One org unit (branch) -- tests create their own 'pos-ou-1'
+-- 1. One org unit (branch) -- tests create their own 'pos-ou-1'
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO org_units (id, parent_id, ou_code, ou_name, ou_type_dict_id, created_at) VALUES
     ('sd-ou-phm', NULL, 'SD-MAIN', 'ហាងកណ្តាលភ្នំពេញ', 'BRANCH',
      strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days'));
 
 -- ---------------------------------------------------------------------------
--- 3. Categories
+-- 2. Categories
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO categories (id, parent_id, cat_code, name, created_at) VALUES
     ('sd-cat-1', NULL, 'SD-CAT-01', 'ទូរស័ព្ទ', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-280 days')),
@@ -42,7 +37,7 @@ INSERT OR IGNORE INTO categories (id, parent_id, cat_code, name, created_at) VAL
     ('sd-cat-5', NULL, 'SD-CAT-05', 'ឧបករណ៍ការពារ', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-280 days'));
 
 -- ---------------------------------------------------------------------------
--- 4. Products: 50 rows = 10 Khmer nouns x 5 adjectives (unique names via
+-- 3. Products: 50 rows = 10 Khmer nouns x 5 adjectives (unique names via
 --    the row number), category cycles, price = 15 + n*37 % 900.
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO products (id, category_id, product_type_dict_id, sku, name,
@@ -80,7 +75,7 @@ SELECT 'sd-prod-' || printf('%03d', n),
 FROM seq;
 
 -- ---------------------------------------------------------------------------
--- 5. One variant per product (black/white, some with a price bump)
+-- 4. One variant per product (black/white, some with a price bump)
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO product_variants (id, product_id, sku, variant_name,
                                         price_delta, created_at)
@@ -94,7 +89,7 @@ SELECT 'sd-var-' || printf('%03d', n),
 FROM seq;
 
 -- ---------------------------------------------------------------------------
--- 6. Stock for every product; the first six sit at/below their min so the
+-- 5. Stock for every product; the first six sit at/below their min so the
 --    low-stock report has rows (quantity <= min_threshold).
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO inventory_stocks (id, org_unit_id, product_id, variant_id,
@@ -111,7 +106,7 @@ SELECT 'sd-stock-' || printf('%03d', n),
 FROM seq;
 
 -- ---------------------------------------------------------------------------
--- 7. Customers (loyalty varies)
+-- 6. Customers (loyalty varies)
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO customers (id, customer_type_dict_id, loyalty_points, metadata, created_at) VALUES
     ('sd-cus-1', 'TEIR_2', 240, NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-120 days')),
@@ -124,16 +119,16 @@ INSERT OR IGNORE INTO customers (id, customer_type_dict_id, loyalty_points, meta
     ('sd-cus-8', 'TEIR_2', 330, NULL, strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-105 days'));
 
 -- ---------------------------------------------------------------------------
--- 8. Users: 3 staff accounts + 5 customer accounts (users.customer_id is
+-- 7. Users: 3 staff accounts + 5 customer accounts (users.customer_id is
 --    what feeds customer_name in the sales report view). All old enough
 --    to stay below demo rows in created_at DESC lists.
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO users (id, org_unit_id, name, username, email, phone,
                              password_hash, user_type_dict_id, customer_id,
-                             location_id, status, created_at) VALUES
-    ('sd-user-1', 'sd-ou-phm', 'សុខ ដារា',   'sd.staff1', 'sd.staff1@pos.kh', '0121000001', '', 'ADMIN',   NULL, 'sd-loc-1', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
-    ('sd-user-2', 'sd-ou-phm', 'ចាន់ថា ស្រីពៅ', 'sd.staff2', 'sd.staff2@pos.kh', '0121000002', '', 'ADMIN',   NULL, 'sd-loc-1', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
-    ('sd-user-3', 'sd-ou-phm', 'វណ្ណារ៉ា សុខ', 'sd.staff3', 'sd.staff3@pos.kh', '0121000003', '', 'ADMIN',   NULL, 'sd-loc-2', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+                             village_id, status, created_at) VALUES
+    ('sd-user-1', 'sd-ou-phm', 'សុខ ដារា',   'sd.staff1', 'sd.staff1@pos.kh', '0121000001', '', 'ADMIN',   NULL, '7426', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+    ('sd-user-2', 'sd-ou-phm', 'ចាន់ថា ស្រីពៅ', 'sd.staff2', 'sd.staff2@pos.kh', '0121000002', '', 'ADMIN',   NULL, '941', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+    ('sd-user-3', 'sd-ou-phm', 'វណ្ណារ៉ា សុខ', 'sd.staff3', 'sd.staff3@pos.kh', '0121000003', '', 'ADMIN',   NULL, '10433', 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
     ('sd-user-4', NULL,        'ឡាច វិចិត្រ',   'sd.cust1',  'sd.cust1@pos.kh',  '0122000001', '', 'CUSTOMER', 'sd-cus-1', NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-100 days')),
     ('sd-user-5', NULL,        'សែស ម៉ាលី',   'sd.cust2',  'sd.cust2@pos.kh',  '0122000002', '', 'CUSTOMER', 'sd-cus-2', NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-100 days')),
     ('sd-user-6', NULL,        'រតនៈ ស្រីណែត','sd.cust3',  'sd.cust3@pos.kh',  '0122000003', '', 'CUSTOMER', 'sd-cus-3', NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-95 days')),
@@ -141,16 +136,16 @@ INSERT OR IGNORE INTO users (id, org_unit_id, name, username, email, phone,
     ('sd-user-8', NULL,        'ប៉ែន សុជាតា',  'sd.cust5',  'sd.cust5@pos.kh',  '0122000005', '', 'CUSTOMER', 'sd-cus-6', NULL, 'ACTIVE', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days'));
 
 -- ---------------------------------------------------------------------------
--- 9. Staff (tests create their own 'pos-stf-1')
+-- 8. Staff (tests create their own 'pos-stf-1')
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO staff (id, user_id, org_unit_id, staff_code, staff_type_dict_id,
-                             first_name, last_name, phone, location_id, hire_date, created_at) VALUES
-    ('sd-stf-1', 'sd-user-1', 'sd-ou-phm', 'SD-STF-01', 'MANAGER',   'សុខ',   'ដារា',   '0121000001', 'sd-loc-1', '2025-01-06', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
-    ('sd-stf-2', 'sd-user-2', 'sd-ou-phm', 'SD-STF-02', 'CASHIER',   'ចាន់ថា', 'ស្រីពៅ', '0121000002', 'sd-loc-1', '2025-03-03', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
-    ('sd-stf-3', 'sd-user-3', 'sd-ou-phm', 'SD-STF-03', 'DRIVER',    'វណ្ណារ៉ា','សុខ',    '0121000003', 'sd-loc-2', '2025-06-02', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days'));
+                             first_name, last_name, phone, village_id, hire_date, created_at) VALUES
+    ('sd-stf-1', 'sd-user-1', 'sd-ou-phm', 'SD-STF-01', 'MANAGER',   'សុខ',   'ដារា',   '0121000001', '7426', '2025-01-06', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+    ('sd-stf-2', 'sd-user-2', 'sd-ou-phm', 'SD-STF-02', 'CASHIER',   'ចាន់ថា', 'ស្រីពៅ', '0121000002', '941', '2025-03-03', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days')),
+    ('sd-stf-3', 'sd-user-3', 'sd-ou-phm', 'SD-STF-03', 'DRIVER',    'វណ្ណារ៉ា','សុខ',    '0121000003', '10433', '2025-06-02', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-150 days'));
 
 -- ---------------------------------------------------------------------------
--- 10. Roles + permissions + links (tests create their own 'pos-role-*')
+-- 9. Roles + permissions + links (tests create their own 'pos-role-*')
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO roles (id, org_unit_id, role_code, role_name, description, created_at) VALUES
     ('sd-role-manager',  'sd-ou-phm', 'SD-MANAGER', 'អ្នកគ្រប់គ្រងហាង', 'គ្រប់គ្រងទាំងអស់',       strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-140 days')),
@@ -186,7 +181,7 @@ INSERT OR IGNORE INTO user_roles (id, user_id, role_id, created_at) VALUES
     ('sd-ur-3', 'sd-user-3', 'sd-role-driver',  strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-135 days'));
 
 -- ---------------------------------------------------------------------------
--- 11. Cash shifts (one closed, one still open)
+-- 10. Cash shifts (one closed, one still open)
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO cash (id, org_unit_id, staff_id, opened_at, closed_at,
                                    opening_cash, closing_cash, expected_cash,
@@ -202,7 +197,7 @@ INSERT OR IGNORE INTO cash (id, org_unit_id, staff_id, opened_at, closed_at,
      strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 days'));
 
 -- ---------------------------------------------------------------------------
--- 12. Order lines first (2 per order, 42 orders): FKs are off, so the
+-- 11. Order lines first (2 per order, 42 orders): FKs are off, so the
 --     orders can then carry subtotals that equal SUM(total_line).
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO order_items (id, order_id, product_id, variant_id,
@@ -228,7 +223,7 @@ JOIN products p
   ON p.id = 'sd-prod-' || printf('%03d', ((o.n * 3 + k.i * 7) % 50) + 1);
 
 -- ---------------------------------------------------------------------------
--- 13. Orders across the last 14 days; subtotal/total = sum of the lines
+-- 12. Orders across the last 14 days; subtotal/total = sum of the lines
 --     (+ delivery fee every third order).
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO orders (id, org_unit_id, shift_id, customer_id, staff_id,
@@ -272,7 +267,7 @@ SELECT 'sd-ord-' || printf('%03d', k),
 FROM n;
 
 -- ---------------------------------------------------------------------------
--- 14. Payments: one per order; every 4th pays half (total_paid < total),
+-- 13. Payments: one per order; every 4th pays half (total_paid < total),
 --     every 7th still PENDING (excluded from the report's paid sum).
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO payments (id, order_id, payment_method_dict_id, amount,
@@ -295,7 +290,7 @@ FROM n
 JOIN orders o ON o.id = 'sd-ord-' || printf('%03d', k);
 
 -- ---------------------------------------------------------------------------
--- 15. Deliveries: every third order is shipped (statuses cycle).
+-- 14. Deliveries: every third order is shipped (statuses cycle).
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO deliveries (id, order_id, driver_staff_id, delivery_status,
                                   recipient_name, recipient_phone, delivery_address,
@@ -333,7 +328,7 @@ FROM n
 JOIN orders o ON o.id = 'sd-ord-' || printf('%03d', k);
 
 -- ---------------------------------------------------------------------------
--- 16. Ledger: one CREDIT row per completed payment with a running balance,
+-- 15. Ledger: one CREDIT row per completed payment with a running balance,
 --     plus a handful of EXPENSE debits.
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO financial_ledgers (id, org_unit_id, reference_type, reference_id,
@@ -367,7 +362,7 @@ VALUES
      'ជួសជុលឧបករណ៍', strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-2 days', '+16 hours'));
 
 -- ---------------------------------------------------------------------------
--- 17. Sample alerts (mixed seen/sent flags)
+-- 16. Sample alerts (mixed seen/sent flags)
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO system_alerts (id, user_id, order_id, alert_type, raw_payload,
                                      is_seen, is_sent, created_at) VALUES
@@ -385,7 +380,7 @@ INSERT OR IGNORE INTO system_alerts (id, user_id, order_id, alert_type, raw_payl
      strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 days', '+16 hours'));
 
 -- ---------------------------------------------------------------------------
--- 18. Sample audit rows
+-- 17. Sample audit rows
 -- ---------------------------------------------------------------------------
 INSERT OR IGNORE INTO audit_logs (id, user_id, table_name, record_id, action,
                                   old_values, new_values, created_at) VALUES

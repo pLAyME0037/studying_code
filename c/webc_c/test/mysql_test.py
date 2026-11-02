@@ -139,7 +139,7 @@ def run_checks(t, c, env):
     t.chk("users page", c.get("/users")[0], 200)
     t.chk("notes page", c.get("/notes")[0], 200)
     t.chk("fresh install: history rows",
-          env.q("SELECT COUNT(*) FROM Migrations"), "10")
+          env.q("SELECT COUNT(*) FROM Migrations"), "11")
     t.chk("geo tables exist (0009 DDL)",
           env.q("SHOW TABLES LIKE 'provinces'"), "provinces")
     t.chk("notes table exists", env.q("SHOW TABLES LIKE 'notes'"), "notes")

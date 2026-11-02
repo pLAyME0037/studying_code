@@ -13,6 +13,218 @@ Status vocabulary:
 
 ---
 
+## 2026-11-02 — Migration cleanup, `locations` removal, geo hierarchy + cascading village picker — **done**
+
+Three asks in one pass: (1) strip the redundancy and in-place edits out of
+the migration set so a fresh database works first try; (2) delete
+`locations`, which had stopped being relevant; (3) restructure
+province ← district ← commune ← village and make picking one fast. Suite:
+**908 PASS / 0 FAIL** (was 897).
+
+### 1. Migrations: one clean first try
+
+The geo DDL moved **into 0003 section 2, ahead of users and staff** - it had
+been in 0009, which 0003 referenced *forward* (`village_id REFERENCES
+villages(id)` naming a table 6 migrations later). Every dialect now defines
+its tables before anything points at them, sections are renumbered
+(sqlite3 1..11, mysql/postgres 1..9, 0004 1..17), and 0009_geo_admin is
+**seed only**.
+
+`locations` was deleted from all three dialects, from 0004/0007, from the
+goldens and from the test fixtures - `staff.village_id` / `users.village_id`
+point at `villages(id)` now, and 0004's demo staff reference real seeded
+villages (7426 / 941 / 10433). That forward reference is safe only because
+`db.c` runs the whole set under `PRAGMA foreign_keys=OFF` (db.c:192,
+restored at :268) - noted in the 0004 header so nobody "fixes" it.
+
+Verified on a throwaway `HOME` + `WEBC_DB`: migrations 0001-0011 all OK,
+33 tables, `locations` absent, geo seeded 44 / 227 / 1712 / 14858, no errors
+in the log. Fresh DB boots first try.
+
+### 2. Codes are labels, not keys
+
+`prov_id` / `dist_id` / `comm_id` / `vill_id` ride along as columns while
+`id` stays the surrogate PK. The source export makes this non-negotiable: it
+ships a renumbered **duplicate district** (Odongkmeachey, codes 505 and 509,
+same province), commune codes are unique only *within* a district, and
+village codes only within a commune - plus 160 byte-identical duplicate
+village rows that had to be deduped. A surrogate key sidesteps all of it.
+
+### 3. The picker: province -> district -> commune -> village, fast
+
+`js/GeoCascade.js` splits the data by size:
+
+- **Ancestors embedded once** (44 + 227 + 1712 rows, ~130 KB) as inert JSON
+  in `<script type="application/json" data-geo-data>`, shaped
+  `{"p":[...],"d":[...],"c":[...],"s":{village_id:commune_id}}`. Filtering is
+  pure array work indexed by parent - **zero round-trips** to walk three
+  levels.
+- **Villages never embedded** (14,858 rows, ~2.1 MB as options). Fetched per
+  chosen commune from `GET /geo/villages?commune=<id>` (bound params)
+  answering bare `<option>` lines, cached per commune in JS.
+- `"s"` maps only the villages chosen on THIS page, so an edit form walks a
+  stored village back up to its province without shipping the other 14,858.
+- The three ancestor selects carry **no `name`**: they are UI-only
+  navigation, so the form still posts exactly one field, `village_id`.
+- Cascade columns skip the bulk option loaders; `md_fk_display` falls back to
+  a one-row lookup, cheaper than the full table.
+
+The village **filter** became a text box rather than a 1.7 MB dropdown: the
+search builder already matches an FK column against its live parent's label
+through `EXISTS (... AND mdq.name_kh LIKE '%x%')`, so typing part of a Khmer
+name narrows the list for free, with or without JS.
+
+### 4. `<noscript>` escape hatch (user decision)
+
+Making the leaf lazy means a scripting-off browser can never satisfy
+`staff.village_id NOT NULL`. Chosen fix: each cascade page emits a tiny
+`<noscript><meta http-equiv="refresh" content="0;url=...&nojs=1">` that
+preserves the rest of the query; that render sets `geo_data = NULL`, so the
+refresh is not re-emitted (one hop, no loop) and the CREATE form ships the
+full list. **Presence** of the `nojs` key - not `=1` - selects the mode,
+because `form_find` matches bare keys and a value-based check would bounce
+forever on `?nojs` or `?nojs=0`.
+
+The list is deliberately withheld from the inline update forms: their
+`master-edit-btn` is a `type="button"` toggled by JS, so with scripting off
+those rows never open and each copy would be ~2 MB of dead weight. Sizes:
+**247 KB with JS, 2.5 MB on `?nojs=1`** (was 4.65 MB before scoping it to
+the create form). This is the one documented exception to hard rule 67
+("server byte-identical with JS disabled") - the URL is the only signal, no
+user-agent sniffing.
+
+### 5. Two real bugs this found
+
+**MySQL's naive `;` split.** `driver_mysql.c:3-4` documents the contract -
+"no semicolons inside comments or strings" - and a `(UUID default);` I put
+inside a 0003 header comment made `sql_exec_script` error. SQLite uses a
+real parser and was unaffected; postgres is a wire stub (fixed for
+consistency). Re-scanned every mysql/postgres migration: zero comment
+semicolons.
+
+**`String_Builder` is not NUL-terminated** (nob.h:679). `md_cascade_json`
+returned `temp_strdup(sb.items)` without `sb_append_null(&sb)`, so it read
+past `sb.count` into heap that still held the migration script - injecting
+raw `INSERT INTO villages...` bytes, cut mid-UTF-8, into `/pos/users`. That
+broke `body.decode()` in **two** suites as a `UnicodeDecodeError` at byte
+~165769. The ~131 KB of valid JSON before the corruption was the real
+payload; everything after was heap. Audited every other
+`temp_strdup(sb.items)` site - all already append the NUL. This was the
+codebase's own convention and I had broken it.
+
+### 6. Harness
+
+`db_fk_target()` (parses the live DDL for the `REFERENCES` target) +
+`db_cascade_value()` let the contract scraper source a real village for a
+required cascade leaf - it cannot run the script that would have filled it,
+and posting `""` into a `NOT NULL` FK earned a 500. +10 checks pin the lazy
+leaf, the `?nojs=1` hop (path kept, flag present, no re-offer, no dataset,
+full list) and the text filter in both modes.
+
+- Suite: 908 PASS (http 120 / pos 389 / shop 118 / role 48 /
+  crud_contract 186 / mysql 41 / https 6).
+
+## 2026-11-01 — Soft-delete cascade across relationships; `cash_shifts` → `cash`; config seeder — **done**
+
+The 2026-10-29 work stamped and gated **one table at a time**: `/pos/roles`
+delete hid the role and left its permissions pointing at a ghost. This entry
+makes soft-delete a *relationship* property — delete the parent and the
+children follow — plus two smaller items that fell out of the same sweep.
+Suite: **897 PASS / 0 FAIL** (was 893).
+
+### 1. Cascade triggers (migration 0003 §9)
+
+Every parent/child edge now has a trigger pair stamping `deleted_at` on the
+child when the parent goes, and clearing it when the parent is restored.
+New in this pass: `categories` (recursive), `languages`, `customers`,
+`roles`, `staff` → `cash`, `inventory_stocks` → `stock_ledger`. 25 triggers
+total.
+
+**The self-reference trap.** `org_units.parent_id` and `categories.parent_id`
+point at their own table, and a plain `AFTER UPDATE` trigger fires only for
+the rows the statement touched — so deleting a top-level org unit stamped its
+direct children and *stopped*. Grandchildren kept rendering under a deleted
+parent. Both were rewritten as `WITH RECURSIVE` bodies that walk the whole
+subtree from the deleted root, stamping every descendant. Verified through the
+real HTTP route (`POST /pos/categories/L1/delete`): L1, L2, L3 and a product
+under L3 all received the *same* timestamp; restore cleared all four.
+
+**Gate, don't just stamp.** Stamping alone still lets a live row reference a
+deleted parent, so `md_fk_options_where()` adds `deleted_at IS NULL` (ANDed
+with the column's existing `fk_where`, never replacing it) to the FK dropdown
+and the header filter. `md_fk_display()` deliberately does *not* use the gate —
+it falls back to its own ungated label query so a row pointing at a deleted
+parent (legacy data, or a parent the `fk_where` filter hides) renders the
+**name**, not a raw uuid.
+
+**A bug this introduced, and its fix.** The gate is shared by the create and
+the update form. On the update form it meant a row whose parent was deleted
+rendered *no* `selected` option — a plain submit would silently re-point the
+FK at the first listed parent. Caught by probing `/pos/shifts` with a live
+cash row whose staff was soft-deleted: the form offered 2 options, neither
+selected. Fix = `md_opt_has_id()` + one extra `<option selected>` in the
+master edit row, emitted only when the row's own value is missing from the
+live list. Picking stays gated; **editing never rewrites what you already
+had**. (The child-row update form is an empty JS-driven stub, so it needed
+nothing.)
+
+**`users` → `notes` has no cascade** — `notes` (migration 0001) has no
+`deleted_at` column at all. Documented as intentionally absent in 0003 §9
+rather than back-filled into a frozen migration.
+
+**0007 must track 0003.** `0007_users_contact` renames the `users` table, so
+its header contract is "every object naming `users` in its body is dropped
+before the RENAME". The customer cascade triggers name `users` in their body
+(they join it), so they joined the drop list and are recreated verbatim after.
+0007 also carries **verbatim copies** of the org_units triggers — those were
+refreshed to the new recursive bodies, or 0007 would have silently overwritten
+the 0003 fix on every rebuild.
+
+### 2. `cash_shifts` → `cash`
+
+Clean rename, no `ALTER TABLE` migration: the base schema files were edited in
+place and history rewritten (SQLite auto-rebuilds on a migration byte
+mismatch; `db_restore_from_backup` copies by identical table name, so old
+`cash_shifts` rows are skipped and the backup is retained — accepted). Touched
+`pos_and_eshop_db_schema.sql`, `0004_seed_pos`, all three `0003` dialects,
+`dashboard.c`, `pos/shifts.{c,h}`, `pos/staff.{c,h}`; golden regenerated and
+byte-equal. `data-tab` derives from `children[].table`, so the tab/table-list
+pins moved with it.
+
+### 3. `0011_seed_config`
+
+New migration (all three dialects) seeding `pos.shop_name`, registered in
+`src/db/db.c`. `/pos/config` is therefore never empty on a fresh DB. The test
+asserts the **contract**, not a literal — live row, non-empty, not encrypted,
+and the storefront chrome renders that exact string — because the seed value
+is a product decision the operator edits.
+
+### Test-harness fixes the changes exposed
+
+- **`selected` is a bare attribute.** `ATTR_RE` only matches `key="value"`,
+  so `"selected" in attrs` was always false — masked until now because create
+  and update picked the same first option. New `has_attr()` scans the raw
+  attribute string, word-bounded, and is now used for `required` too.
+- **Required selects can collide.** A scraped first option may already be held
+  by a live row; on a `UNIQUE` FK (`staff.user_id`, `deliveries.order_id`, …)
+  that earned a 409 and the create leg never got its row. `db_value_taken()`
+  skips taken options.
+- `shop_test`'s `value="km" selected` pin became whitespace-tolerant
+  (`re.search(r'value="km"\s+selected')`), matching the `pos_test` convention —
+  the tt reformat legitimately moved `selected` onto its own line, and
+  whitespace *between* attributes is harmless (Phase 25: only whitespace
+  inside an attribute URL is an error).
+
+### Verified
+
+Suite 897 PASS (http 120 / pos 389 / shop 118 / role 48 / crud_contract 175 /
+mysql 41 / https 6). Cascade additionally verified through real HTTP routes,
+not scratch SQL: 3-level category subtree + product all stamped on delete and
+all cleared on restore; a soft-deleted staff member vanishes from both the
+create dropdown and the `q_staff_id` filter while the cash row it owns still
+renders the staff *name* on `?deleted=1`; and its update form still offers
+itself, selected.
+
 ## 2026-10-29 — Soft-delete rename finished; 5 failures the build could not see — **done**
 
 `SERVE_SOFT_DELETE` now generates `serve_<plural>_soft_delete` (plus

@@ -12,9 +12,10 @@ for real; 302 means the round trip works end to end.
 
 Per page:
   GET page -> scrape the create form -> fill inputs browser-style
-  (required selects take the first non-empty option, optional selects
-  keep the "None" default, dates stay empty so DB defaults win, text/
-  numbers get a page-unique marker or a typed fake) -> POST expect 302.
+  (required selects take the first non-empty option no live row already
+  holds, optional selects keep the "None" default, dates stay empty so
+  DB defaults win, text/numbers get a page-unique marker or a typed
+  fake) -> POST expect 302.
   Then walk the pager until the created row's update form turns up,
   submit it exactly as rendered (empty optional inputs must keep stored
   data) -> expect 302, then the row's delete form -> expect 302, and
@@ -65,6 +66,17 @@ def attrs_of(s):
     return dict(ATTR_RE.findall(s))
 
 
+def has_attr(raw, name):
+    """Is a bare attribute present in a raw attribute string?
+
+    ATTR_RE only matches key="value" pairs, so valueless HTML attributes
+    (required, selected, checked) are invisible to attrs_of(). Scan the
+    raw string for the word itself - word-bounded so `selected_extra`
+    or a data-selected="..." value never match.
+    """
+    return bool(re.search(r"(?<![-\w])%s(?![\w-])" % re.escape(name), raw))
+
+
 def fake_text(name, seq):
     n = name.lower()
     if "email" in n:
@@ -102,6 +114,93 @@ def db_live_count(table, col, marker):
         conn.close()
 
 
+def db_value_taken(table, col, value):
+    """Does a live row already hold this FK value?
+
+    Required FK selects are UNIQUE in several tables (staff.user_id,
+    deliveries.order_id, ...), so scraping the first option can collide
+    with a row an earlier suite left behind - the engine answers 409,
+    which is the documented duplicate-UNIQUE contract, not a form bug.
+    Prefer an option no live row holds yet. Unknown table/column (or a
+    table without deleted_at, e.g. notes) answers "free" so the caller
+    keeps the plain first-option behaviour.
+    """
+    if not table or not col or value == "":
+        return False
+    conn = sqlite3.connect(DB, timeout=10)
+    try:
+        conn.execute("PRAGMA busy_timeout=5000")
+        for sql in (f"SELECT count(*) FROM {table} WHERE {col} = ? "
+                    "AND deleted_at IS NULL",
+                    f"SELECT count(*) FROM {table} WHERE {col} = ?"):
+            try:
+                return conn.execute(sql, (value,)).fetchone()[0] > 0
+            except sqlite3.Error:
+                continue
+        return False
+    finally:
+        conn.close()
+
+
+def db_fk_target(table, col):
+    """The table a FK column points at, parsed from the live DDL.
+
+    A cascade leaf (the select carrying data-geo) ships no options at all:
+    its three ancestor selects are UI-only navigation and the village list
+    is fetched per commune by GeoCascade.js, which never runs here. To
+    source a value the way that browser would, we need the parent table,
+    and only the schema knows it.
+    """
+    if not table or not col:
+        return None
+    conn = sqlite3.connect(DB, timeout=10)
+    try:
+        row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+            (table,)).fetchone()
+    finally:
+        conn.close()
+    if not row or not row[0]:
+        return None
+    m = re.search(r"\b%s\b[^,]*?\bREFERENCES\s+\"?([A-Za-z_]\w*)\"?"
+                  % re.escape(col), row[0], re.I)
+    return m.group(1) if m else None
+
+
+def db_cascade_value(table, col):
+    """A real, untaken value for a cascade leaf.
+
+    This is what GeoCascade.js would have put into the select once the
+    user walked province -> district -> commune -> village; the scraper
+    cannot run that script, so it takes the value straight from the
+    parent table. Reached only when the scraped form offers no non-empty
+    option whatsoever - the cascade case - so ordinary selects keep their
+    first-option behaviour untouched.
+    """
+    tgt = db_fk_target(table, col)
+    if not tgt:
+        return ""
+    rows = None
+    conn = sqlite3.connect(DB, timeout=10)
+    try:
+        conn.execute("PRAGMA busy_timeout=5000")
+        for sql in (f"SELECT id FROM {tgt} WHERE deleted_at IS NULL ORDER BY id",
+                    f"SELECT id FROM {tgt} ORDER BY id"):
+            try:
+                rows = conn.execute(sql).fetchall()
+                break
+            except sqlite3.Error:
+                continue
+    finally:
+        conn.close()
+    if not rows:
+        return ""
+    for (v,) in rows:
+        if v and not db_value_taken(table, col, v):
+            return v
+    return rows[0][0]
+
+
 def forms_on(html):
     """[(attrs_dict, inner_html), ...] for every form on the page."""
     out = []
@@ -120,14 +219,16 @@ def find_form(html, op, master_id=None):
     return None, None
 
 
-def parse_fields(inner, create=True):
+def parse_fields(inner, create=True, table=None):
     """Browser-style (fields, kinds) for a form body.
 
     kinds maps field name -> "text"|"number"|"date"|"hidden"|"select"|
     "textarea" so the marker pick can stay off FKs and numerics.
 
     create=True: fill text/number with fakes, required selects take the
-    first non-empty option, optional selects submit the browser default
+    first non-empty option that no live row already holds (see
+    db_value_taken - a scraped first option can collide with a UNIQUE
+    FK and earn a 409), optional selects submit the browser default
     (first option, possibly the empty None). create=False: submit every
     value exactly as rendered (prefilled inputs, selected options).
     """
@@ -166,30 +267,54 @@ def parse_fields(inner, create=True):
         if not name:
             continue
         kinds[name] = "select"
-        opts = [(attrs_of(oa), oh.strip())
+        # Keep the RAW option attrs too: `selected` is a bare attribute and
+        # attrs_of() cannot see it (see has_attr).
+        opts = [(attrs_of(oa), oh.strip(), oa)
                 for oa, oh in OPTION_RE.findall(m.group(2))]
         if not create:
-            picked = ""
-            for oa, _oh in opts:
-                if "selected" in oa:
-                    picked = oa.get("value", "")
-                    break
             if not opts:
                 continue
-            if not any("selected" in oa for oa, _ in opts):
+            picked = ""
+            for oa, _oh, oraw in opts:
+                if has_attr(oraw, "selected"):
+                    picked = oa.get("value", "")
+                    break
+            if not picked:
+                # Nothing marked selected (or the stored value is no longer
+                # offerable): browser falls back to the first option.
                 picked = opts[0][0].get("value", "")
             fields[name] = picked
             continue
         # `required` renders as a bare attribute (no ="") - ATTR_RE cannot
         # see it, so scan the raw attr string for the word itself.
-        required = bool(re.search(r"(?<![-\w])required(?![\w-])", m.group(1)))
+        required = has_attr(m.group(1), "required")
         if required:
             picked = ""
-            for oa, _oh in opts:
+            for oa, _oh, _oraw in opts:
                 v = oa.get("value", "")
-                if v:
-                    picked = v
-                    break
+                if not v:
+                    continue
+                # Skip options a live row already holds: UNIQUE FK columns
+                # (staff.user_id, deliveries.order_id, ...) answer 409 and
+                # the create leg would never get its row.
+                if db_value_taken(table, name, v):
+                    continue
+                picked = v
+                break
+            if not picked:
+                # Everything is taken - fall back to the plain first option
+                # so the caller still gets a 409 it can report.
+                for oa, _oh, _oraw in opts:
+                    if oa.get("value", ""):
+                        picked = oa.get("value", "")
+                        break
+            if not picked and a.get("data-geo"):
+                # A cascade leaf renders only `None` server-side - the
+                # ancestors are UI-only and the leaf is filled per commune
+                # by GeoCascade.js, which this scraper never runs. Take the
+                # value that script would have chosen, or the NOT NULL
+                # column would be posted empty and answer a 500.
+                picked = db_cascade_value(table, name)
             fields[name] = picked
         else:
             # browser default: first option as rendered (None -> "")
@@ -290,7 +415,7 @@ def main():
 
         action = a.get("action", "")
         scope = a.get("data-md-scope", "")
-        fields, kinds = parse_fields(inner, create=True)
+        fields, kinds = parse_fields(inner, create=True, table=scope)
         if not fields:
             t.chk(f"{slug}: create form carries fields", len(fields) > 0, True)
             continue
@@ -350,6 +475,46 @@ def main():
                       db_live_count(scope, marker_field, marker), 0)
 
     t.chk("contract exercised the CRUD surface", exercised >= 13, True)
+
+    # ---- geo cascade: lazy leaf + <noscript> escape hatch --------------
+    # The village select ships only "None" server-side (GeoCascade.js fills
+    # it per commune), so a scripting-off browser could never satisfy the
+    # NOT NULL village_id on staff. The page answers a <noscript> meta
+    # refresh to ?nojs=1, where the full list is rendered instead - and
+    # must NOT re-offer that refresh, or it would bounce forever.
+    st, body, _ = c.get("/pos/staff")
+    html = body.decode()
+    t.chk("staff page renders (cascade)", st, 200)
+    leaf = re.search(r'<select[^>]*name="village_id"[^>]*>(.*?)</select>',
+                     html, re.S)
+    t.chk("cascade leaf ships no village options",
+          len(re.findall(r"<option", leaf.group(1))) if leaf else -1, 1)
+    refresh = re.search(r'content="0;url=([^"]*nojs=1[^"]*)"', html)
+    t.chk("cascade page offers the nojs escape hatch", refresh is not None, True)
+    if refresh:
+        target = refresh.group(1)
+        t.chk("nojs target keeps the path", target.split("?")[0], "/pos/staff")
+        t.chk("nojs target carries the flag", target.endswith("nojs=1"), True)
+
+    st, plain, _ = c.get("/pos/staff?nojs=1")
+    ph = plain.decode()
+    t.chk("nojs page renders (200)", st, 200)
+    t.chk("nojs page does not re-offer the refresh (no loop)",
+          re.search(r'content="0;url=[^"]*nojs=1', ph) is None, True)
+    t.chk("nojs page drops the lazy dataset",
+          re.search(r"data-geo-data>", ph) is None, True)
+    leaf2 = re.search(r'<select[^>]*name="village_id"[^>]*>(.*?)</select>',
+                      ph, re.S)
+    n2 = len(re.findall(r"<option", leaf2.group(1))) if leaf2 else -1
+    t.chk("nojs page ships the full village list", n2 > 14000, True)
+
+    # The village column filters as free text in BOTH modes: its option
+    # list is ~2 MB, and md_append_where already matches an FK column
+    # against its live parent's label through an EXISTS subquery.
+    t.chk("village filter is a text box (JS mode)",
+          bool(re.search(r'<input[^>]*name="q_village_id"', html)), True)
+    t.chk("village filter is a text box (nojs mode)",
+          bool(re.search(r'<input[^>]*name="q_village_id"', ph)), True)
 
 
 def _post(action, fields):

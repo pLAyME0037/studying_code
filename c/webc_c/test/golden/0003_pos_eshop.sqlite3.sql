@@ -1,6 +1,7 @@
 -- ============================================================================
 -- SQLITE3 POS + E-SHOP SCHEMA (migration 0003_pos_eshop)
--- Generated from migrations/pos_and_eshop_db_schema.sql with deltas:
+-- Originally generated from migrations/pos_and_eshop_db_schema.sql (since
+-- deleted, see wiki/dev-log.md) with deltas:
 --   - PRAGMA lines stripped (db.c runs them at open, not in the txn)
 --   - dictionary + language rows seeded (FK defaults reference literal
 --     ids such as 'CUSTOMER' and 'TEIR_1')
@@ -64,21 +65,64 @@ CREATE TABLE IF NOT EXISTS translations (
 );
 
 -- ============================================================================
--- 2. Location
 -- ============================================================================
-
-CREATE TABLE IF NOT EXISTS locations (
+-- 2. GEO ADMIN AREAS (CAMBODIA)
+-- ============================================================================
+-- The four official admin-area tables. users/staff carry village_id ->
+-- villages(id), so these MUST exist before them (SQLite and MySQL both
+-- reject a forward REFERENCES). The tables live here; the 16k seed rows
+-- load in 0009_geo_admin.
+--
+-- `id` is the surrogate key the engine addresses rows by - the seed uses
+-- sequential '1'..'n' and the column default covers rows the app creates
+-- later. The official MOC code rides along as prov_id / dist_id / comm_id
+-- / vill_id and is deliberately NOT the key: the source export ships a
+-- renumbered duplicate district (Odongkmeachey, codes 505 and 509, same
+-- province) so commune codes are unique only within a district, and
+-- village codes only within a commune.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS provinces (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-    province TEXT NOT NULL,
-    district TEXT NOT NULL,
-    commune TEXT NOT NULL,
-    village TEXT NOT NULL,
+    prov_id TEXT NOT NULL UNIQUE,
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS districts (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    dist_id TEXT NOT NULL UNIQUE,
+    province_id TEXT NOT NULL REFERENCES provinces(id),
+    type TEXT NOT NULL,
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS communes (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    comm_id TEXT NOT NULL,
+    district_id TEXT NOT NULL REFERENCES districts(id),
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    deleted_at TEXT DEFAULT NULL
+);
+CREATE TABLE IF NOT EXISTS villages (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
+    vill_id TEXT NOT NULL,
+    commune_id TEXT NOT NULL REFERENCES communes(id),
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    is_not_active TEXT NULL,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     deleted_at TEXT DEFAULT NULL
 );
 
--- ============================================================================
 -- 3. ORGANIZATIONAL UNITS & RBAC (USERS, STAFF, ROLES, PERMISSIONS)
 -- ============================================================================
 
@@ -104,7 +148,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -120,7 +164,7 @@ CREATE TABLE IF NOT EXISTS staff (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone TEXT,
-    location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NOT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     hire_date TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -169,7 +213,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
 );
 
 -- ============================================================================
--- 3. PRODUCT CATALOG & INVENTORY STOCK
+-- 4. PRODUCT CATALOG & INVENTORY STOCK
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -238,7 +282,7 @@ CREATE TABLE IF NOT EXISTS stock_ledger (
 );
 
 -- ============================================================================
--- 4. CUSTOMERS & INTERACTION JSON DATA
+-- 5. CUSTOMERS & INTERACTION JSON DATA
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS customers (
@@ -263,10 +307,10 @@ CREATE TABLE IF NOT EXISTS customer_interactions (
 );
 
 -- ============================================================================
--- 5. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
+-- 6. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
 -- ============================================================================
 
-CREATE TABLE IF NOT EXISTS cash_shifts (
+CREATE TABLE IF NOT EXISTS cash (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
     org_unit_id TEXT NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
     staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
@@ -285,7 +329,7 @@ CREATE TABLE IF NOT EXISTS cash_shifts (
 CREATE TABLE IF NOT EXISTS orders (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
     org_unit_id TEXT NOT NULL REFERENCES org_units(id) ON DELETE RESTRICT,
-    shift_id TEXT REFERENCES cash_shifts(id) ON DELETE RESTRICT,
+    shift_id TEXT REFERENCES cash(id) ON DELETE RESTRICT,
     customer_id TEXT REFERENCES customers(id) ON DELETE RESTRICT,
     staff_id TEXT NOT NULL REFERENCES staff(id) ON DELETE RESTRICT,
     order_number TEXT NOT NULL UNIQUE,
@@ -364,7 +408,7 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
 );
 
 -- ============================================================================
--- 6. SYSTEM ALERTS (JSON STORAGE) & AUDIT LOGS
+-- 7. SYSTEM ALERTS (JSON STORAGE) & AUDIT LOGS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS system_alerts (
@@ -450,7 +494,7 @@ CREATE TABLE users_pos (
     password_hash TEXT NOT NULL DEFAULT '',
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     profile_pic BLOB NULL, -- kept from the demo schema (superset of vision)
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
@@ -475,7 +519,7 @@ DROP TABLE users;
 ALTER TABLE users_pos RENAME TO users;
 
 -- ============================================================================
--- 7. INDEXES (PERFORMANCE TUNING)
+-- 8. INDEXES (PERFORMANCE TUNING)
 -- ============================================================================
 
 CREATE INDEX IF NOT EXISTS idx_orders_org_unit ON orders(org_unit_id, deleted_at);
@@ -489,7 +533,7 @@ CREATE INDEX IF NOT EXISTS idx_alerts_user ON system_alerts(user_id, is_seen, de
 CREATE INDEX IF NOT EXISTS idx_translations_lookup ON translations(language_id, trans_key, deleted_at);
 
 -- ============================================================================
--- 8. AUTO UPDATED_AT TRIGGERS
+-- 9. AUTO UPDATED_AT TRIGGERS
 -- ============================================================================
 
 CREATE TRIGGER IF NOT EXISTS trg_upd_users BEFORE UPDATE ON users BEGIN
@@ -514,27 +558,94 @@ CREATE TRIGGER IF NOT EXISTS trg_upd_stocks BEFORE UPDATE ON inventory_stocks BE
 END;
 
 -- ============================================================================
--- 9. CASCADE SOFT-DELETE & RESTORE TRIGGERS
+-- 10. CASCADE SOFT-DELETE & RESTORE TRIGGERS
 -- ============================================================================
+-- One pair per master that owns child rows. Every edge here mirrors an
+-- MD_ChildTab in src/pos/*.c, so soft-deleting a parent hides its children
+-- (and restoring brings them back) instead of leaving orphans selectable.
+--
+-- The two self-referencing masters (org_units.parent_id,
+-- categories.parent_id) walk their WHOLE subtree with WITH RECURSIVE: a
+-- plain "UPDATE parent SET ... WHERE parent_id = OLD.id" only reaches the
+-- first level, because SQLite never re-fires the trigger that is already
+-- running (recursive_triggers is off) - grandchildren would stay live.
+--
+-- The restore side matches children on deleted_at = OLD.deleted_at, i.e.
+-- "put back only what MY delete stamped": a child deleted earlier by hand
+-- keeps its own timestamp and is not resurrected by its parent.
+--
+-- notes (0001) has no deleted_at column at all, so the users -> notes edge
+-- cannot cascade and is intentionally absent.
 
--- ORG UNIT SOFT DELETE -> CASCADE TO USERS, STAFF, STOCKS
+-- ORG UNIT SOFT DELETE -> CASCADE DOWN THE WHOLE SUBTREE (self-ref) TO
+-- USERS, STAFF, STOCKS
 CREATE TRIGGER IF NOT EXISTS trg_soft_del_org_units
 AFTER UPDATE OF deleted_at ON org_units
 WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
 BEGIN
-    UPDATE users SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
-    UPDATE staff SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
-    UPDATE inventory_stocks SET deleted_at = NEW.deleted_at WHERE org_unit_id = OLD.id AND deleted_at IS NULL;
+    UPDATE org_units SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE users SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE staff SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE inventory_stocks SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
 END;
 
--- ORG UNIT RESTORE -> CASCADE RESTORE
+-- ORG UNIT RESTORE -> CASCADE RESTORE DOWN THE SUBTREE
 CREATE TRIGGER IF NOT EXISTS trg_restore_org_units
 AFTER UPDATE OF deleted_at ON org_units
 WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
 BEGIN
-    UPDATE users SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
-    UPDATE staff SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
-    UPDATE inventory_stocks SET deleted_at = NULL WHERE org_unit_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE org_units SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE users SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE staff SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE inventory_stocks SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND org_unit_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM org_units WHERE id = OLD.id
+            UNION ALL
+            SELECT o.id FROM org_units o JOIN sub s ON o.parent_id = s.id
+        ) SELECT id FROM sub);
 END;
 
 -- USER SOFT DELETE -> CASCADE TO USER_ROLES, ALERTS, INTERACTIONS
@@ -595,8 +706,134 @@ BEGIN
     UPDATE payments SET deleted_at = NULL WHERE order_id = OLD.id AND deleted_at = OLD.deleted_at;
 END;
 
+-- CATEGORY SOFT DELETE -> CASCADE DOWN THE WHOLE SUBTREE (self-ref) TO PRODUCTS
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_categories
+AFTER UPDATE OF deleted_at ON categories
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE categories SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE products SET deleted_at = NEW.deleted_at
+     WHERE deleted_at IS NULL AND category_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+END;
+
+-- CATEGORY RESTORE -> CASCADE RESTORE DOWN THE SUBTREE
+CREATE TRIGGER IF NOT EXISTS trg_restore_categories
+AFTER UPDATE OF deleted_at ON categories
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE categories SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+    UPDATE products SET deleted_at = NULL
+     WHERE deleted_at = OLD.deleted_at AND category_id IN (
+        WITH RECURSIVE sub(id) AS (
+            SELECT id FROM categories WHERE id = OLD.id
+            UNION ALL
+            SELECT c.id FROM categories c JOIN sub s ON c.parent_id = s.id
+        ) SELECT id FROM sub);
+END;
+
+-- LANGUAGE SOFT DELETE -> CASCADE TO TRANSLATIONS
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_languages
+AFTER UPDATE OF deleted_at ON languages
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE translations SET deleted_at = NEW.deleted_at WHERE language_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- LANGUAGE RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_languages
+AFTER UPDATE OF deleted_at ON languages
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE translations SET deleted_at = NULL WHERE language_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- CUSTOMER SOFT DELETE -> CASCADE TO USERS, CUSTOMER_INTERACTIONS
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_customers
+AFTER UPDATE OF deleted_at ON customers
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE users SET deleted_at = NEW.deleted_at WHERE customer_id = OLD.id AND deleted_at IS NULL;
+    UPDATE customer_interactions SET deleted_at = NEW.deleted_at WHERE customer_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- CUSTOMER RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_customers
+AFTER UPDATE OF deleted_at ON customers
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE users SET deleted_at = NULL WHERE customer_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE customer_interactions SET deleted_at = NULL WHERE customer_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- ROLE SOFT DELETE -> CASCADE TO ROLE_PERMISSIONS, USER_ROLES
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_roles
+AFTER UPDATE OF deleted_at ON roles
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE role_permissions SET deleted_at = NEW.deleted_at WHERE role_id = OLD.id AND deleted_at IS NULL;
+    UPDATE user_roles SET deleted_at = NEW.deleted_at WHERE role_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- ROLE RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_roles
+AFTER UPDATE OF deleted_at ON roles
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE role_permissions SET deleted_at = NULL WHERE role_id = OLD.id AND deleted_at = OLD.deleted_at;
+    UPDATE user_roles SET deleted_at = NULL WHERE role_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- STAFF SOFT DELETE -> CASCADE TO CASH
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_staff
+AFTER UPDATE OF deleted_at ON staff
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE cash SET deleted_at = NEW.deleted_at WHERE staff_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- STAFF RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_staff
+AFTER UPDATE OF deleted_at ON staff
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE cash SET deleted_at = NULL WHERE staff_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
+-- INVENTORY STOCK SOFT DELETE -> CASCADE TO STOCK_LEDGER
+CREATE TRIGGER IF NOT EXISTS trg_soft_del_stock_ledger
+AFTER UPDATE OF deleted_at ON inventory_stocks
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NOT NULL
+BEGIN
+    UPDATE stock_ledger SET deleted_at = NEW.deleted_at WHERE stock_id = OLD.id AND deleted_at IS NULL;
+END;
+
+-- INVENTORY STOCK RESTORE -> CASCADE RESTORE
+CREATE TRIGGER IF NOT EXISTS trg_restore_stock_ledger
+AFTER UPDATE OF deleted_at ON inventory_stocks
+WHEN OLD.deleted_at IS NOT NULL AND NEW.deleted_at IS NULL
+BEGIN
+    UPDATE stock_ledger SET deleted_at = NULL WHERE stock_id = OLD.id AND deleted_at = OLD.deleted_at;
+END;
+
 -- ============================================================================
--- 10. ACTIVE VIEWS & FINANCIAL REPORTING VIEW
+-- 11. ACTIVE VIEWS & FINANCIAL REPORTING VIEW
 -- ============================================================================
 
 CREATE VIEW IF NOT EXISTS v_active_users AS 

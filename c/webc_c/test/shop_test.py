@@ -392,8 +392,10 @@ def main():
     t.chk("storefront language form", "data-lang-form" in html, True)
     t.chk("storefront language options km+en",
           html.count('<option value="'), 2)
+    # Whitespace-tolerant like the other option pins (pos_test): the
+    # selected attribute may sit on its own line in the rendered markup.
     t.chk("storefront active option selected",
-          'value="km" selected' in html, True)
+          bool(re.search(r'value="km"\s+selected', html)), True)
     t.chk("storefront Khmer default placeholder",
           "ស្វែងរកផលិតផល..." in html, True)
     t.chk("no leftover indigo in storefront",

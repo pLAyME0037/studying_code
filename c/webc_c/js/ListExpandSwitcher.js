@@ -132,6 +132,8 @@ function mdSwap(newRoot) {
         if (tab) tab.click();
     });
     mdReveal();
+    // GeoCascade re-arms on the fresh containers mdSwap just installed.
+    document.dispatchEvent(new CustomEvent('md:swapped'));
     return true;
 }
 

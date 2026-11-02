@@ -95,15 +95,58 @@ CREATE TABLE IF NOT EXISTS translations (
 );
 
 -- ============================================================================
--- 2. Location
+-- 2. GEO ADMIN AREAS (CAMBODIA)
 -- ============================================================================
+-- The four official admin-area tables. users/staff carry village_id ->
+-- villages(id), so these MUST exist before them. `id` is the surrogate key
+-- (UUID default). The official MOC code rides along as prov_id / dist_id /
+-- comm_id / vill_id and is deliberately NOT the key - the source export
+-- ships a renumbered duplicate district (Odongkmeachey, codes 505 and 509,
+-- same province) so commune codes are unique only within a district and
+-- village codes only within a commune. Seed rows are sqlite-only
+-- (0009_geo_admin), like 0004_seed_pos. Inline REFERENCES are dropped:
+-- sqlite3 is the canonical FK dialect.
 
-CREATE TABLE IF NOT EXISTS locations (
-    id TEXT PRIMARY KEY DEFAULT ((gen_random_uuid()::text)),
-    province TEXT NOT NULL,
-    district TEXT NOT NULL,
-    commune TEXT NOT NULL,
-    village TEXT NOT NULL,
+CREATE TABLE IF NOT EXISTS provinces (
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+    prov_id TEXT NOT NULL UNIQUE,
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS districts (
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+    dist_id TEXT NOT NULL UNIQUE,
+    province_id TEXT NOT NULL REFERENCES provinces(id),
+    type TEXT NOT NULL,
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS communes (
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+    comm_id TEXT NOT NULL,
+    district_id TEXT NOT NULL REFERENCES districts(id),
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
+);
+
+CREATE TABLE IF NOT EXISTS villages (
+    id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+    vill_id TEXT NOT NULL,
+    commune_id TEXT NOT NULL REFERENCES communes(id),
+    name_kh TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    is_not_active TEXT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
@@ -149,7 +192,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash TEXT NOT NULL,
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -177,7 +220,7 @@ CREATE TABLE users_pos (
     password_hash TEXT NOT NULL DEFAULT '',
     user_type_dict_id TEXT NOT NULL DEFAULT 'CUSTOMER' REFERENCES dictionaries(id) ON DELETE RESTRICT,
     customer_id TEXT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    location_id TEXT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')),
     profile_pic BYTEA NULL, -- kept from the demo schema (superset of vision)
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -211,7 +254,7 @@ CREATE TABLE IF NOT EXISTS staff (
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     phone TEXT,
-    location_id TEXT NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
+    village_id TEXT NOT NULL REFERENCES villages(id) ON DELETE RESTRICT,
     hire_date TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -260,7 +303,7 @@ CREATE TABLE IF NOT EXISTS user_roles (
 );
 
 -- ============================================================================
--- 3. PRODUCT CATALOG & INVENTORY STOCK
+-- 5. PRODUCT CATALOG & INVENTORY STOCK
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -340,7 +383,7 @@ CREATE TABLE IF NOT EXISTS customer_interactions (
 );
 
 -- ============================================================================
--- 5. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
+-- 6. POS SHIFTS, ORDERS, ITEMS, DELIVERY & FINANCIALS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS cash (
@@ -441,7 +484,7 @@ CREATE TABLE IF NOT EXISTS financial_ledgers (
 );
 
 -- ============================================================================
--- 6. SYSTEM ALERTS (JSON STORAGE) & AUDIT LOGS
+-- 7. SYSTEM ALERTS (JSON STORAGE) & AUDIT LOGS
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS system_alerts (
@@ -472,7 +515,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 
 
 -- ============================================================================
--- 7. INDEXES (PERFORMANCE TUNING)
+-- 8. INDEXES (PERFORMANCE TUNING)
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_orders_org_unit ON orders(org_unit_id, deleted_at);
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_id, deleted_at);
@@ -486,7 +529,7 @@ CREATE INDEX IF NOT EXISTS idx_translations_lookup ON translations(language_id, 
 
 
 -- ============================================================================
--- 10. ACTIVE VIEWS & FINANCIAL REPORTING VIEW
+-- 9. ACTIVE VIEWS & FINANCIAL REPORTING VIEW
 -- ============================================================================
 
 CREATE VIEW IF NOT EXISTS v_active_users AS 

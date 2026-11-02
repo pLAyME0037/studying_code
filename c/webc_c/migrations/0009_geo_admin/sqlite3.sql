@@ -1,67 +1,26 @@
 -- ===========================================================================
--- 0009_geo_admin -- Phase 16 (geo redo): the single 4-part locations stack
--- becomes four individual admin tables (provinces, districts, communes,
--- villages), seeded from the official cam-geo locations.json export
--- (pLAyME0037/cam-geo-ft-Laravel). Parents reference id columns and the
--- official MOC codes keep their own column (prov_id / dist_id / comm_id /
--- vill_id). Existing people rows keep working: users.location_id and
--- staff.location_id are repointed from their legacy locations row to the
--- matching province (matched by the stored Khmer province name), and every
--- province is mirrored into locations so the DDL-level REFERENCES
--- locations(id) constraint still resolves for new picks (the locations
--- table stays as the compatibility layer, its page is retired). The four
--- new tables ride the usual master pages, mysql gets the DDL only (seed
--- data is sqlite-only like 0004_seed_pos) and the postgres stub skips.
--- The export itself carries a renumbered duplicate district (Odongkmeachey
--- under codes 505 and 509), so commune codes are only unique within a
--- district and village codes within a commune (10 and 160 collisions) -
--- the code columns stay plain labels and every FK addresses row ids.
+-- 0009_geo_admin -- SEED ONLY. The four Cambodia admin-area tables
+-- (provinces, districts, communes, villages) are CREATED in
+-- 0003_pos_eshop, because users/staff carry village_id -> villages(id) and
+-- SQLite/MySQL both reject a table that references one not yet built. This
+-- migration only loads the official cam-geo locations.json export
+-- (pLAyME0037/cam-geo-ft-Laravel) into them: 44 provinces, 227 districts,
+-- 1712 communes, 14859 villages.
+--
+-- Why the codes are LABELS, not primary keys: every table is addressed by
+-- its surrogate `id` (the seeds use sequential '1'..'n'; the column default
+-- only covers rows the app creates at runtime) and the official MOC code
+-- rides along as prov_id / dist_id / comm_id / vill_id. That matters
+-- because the export ships a renumbered duplicate district - Odongkmeachey
+-- under both codes 505 and 509, same province, 10 identically-named
+-- communes - so commune codes are only unique WITHIN a district and
+-- village codes within a commune (10 and 160 collisions respectively, the
+-- latter being 160 byte-identical duplicate rows). A code column cannot be
+-- a key here; the surrogate can.
+--
+-- Seed data is sqlite-only, like 0004_seed_pos; mysql gets the tables from
+-- 0003 and the postgres stub skips.
 -- ===========================================================================
-
-CREATE TABLE IF NOT EXISTS provinces (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-    prov_id TEXT NOT NULL UNIQUE,
-    name_kh TEXT NOT NULL,
-    name_en TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    deleted_at TEXT DEFAULT NULL
-);
-
-CREATE TABLE IF NOT EXISTS districts (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-    dist_id TEXT NOT NULL UNIQUE,
-    province_id TEXT NOT NULL REFERENCES provinces(id),
-    type TEXT NOT NULL,
-    name_kh TEXT NOT NULL,
-    name_en TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    deleted_at TEXT DEFAULT NULL
-);
-
-CREATE TABLE IF NOT EXISTS communes (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-    comm_id TEXT NOT NULL,
-    district_id TEXT NOT NULL REFERENCES districts(id),
-    name_kh TEXT NOT NULL,
-    name_en TEXT NOT NULL,
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    deleted_at TEXT DEFAULT NULL
-);
-
-CREATE TABLE IF NOT EXISTS villages (
-    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(4))) || '-' || lower(hex(randomblob(2))) || '-4' || substr(lower(hex(randomblob(2))),2) || '-' || substr('89ab',abs(random()) % 4 + 1, 1) || substr(lower(hex(randomblob(2))),2) || '-' || lower(hex(randomblob(6)))),
-    vill_id TEXT NOT NULL,
-    commune_id TEXT NOT NULL REFERENCES communes(id),
-    name_kh TEXT NOT NULL,
-    name_en TEXT NOT NULL,
-    is_not_active TEXT NULL,
-    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    deleted_at TEXT DEFAULT NULL
-);
 
 INSERT INTO provinces (id, prov_id, name_kh, name_en) VALUES ('1', '1', 'បន្ទាយមានជ័យ', 'Banteay Meanchey');
 INSERT INTO provinces (id, prov_id, name_kh, name_en) VALUES ('2', '2', 'បាត់ដំបង', 'Battambang');
@@ -16905,29 +16864,10 @@ INSERT INTO villages (id, vill_id, commune_id, name_kh, name_en, is_not_active) 
 INSERT INTO villages (id, vill_id, commune_id, name_kh, name_en, is_not_active) VALUES ('14858', '10070506', '1671', 'ត្នោត', 'Tnaot', NULL);
 INSERT INTO villages (id, vill_id, commune_id, name_kh, name_en, is_not_active) VALUES ('14859', '8140501', '1712', 'ក្បាលកោះទៀវ', 'Kbal Koh Teav', NULL);
 
--- Repoint the legacy people FKs: a stored locations row maps to the
--- province whose Khmer name matches its province column, unmatched rows
--- keep their value (still valid through the locations compatibility table).
-UPDATE users SET location_id = (
-    SELECT p.id FROM locations l
-      JOIN provinces p ON p.name_kh = l.province
-     WHERE l.id = users.location_id)
-WHERE location_id IS NOT NULL
-  AND EXISTS (SELECT 1 FROM locations l
-               JOIN provinces p ON p.name_kh = l.province
-              WHERE l.id = users.location_id);
-
-UPDATE staff SET location_id = (
-    SELECT p.id FROM locations l
-      JOIN provinces p ON p.name_kh = l.province
-     WHERE l.id = staff.location_id)
-WHERE location_id IS NOT NULL
-  AND EXISTS (SELECT 1 FROM locations l
-               JOIN provinces p ON p.name_kh = l.province
-              WHERE l.id = staff.location_id);
-
--- Mirror every province into locations (district/commune/village stay
--- empty) so new location_id picks satisfy REFERENCES locations(id).
-INSERT INTO locations (id, province, district, commune, village)
-SELECT p.id, p.name_kh, '', '', '' FROM provinces p
-WHERE p.id NOT IN (SELECT id FROM locations);
+-- ===========================================================================
+-- End of seed. The legacy locations compatibility layer that used to
+-- close this file (repoint users/staff.location_id from their old
+-- locations row, and mirror every province into locations) is gone:
+-- the locations table itself was dropped in 0003 and users/staff now
+-- carry village_id -> villages(id) directly.
+-- ===========================================================================
