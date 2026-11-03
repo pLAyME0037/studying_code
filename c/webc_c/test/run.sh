@@ -61,6 +61,12 @@ python3 test/role_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 # create/edit/delete forms and submit them (its soft-deleted rows must not
 # disturb the suites above, so it runs after them).
 python3 test/crud_contract_test.py "$HOST" "$PORT" "$TMP" || rc=$?
+# Geo picker: the ONLY suite that executes GeoCascade.js (every suite above
+# scrapes HTML, so a JS bug there is invisible to them - which is how the
+# create form shipped with all three ancestor selects permanently disabled).
+# Needs chromium + python websocket; SKIPs loudly without them. Runs after
+# the contract suite so its staff row cannot shift any earlier count.
+python3 test/geo_cascade_test.py "$HOST" "$PORT" "$TMP" || rc=$?
 
 if ! wait "$MYSQL_PID"; then
     rc=1

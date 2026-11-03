@@ -65,7 +65,6 @@ CREATE TABLE IF NOT EXISTS translations (
 );
 
 -- ============================================================================
--- ============================================================================
 -- 2. GEO ADMIN AREAS (CAMBODIA)
 -- ============================================================================
 -- The four official admin-area tables. users/staff carry village_id ->
@@ -877,3 +876,18 @@ LEFT JOIN (SELECT order_id, SUM(amount) AS paid FROM payments
            WHERE payment_status = 'COMPLETED' AND deleted_at IS NULL
            GROUP BY order_id) p ON p.order_id = o.id
 WHERE o.deleted_at IS NULL;
+
+CREATE VIEW IF NOT EXISTS v_geo_hierarchy AS
+SELECT 
+    v.id AS id,
+    v.vill_id AS village_code,
+    v.name_kh AS village_name,
+    c.name_kh AS commune_name,
+    d.name_kh AS district_name,
+    p.name_kh AS province_name,
+    v.deleted_at AS deleted_at,
+    v.created_at AS created_at
+FROM villages v
+JOIN communes c ON v.commune_id = c.id
+JOIN districts d ON c.district_id = d.id
+JOIN provinces p ON d.province_id = p.id;

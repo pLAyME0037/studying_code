@@ -3,10 +3,6 @@
 
 #include "src/layout/master_child.h"
 
-/* Phase 16 geo redo: the four Cambodia admin-area masters seeded from the
- * cam-geo locations.json export (src/pos/geo.c). Provinces/districts/
- * communes carry the full soft-delete + trash flow, villages is a
- * read-only catalog. */
 void serve_pos_provinces(Serve_Context *sc);
 void serve_pos_provinces_create(Serve_Context *sc);
 void serve_pos_provinces_update(Serve_Context *sc);
@@ -33,6 +29,7 @@ void serve_pos_villages(Serve_Context *sc);   /* read_only: GET route only */
  * ancestor dataset embedded once per form; serve_geo_villages_options() is
  * the lazy village half, served from /geo/villages?commune=<id>. */
 void serve_geo_villages_options(Serve_Context *sc);
+void serve_pos_geo_workspace(Serve_Context *sc);
 
 extern MD_Column md_provinces_columns[];
 extern const size_t md_provinces_columns_count;

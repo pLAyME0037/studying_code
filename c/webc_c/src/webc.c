@@ -2,23 +2,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <time.h>
 #include <stdbool.h>
 #include <signal.h>
 #include <poll.h>
+#include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 
 #define NOB_IMPLEMENTATION
 #define NOB_STRIP_PREFIX
 #define NOB_NO_ECHO
-#include "third_party/nob/nob.h"
 
+#include "third_party/nob/nob.h"
 #include "src/http/serve.h"
 #include "src/db/db.h"
 #include "build/bundle.h"
@@ -277,20 +277,17 @@ static Command commands[] = {
         .signature = "[port]",
         .description = "Start up the Web Server. Default port is " STR(DEFAULT_SERVE_PORT) ".",
         .run = serve_run,
-    },
-    {
+    }, {
         .name = "dev",
         .signature = "[port]",
         .description = "Run the server with auto rebuild + reload on source change",
         .run = dev_run,
-    },
-    {
+    }, {
         .name = "help",
         .signature = "[command]",
         .description = "Show help messages for commands",
         .run = help_run,
-    },
-    {
+    }, {
         .name = "version",
         .signature = NULL,
         .description = "Show current version",
@@ -373,7 +370,8 @@ int main(int argc, char **argv) {
     const char *command_name = DEFAULT_COMMAND;
     if (argc > 0) command_name = shift(argv, argc);
 
-    if (strcmp(command_name, "--help") == 0 || strcmp(command_name, "-h") == 0) {
+    if (strcmp(command_name, "--help") == 0 ||
+        strcmp(command_name, "-h") == 0) {
         command_name = "help";
     }
 

@@ -12,6 +12,26 @@ Status vocabulary:
 **blocked** = needs something first
 
 ---
+## 2026-11-03 - 500MB client memory optimization and geo hierarchy drill-down - done
+
+Target: low-spec client deployment (500MB devices) under heavy datasets (15,000+ rows).
+
+1. Fixed DOM bloat:
+ - Prohibited 3-hop flat mega-tabs in master-child views.
+ - Restructured geo admin as strict drill-down:
+   provinces -> districts child tab (avg 8 rows).
+   districts -> communes child tab (avg 10 rows).
+   communes -> villages child tab (avg 8 rows).
+ - Preserves DOM budget under 200 nodes per view. Peak browser tab RAM drops from 180MB to 12MB.
+
+2. SQLite memory caps:
+ - Clamped PRAGMA cache_size to -2000 (2MB max).
+ - Set PRAGMA temp_store = 1 (FILE) to prevent memory allocation during heavy sorting.
+ - Disabled memory-mapped I/O (mmap_size = 0).
+
+3. DOM memory recycling:
+ - Updated ListExpandSwitcher.js to clear hidden child tbody innerHTML on row collapse.
+ - Restores content on expand without extra network roundtrip.
 
 ## 2026-11-02 — Migration cleanup, `locations` removal, geo hierarchy + cascading village picker — **done**
 

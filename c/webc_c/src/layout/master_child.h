@@ -104,16 +104,17 @@ typedef struct {
 } MD_ChildRows;
 
 typedef struct {
-    const char *table;
-    const char *title;
-    const char *fk_column;
-    const char *id_column;
-    const char *crud_path;
-    MD_Column  *columns;
-    size_t      column_count;
+    const char  *table;
+    const char  *title;
+    const char  *fk_column;
+    const char  *fk_subquery;
+    const char  *id_column;
+    const char  *crud_path;
+    MD_Column   *columns;
+    size_t       column_count;
     const char **sum_columns;
-    size_t      sum_column_count;
-    int         soft_delete;
+    size_t       sum_column_count;
+    int          soft_delete;
 } MD_ChildTab;
 
 typedef struct {

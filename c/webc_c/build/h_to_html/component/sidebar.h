@@ -10,101 +10,193 @@ OUT("", 0);
         const char *icon;
     } Nav_Item;
     static const Nav_Item nav_items[] = {
-        { "Dashboard", "/dashboard", "Overview",
-          "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" },
-        { "Catalog",  "/pos/products",  "Products",
-          "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" },
-        { NULL,       "/pos/categories","Categories",
-          "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" },
-        { "Sales",    "/pos/sale",      "New Sale",
-          "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" },
-        { NULL,       "/pos/orders",    "Orders",
-          "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" },
-        { NULL,       "/pos/shifts",    "Shifts",
-          "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
-        { NULL,       "/pos/finance",   "Finance",
-          "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" },
-        { "Party",    "/pos/customers", "Customers",
-          "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-        { NULL,       "/pos/users",     "Users",
-          "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-        { NULL,       "/pos/staff",     "Staff",
-          "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-        { NULL,       "/pos/org",       "Org Units",
-          "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-        { "Inventory", "/pos/stocks",   "Stocks",
-          "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" },
-        { "Access",   "/pos/roles",     "Roles",
-          "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" },
-        { NULL,       "/pos/permissions","Permissions",
-          "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" },
-        { "Config",   "/pos/provinces",  "Provinces",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { NULL,       "/pos/districts",  "Districts",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { NULL,       "/pos/communes",   "Communes",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { NULL,       "/pos/villages",   "Villages",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { NULL,       "/pos/dictionaries","Dictionaries",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { NULL,       "/pos/i18n",      "Languages",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { NULL,       "/pos/config",    "Configs",
-          "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" },
-        { "Monitoring", "/pos/alerts",  "Alerts",
-          "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" },
-        { NULL,       "/pos/audit",     "Audit",
-          "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" },
-        { "Reports",   "/reports",       "Reports",
-          "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" },
-        { "Demo",     "/users",         "Demo Users",
-          "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" },
-        { NULL,       "/notes",         "Notes",
-          "M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" },
-        { NULL,       "/people",        "People",
-          "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8zm8 10v-2a4 4 0 0 0-3-3.87M4 21v-2a4 4 0 0 1 3-3.87" },
-        { NULL,       "/version",       "Version",
-          "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
-        { NULL,       "/api/notes",     "API",
-          "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" },
+    {
+        "Dashboard",
+        "/dashboard",
+        "Overview",
+        "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+    }, {
+        "Catalog",
+        "/pos/products",
+        "Products",
+        "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+    }, {
+        NULL,
+        "/pos/categories",
+        "Categories",
+        "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+    }, {
+        "Sales",
+        "/pos/sale",
+        "New Sale",
+        "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
+    }, {
+        NULL,
+        "/pos/orders",
+        "Orders",
+        "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"
+    }, {
+        NULL,
+        "/pos/shifts",
+        "Shifts",
+        "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+    }, {
+        NULL,
+        "/pos/finance",
+        "Finance",
+        "M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+    }, {
+        "Party",
+        "/pos/customers",
+        "Customers",
+        "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+    }, {
+        NULL,
+        "/pos/users",
+        "Users",
+        "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+    }, {
+        NULL,
+        "/pos/staff",
+        "Staff",
+        "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+    }, {
+        NULL,
+        "/pos/org",
+        "Org Units",
+        "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+    }, {
+        "Inventory",
+        "/pos/stocks",
+        "Stocks",
+        "M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+    }, {
+        "Access",
+        "/pos/roles",
+        "Roles",
+        "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+    }, {
+        NULL,
+        "/pos/permissions",
+        "Permissions",
+        "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"
+    }, {
+        "Config",
+        "/pos/provinces",
+        "Provinces",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/districts",
+        "Districts",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/communes",
+        "Communes",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/villages",
+        "Villages",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/geo",
+        "CAM-Geo",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/dictionaries",
+        "Dictionaries",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/i18n",
+        "Languages",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        NULL,
+        "/pos/config",
+        "Configs",
+        "M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+    }, {
+        "Monitoring",
+        "/pos/alerts",
+        "Alerts",
+        "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+    }, {
+        NULL,
+        "/pos/audit",
+        "Audit",
+        "M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+    }, {
+        "Reports",
+        "/reports",
+        "Reports",
+        "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+    }, {
+        "Demo",
+        "/users",
+        "Demo Users",
+        "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+    }, {
+        NULL,
+        "/notes",
+        "Notes",
+        "M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"
+    }, {
+        NULL,
+        "/people",
+        "People",
+        "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8zm8 10v-2a4 4 0 0 0-3-3.87M4 21v-2a4 4 0 0 1 3-3.87"
+    }, {
+        NULL,
+        "/version",
+        "Version",
+        "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+    }, {
+        NULL,
+        "/api/notes",
+        "API",
+        "M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+    },
     };
-    static const size_t nav_items_count = sizeof(nav_items) / sizeof(nav_items[0]);
+    #define nav_items_count (sizeof(nav_items) / sizeof(nav_items[0]))
 
-    // Phase 14: one required permission per nav row (NULL = public entry,
-    // kept by every signed-in role - Dashboard and the legacy Demo links).
-    // Anonymous visitors on public pages see the full link set: those hrefs
-    // gate server-side anyway. A group header hides when filtering left it
-    // without a single visible row.
     static const char *const nav_perms[] = {
-        NULL,                  /* Dashboard / Overview */
-        "SD.PRODUCT.MGMT",     /* Products */
-        "SD.PRODUCT.MGMT",     /* Categories */
-        "SD.SELL",             /* New Sale */
-        "SD.SELL",             /* Orders */
-        "SD.SELL",             /* Shifts */
-        "SD.FINANCE",          /* Finance */
-        "SD.SELL",             /* Customers */
-        "SD.USER.MGMT",        /* Users */
-        "SD.USER.MGMT",        /* Staff */
-        "SD.USER.MGMT",        /* Org Units */
-        "SD.STOCK.ADJUST",     /* Stocks */
-        "SD.USER.MGMT",        /* Roles */
-        "SD.USER.MGMT",        /* Permissions */
-        "SD.SETTINGS",         /* Provinces */
-        "SD.SETTINGS",         /* Districts */
-        "SD.SETTINGS",         /* Communes */
-        "SD.SETTINGS",         /* Villages */
-        "SD.SETTINGS",         /* Dictionaries */
-        "SD.SETTINGS",         /* Languages */
-        "SD.SETTINGS",         /* Configs */
-        "SD.AUDIT",            /* Alerts */
-        "SD.AUDIT",            /* Audit */
-        "SD.REPORT.VIEW",      /* Reports */
-        NULL, NULL, NULL, NULL, NULL, /* Demo Users / Notes / People / ... */
+        NULL,                  // Dashboard / Overview
+        "SD.PRODUCT.MGMT",     // Products
+        "SD.PRODUCT.MGMT",     // Categories
+        "SD.SELL",             // New Sale
+        "SD.SELL",             // Orders
+        "SD.SELL",             // Shifts
+        "SD.FINANCE",          // Finance
+        "SD.SELL",             // Customers
+        "SD.USER.MGMT",        // Users
+        "SD.USER.MGMT",        // Staff
+        "SD.USER.MGMT",        // Org Units
+        "SD.STOCK.ADJUST",     // Stocks
+        "SD.USER.MGMT",        // Roles
+        "SD.USER.MGMT",        // Permissions
+        "SD.SETTINGS",         // Provinces
+        "SD.SETTINGS",         // Districts
+        "SD.SETTINGS",         // Communes
+        "SD.SETTINGS",         // Villages
+        "SD.SETTINGS",         // CAM-Geo
+        "SD.SETTINGS",         // Dictionaries
+        "SD.SETTINGS",         // Languages
+        "SD.SETTINGS",         // Configs
+        "SD.AUDIT",            // Alerts
+        "SD.AUDIT",            // Audit
+        "SD.REPORT.VIEW",      // Reports
+        NULL, NULL, NULL, NULL, NULL, // Demo Users / Notes / People / ...
     };
-    _Static_assert(sizeof(nav_perms) / sizeof(nav_perms[0])
-                       == sizeof(nav_items) / sizeof(nav_items[0]),
+
+#define sizeof_nav_perm  (sizeof(nav_perms) / sizeof(nav_perms[0]))
+#define sizeof_nav_items (sizeof(nav_items) / sizeof(nav_items[0]))
+
+    _Static_assert((sizeof_nav_perm == sizeof_nav_items),
                    "nav_perms must mirror nav_items");
     bool nav_vis[sizeof(nav_items) / sizeof(nav_items[0])];
     bool nav_grp[sizeof(nav_items) / sizeof(nav_items[0])];
@@ -122,9 +214,9 @@ OUT("", 0);
         }
     }
 
-OUT("\x0a\x3c\x61\x73\x69\x64\x65\x20\x69\x64\x3d\x22\x73\x69\x64\x65\x62\x61\x72\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x63\x6c\x61\x73\x73\x3d\x22\x73\x68\x72\x69\x6e\x6b\x2d\x30\x20\x66\x6c\x65\x78\x20\x66\x6c\x65\x78\x2d\x63\x6f\x6c\x20\x62\x6f\x72\x64\x65\x72\x2d\x72\x20\x62\x6f\x72\x64\x65\x72\x2d\x73\x75\x72\x66\x61\x63\x65\x30\x20\x62\x67\x2d\x6d\x61\x6e\x74\x6c\x65\x20\x74\x72\x61\x6e\x73\x69\x74\x69\x6f\x6e\x2d\x61\x6c\x6c\x20\x64\x75\x72\x61\x74\x69\x6f\x6e\x2d\x33\x30\x30\x20\x68\x2d\x66\x75\x6c\x6c\x22\x3e\x0a\x0a\x20\x20\x20\x20\x3c\x64\x69\x76\x20\x63\x6c\x61\x73\x73\x3d\x22\x62\x6f\x72\x64\x65\x72\x2d\x62\x20\x62\x6f\x72\x64\x65\x72\x2d\x73\x75\x72\x66\x61\x63\x65\x30\x20\x62\x67\x2d\x63\x72\x75\x73\x74\x20\x73\x68\x72\x69\x6e\x6b\x2d\x30\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x64\x69\x76\x20\x69\x64\x3d\x22\x73\x69\x64\x65\x62\x61\x72\x2d\x70\x61\x64\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x63\x6c\x61\x73\x73\x3d\x22\x66\x6c\x65\x78\x20\x69\x74\x65\x6d\x73\x2d\x63\x65\x6e\x74\x65\x72\x20\x70\x2d\x33\x20\x75\x73\x65\x72\x2d\x63\x61\x72\x64\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20", 288);
+OUT("\x0a\x3c\x61\x73\x69\x64\x65\x20\x69\x64\x3d\x22\x73\x69\x64\x65\x62\x61\x72\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x63\x6c\x61\x73\x73\x3d\x22\x73\x68\x72\x69\x6e\x6b\x2d\x30\x20\x66\x6c\x65\x78\x20\x66\x6c\x65\x78\x2d\x63\x6f\x6c\x20\x62\x6f\x72\x64\x65\x72\x2d\x72\x20\x62\x6f\x72\x64\x65\x72\x2d\x73\x75\x72\x66\x61\x63\x65\x30\x20\x62\x67\x2d\x6d\x61\x6e\x74\x6c\x65\x20\x74\x72\x61\x6e\x73\x69\x74\x69\x6f\x6e\x2d\x61\x6c\x6c\x20\x64\x75\x72\x61\x74\x69\x6f\x6e\x2d\x33\x30\x30\x20\x68\x2d\x66\x75\x6c\x6c\x22\x3e\x0a\x0a\x20\x20\x20\x20\x3c\x64\x69\x76\x20\x63\x6c\x61\x73\x73\x3d\x22\x62\x6f\x72\x64\x65\x72\x2d\x62\x20\x62\x6f\x72\x64\x65\x72\x2d\x73\x75\x72\x66\x61\x63\x65\x30\x20\x62\x67\x2d\x63\x72\x75\x73\x74\x20\x73\x68\x72\x69\x6e\x6b\x2d\x30\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x64\x69\x76\x20\x69\x64\x3d\x22\x73\x69\x64\x65\x62\x61\x72\x2d\x70\x61\x64\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x63\x6c\x61\x73\x73\x3d\x22\x66\x6c\x65\x78\x20\x69\x74\x65\x6d\x73\x2d\x63\x65\x6e\x74\x65\x72\x20\x70\x2d\x33\x20\x75\x73\x65\x72\x2d\x63\x61\x72\x64\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x61\x20\x68\x72\x65\x66\x3d\x22\x2f\x61\x63\x63\x6f\x75\x6e\x74\x73\x22\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20", 324);
  STR(SIDEBAR_AVATAR_RAW); 
-OUT("\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x64\x69\x76\x20\x63\x6c\x61\x73\x73\x3d\x22\x6d\x6c\x2d\x33\x20\x6d\x69\x6e\x2d\x77\x2d\x30\x20\x6e\x61\x76\x2d\x6c\x61\x62\x65\x6c\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x70\x20\x63\x6c\x61\x73\x73\x3d\x22\x74\x65\x78\x74\x2d\x73\x6d\x20\x66\x6f\x6e\x74\x2d\x73\x65\x6d\x69\x62\x6f\x6c\x64\x20\x74\x65\x78\x74\x2d\x74\x65\x78\x74\x20\x74\x72\x75\x6e\x63\x61\x74\x65\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20", 139);
+OUT("\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x2f\x61\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x64\x69\x76\x20\x63\x6c\x61\x73\x73\x3d\x22\x6d\x6c\x2d\x33\x20\x6d\x69\x6e\x2d\x77\x2d\x30\x20\x6e\x61\x76\x2d\x6c\x61\x62\x65\x6c\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x70\x20\x63\x6c\x61\x73\x73\x3d\x22\x74\x65\x78\x74\x2d\x73\x6d\x20\x66\x6f\x6e\x74\x2d\x73\x65\x6d\x69\x62\x6f\x6c\x64\x20\x74\x65\x78\x74\x2d\x74\x65\x78\x74\x20\x74\x72\x75\x6e\x63\x61\x74\x65\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20", 156);
  STR(SIDEBAR_NAME); 
 OUT("\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x2f\x70\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x3c\x70\x20\x63\x6c\x61\x73\x73\x3d\x22\x74\x65\x78\x74\x2d\x78\x73\x20\x74\x65\x78\x74\x2d\x73\x75\x62\x74\x65\x78\x74\x30\x20\x74\x72\x75\x6e\x63\x61\x74\x65\x22\x3e\x0a\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20", 101);
  STR(SIDEBAR_SUB); 

@@ -336,6 +336,7 @@ static void serve_request_coro(void *arg) {
     sc.method = method;
 
     route_request(&sc);
+    temp_reset();
 
 send_response:
     if (!write_entire_sv_coro(&conn, sb_to_sv(sc.response))) { }
@@ -351,6 +352,7 @@ cleanup:
     if (conn.ssl) SSL_free(conn.ssl);
     close(client_fd);
     sc_reset(&sc);
+    temp_reset();
     return;
 }
 

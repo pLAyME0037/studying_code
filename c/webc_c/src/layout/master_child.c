@@ -89,6 +89,7 @@ static bool load_child_rows(db_t              *db,
                             MD_ChildRows      *out_rows)
 {
     char *cols = build_column_list(child);
+    char *where_fk = NULL;
     // Same live/trash rule as the master list: soft_delete tabs hide the
     // trash, ?deleted=1 shows ONLY the trash (restore buttons gate on it).
     const char *trash = "";
@@ -96,11 +97,16 @@ static bool load_child_rows(db_t              *db,
         trash = show_deleted ? " AND deleted_at IS NOT NULL"
                              : " AND deleted_at IS NULL";
     }
-    char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s = '%s'%s "
+    if (child->fk_subquery != NULL) {
+        where_fk = temp_sprintf(child->fk_subquery, md_sql_quote(master_id));
+    } else {
+        where_fk = temp_sprintf("%s = '%s'", child->fk_column,
+                                md_sql_quote(master_id));
+    }
+    char *sql = temp_sprintf("SELECT %s FROM %s WHERE %s%s "
                              "ORDER BY %s DESC;",
-                             cols, child->table, child->fk_column,
-                             md_sql_quote(master_id),
-                             trash, child->id_column);
+                             cols, child->table, where_fk, trash,
+                             child->id_column);
     sql_stmt stmt = {0};
     if (!sql_prepare(db, sql, &stmt)) {
         return false;

@@ -58,7 +58,8 @@ function mdSnapshot(form) {
 }
 
 function mdFlash(el) {
-    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { el.scrollIntoView(); }
+    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    catch (e) { el.scrollIntoView(); }
     el.style.transition = 'background-color 900ms ease';
     el.style.backgroundColor = 'rgba(52, 211, 153, 0.45)';
     setTimeout(() => { el.style.backgroundColor = 'rgba(52, 211, 153, 0)'; }, 500);
@@ -69,11 +70,14 @@ function mdFlash(el) {
 // redirect path, and after every fetch swap).
 function mdReveal() {
     let raw = null;
-    try { raw = sessionStorage.getItem(MD_FLASH_KEY); } catch (e) { return; }
+    try { raw = sessionStorage.getItem(MD_FLASH_KEY); }
+    catch (e) { return; }
     if (!raw) return;
-    try { sessionStorage.removeItem(MD_FLASH_KEY); } catch (e) {}
+    try { sessionStorage.removeItem(MD_FLASH_KEY); }
+    catch (e) {}
     let snap;
-    try { snap = JSON.parse(raw); } catch (e) { return; }
+    try { snap = JSON.parse(raw); }
+    catch (e) { return; }
 
     let row = null;
     if (snap.kind === 'child') {
@@ -114,7 +118,9 @@ function mdSwap(newRoot) {
     const activeTabs = {};
     document.querySelectorAll('.detail-panel-row').forEach(r => {
         const active = r.querySelector('.tab-content:not(.hidden)');
-        if (active && r.dataset.masterId) activeTabs[r.dataset.masterId] = active.dataset.tab;
+        if (active && r.dataset.masterId) {
+            activeTabs[r.dataset.masterId] = active.dataset.tab;
+        }
     });
 
     const root = document.getElementById('mc-root');
@@ -260,8 +266,30 @@ window.masterDetailController = {
             const panel = document.querySelector('.detail-panel-row[data-master-id="' + id + '"]');
             const open = btn.getAttribute('aria-expanded') === 'true';
             btn.setAttribute('aria-expanded', String(!open));
-            btn.innerHTML = open ? EYE_OPEN : EYE_CLOSE;
-            if (panel) panel.style.display = open ? 'none' : 'table-row';
+            if (open) { 
+                btn.innerHTML = EYE_OPEN;
+                if (panel) {
+                    panel.style.display = 'none';
+                    const tbodies = panel.querySelectorAll('.tab-content tbody[id]');
+                    tbodies.forEach(function (tb) {
+                        tb.setAttribute('data-cached-html', tb.innerHTML);
+                        tb.innerHTML = '';
+                    });
+                }
+            } else {
+                btn.innerHTML = EYE_CLOSE;
+                if (panel) {
+                    panel.style.display = 'table-row';
+                    const tbodies = panel.querySelectorAll('.tab-content tbody[id]');
+                    tbodies.forEach(function (tb) {
+                        const cached = tb.getAttribute('data-cached-html');
+                        if (cached) {
+                            tb.innerHTML = cached;
+                            tb.removeAttribute('data-cached-html');
+                        }
+                    });
+                }
+            }
         });
 
         // Tab switching within a panel

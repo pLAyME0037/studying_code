@@ -240,13 +240,11 @@ void route_initialize(void) {
     route_new(&routes, "/pos/communes", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_communes_restore);
 
     route_new(&routes, "/pos/villages", NULL, "GET", ROUTE_EXACT, serve_pos_villages);
-    // Lazy half of the cascading village picker: /geo/villages?commune=<id>
-    // answers bare <option> lines. Data-only, no page shell.
     route_new(&routes, "/geo/villages", NULL, "GET", ROUTE_EXACT, serve_geo_villages_options);
+    route_new(&routes, "/pos/geo",      NULL, "GET", ROUTE_EXACT, serve_pos_geo_workspace);
 
     route_new(&routes, "/pos/users", NULL,       "GET",  ROUTE_EXACT,     serve_pos_users);
     route_new(&routes, "/pos/users/create", NULL, "POST", ROUTE_EXACT,    serve_pos_users_create);
-    route_new(&routes, "/pos/users", "/update",  "POST", ROUTE_ID_ACTION, serve_pos_users_update);
     route_new(&routes, "/pos/users", "/delete",  "POST", ROUTE_ID_ACTION, serve_pos_users_soft_delete);
     route_new(&routes, "/pos/users", "/restore", "POST", ROUTE_ID_ACTION, serve_pos_users_restore);
 

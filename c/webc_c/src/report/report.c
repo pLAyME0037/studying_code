@@ -617,7 +617,7 @@ static bool report_fodt_decorate(const char *path, const Report_Def *rep,
     // page 1 (report_append_letterhead); the page style carries both the
     // imprint header and the footer (live page numbers).
     const char *shop = report_shop_name();
-    char right_hdr[96];
+    char right_hdr[120];
     {
         char when[32] = {0};
         time_t now = time(NULL);

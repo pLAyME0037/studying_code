@@ -535,6 +535,10 @@ db_t *open_webc_db(void) {
     if (lang == SQL_SQLITE) {
         int exists = file_exists(WEBC_DIR_PATH);
         if (exists < 0) return_defer(NULL);
+        sql_exec_script(result, "PRAGMA cache_size = -2000;"); // 2000 KB memory limit
+        sql_exec_script(result, "PRAGMA temp_store = 1;");     // Store temp tables on disk (FILE)
+        sql_exec_script(result, "PRAGMA mmap_size = 0;");      // Disable memory-mapped I/O
+
         if (!exists) {
             if (!db_mkdir_recursive(WEBC_DIR_PATH)) return_defer(NULL);
         } else {

@@ -61,7 +61,7 @@
                 break;
             }
         }
-    </c>();
+    ();
     </script>
     <c> if (show_deleted) { </c>
     <div class="mb-3 px-2 py-1 flex justify-between items-center text-sm bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
@@ -119,15 +119,15 @@
                              one field, the village_id select below. -->
                         <select data-geo="province" disabled
                                 class="w-full mb-1 px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                            <option value="">— Province —</option>
+                            <option value="">Select Province</option>
                         </select>
                         <select data-geo="district" disabled
                                 class="w-full mb-1 px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                            <option value="">— District —</option>
+                            <option value="">Select District</option>
                         </select>
                         <select data-geo="commune" disabled
                                 class="w-full mb-1 px-0.5 py-1.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-white">
-                            <option value="">— Commune —</option>
+                            <option value="">Select Commune</option>
                         </select>
                         <select name="<c> ESCAPED(form_cols.items[fi].col->name); </c>" data-geo="village"
                                 <c> if (!form_cols.items[fi].col->nullable) { </c>required<c> } </c>
@@ -192,9 +192,15 @@
                     <c> ESCAPED(config->columns[i].label); </c>
                 </th>
                 <c> } </c>
+                <c>if (!config->read_only          &&
+                       !config->create_only        &&
+                        config->children != NULL   &&
+                        config->children_count > 0 &&
+                        config->crud_path != "") {</c>
                 <th class="py-1 pl-3 font-semibold">
                     Actions
                 </th>
+                <c> } </c>
             </tr>
             <c> md_query_row(sb, config, &form_cols, md_path, sc->query_string,
                             q_text, qcol_name, search.term_count > 0); </c>
@@ -226,8 +232,8 @@
                     <td class="pl-3 py-1 whitespace-nowrap">
                         <div class="flex items-center gap-1">
                             <c> if (!config->read_only   &&
-                                   !config->create_only &&
-                                    config->soft_delete &&
+                                    !config->create_only &&
+                                     config->soft_delete &&
                                     show_deleted) { </c>
                             <form method="POST"
                                   action="<c> STR(config->crud_path); </c>/<c> STR(rows->items[ri].id); </c>/restore?redirect=<c> STR(md_path); </c>?deleted=1"
@@ -254,6 +260,7 @@
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                             </button>
                             <c> } </c>
+                            <c>if (config->children != NULL || config->children_count > 0) {</c>
                             <button
                                 type="button"
                                 class="expand-btn p-1 text-sm hover:bg-indigo-900/30 text-indigo-600"
@@ -264,6 +271,7 @@
                                     <circle cx="12" cy="12" r="3" />
                                 </svg> 
                             </button>
+                            <c> } </c>
                             <c> if (!config->read_only && !config->create_only) { </c>
                             <form method="POST"
                                   action="<c> STR(config->crud_path); </c>/<c> STR(rows->items[ri].id); </c>/delete?redirect=<c> STR(md_path); </c>"

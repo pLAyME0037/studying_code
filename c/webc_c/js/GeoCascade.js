@@ -27,10 +27,10 @@
     // fetched, not embedded.
     const PARENT_SLOT = { d: 1, c: 1 };
     const PLACEHOLDER = {
-        province: '\u2014 Province \u2014',
-        district: '\u2014 District \u2014',
-        commune:  '\u2014 Commune \u2014',
-        village:  'None',
+        province: 'Select Province',
+        district: 'Select District',
+        commune:  'Select Commune',
+        village:  'Select Village',
     };
 
     let DATA = null;   // parsed dataset, or null when absent/unparseable
@@ -186,7 +186,24 @@
         const d = levelEl(box, 'district');
         const c = levelEl(box, 'commune');
 
-        if (!stored) { clearBelow(box, 0); return; }
+        if (!stored) {
+            // CREATE form, or a row whose village_id is NULL: there is
+            // nothing to walk back up from. But province has NO parent, so
+            // it must be live from the very first paint - fill it and
+            // enable it, and reset only the levels BELOW it (they light up
+            // one at a time as each parent is chosen).
+            //
+            // This used to be `clearBelow(box, 0)`, which also disabled
+            // province - and nothing ever re-enabled it, because the only
+            // other enable path lived in the stored-village branch below.
+            // Result: on a create form all three nav selects stayed
+            // disabled with just their placeholder, so village_id could
+            // never be chosen at all. Province has no parent to wait for.
+            fill(p, rowsFor('p', null), '');
+            setEnabled(p, true);
+            clearBelow(box, 1);
+            return;
+        }
 
         const communeId = (DATA.s || {})[stored];
         if (!communeId) {

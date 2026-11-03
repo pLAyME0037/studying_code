@@ -17,33 +17,66 @@
 // =========================================================================
 
 MD_Column md_roles_columns[] = {
-    { .name = "role_code", .label = "Code", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "role_name", .label = "Name", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "org_unit_id", .label = "Org", .type = COL_TYPE_FK_SELECT,
-      .nullable = true, .fk_table = "org_units", .fk_label = "ou_name" },
-    { .name = "description", .label = "Description", .type = COL_TYPE_TEXT,
-      .nullable = true },
+    {
+        .name     = "role_code",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "role_name",
+        .label    = "Name",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "org_unit_id",
+        .label    = "Org",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = true,
+        .fk_table = "org_units",
+        .fk_label = "ou_name"
+    }, {
+        .name     = "description",
+        .label    = "Description",
+        .type     = COL_TYPE_TEXT,
+        .nullable = true
+    },
 };
 const size_t md_roles_columns_count = ARRAY_LEN(md_roles_columns);
 
 // Child shapes: permission link / user link under a role.
 static MD_Column md_role_permission_columns[] = {
-    { .name = "permission_id", .label = "Permission",
-      .type = COL_TYPE_FK_SELECT, .nullable = false,
-      .fk_table = "permissions", .fk_label = "perm_name" },
-    { .name = "created_at", .label = "Granted", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "permission_id",
+        .label    = "Permission",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = false,
+        .fk_table = "permissions",
+        .fk_label = "perm_name"
+    }, {
+        .name     = "created_at",
+        .label    = "Granted",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
-static const size_t md_role_permission_columns_count =
-    ARRAY_LEN(md_role_permission_columns);
+static const size_t md_role_permission_columns_count = ARRAY_LEN(md_role_permission_columns);
 
 static MD_Column md_role_user_columns[] = {
-    { .name = "user_id", .label = "User", .type = COL_TYPE_FK_SELECT,
-      .nullable = false, .fk_table = "users", .fk_label = "name" },
-    { .name = "created_at", .label = "Linked", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "user_id",
+        .label    = "User",
+        .type     = COL_TYPE_FK_SELECT,
+        .nullable = false,
+        .fk_table = "users",
+        .fk_label = "name"
+    }, {
+        .name     = "created_at",
+        .label    = "Linked",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 static const size_t md_role_user_columns_count = ARRAY_LEN(md_role_user_columns);
 
@@ -104,8 +137,8 @@ static bool update_role(db_t *db, String_View *fields, size_t count,
     for (int i = 1; i <= 4; ++i) {
         if (!sql_bind(&stmt, i, SQL_SV(fields[i - 1]))) return_defer(false);
     }
-    if (!sql_bind(&stmt, 5, SQL_SV(id)))        return_defer(false);
-    if (!sql_final_step(&stmt))                 return_defer(false);
+    if (!sql_bind(&stmt, 5, SQL_SV(id)))      return_defer(false);
+    if (!sql_final_step(&stmt))               return_defer(false);
 defer:
     sql_finalize(&stmt);
     return result;
@@ -156,8 +189,7 @@ void serve_pos_roles(Serve_Context *sc) {
             .columns      = md_role_permission_columns,
             .column_count = md_role_permission_columns_count,
             .soft_delete  = 1,
-        },
-        {
+        }, {
             .table        = "user_roles",
             .title        = "Members",
             .fk_column    = "role_id",

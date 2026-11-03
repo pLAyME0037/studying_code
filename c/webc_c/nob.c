@@ -76,6 +76,7 @@ int build_bundle(const char *webc_build_time) {
         { .file_path = "./resource/image/know_me.png" },
         { .file_path = "./js/ListExpandSwitcher.js" },
         { .file_path = "./js/PaginationSwitcher.js" },
+        { .file_path = "./js/GeoCascade.js" },
         { .file_path = "./js/sidebarSwitcher.js" },
         { .file_path = "./js/themeSwitcher.js" },
     };
@@ -348,7 +349,7 @@ bool generate_compile_commands(Cmd *cmd, const char *proj_dir) {
     json_append_escaped(&json, escaped.items, escaped.count);
     sb_appendf(&json,
         "\",\n"
-        "    \"file\": \"main.c\"\n"
+        "    \"file\": \"nob.c\"\n"
         "  }\n"
         "]\n");
 

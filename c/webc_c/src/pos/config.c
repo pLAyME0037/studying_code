@@ -15,16 +15,33 @@
 // =========================================================================
 
 MD_Column md_configs_columns[] = {
-    { .name = "config_key", .label = "Key", .type = COL_TYPE_TEXT,
-      .nullable = false },
-    { .name = "config_value", .label = "Value", .type = COL_TYPE_TEXT,
-      .nullable = true },
-    { .name = "json_payload", .label = "JSON", .type = COL_TYPE_TEXT,
-      .nullable = true },
-    { .name = "is_encrypted", .label = "Encrypted", .type = COL_TYPE_NUM,
-      .nullable = false },
-    { .name = "created_at", .label = "Since", .type = COL_TYPE_DATE,
-      .nullable = false, .computed = 1 },
+    {
+        .name     = "config_key",
+        .label    = "Key",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false
+    }, {
+        .name     = "config_value",
+        .label    = "Value",
+        .type     = COL_TYPE_TEXT,
+        .nullable = true
+    }, {
+        .name     = "json_payload",
+        .label    = "JSON",
+        .type     = COL_TYPE_TEXT,
+        .nullable = true
+    }, {
+        .name     = "is_encrypted",
+        .label    = "Encrypted",
+        .type     = COL_TYPE_NUM,
+        .nullable = false
+    }, {
+        .name     = "created_at",
+        .label    = "Since",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1
+    },
 };
 const size_t md_configs_columns_count = ARRAY_LEN(md_configs_columns);
 

@@ -6,42 +6,22 @@
 #include "src/pos/pos_util.h"
 #include "src/http/utils.h"
 
-// =========================================================================
-// Phase 16 geo redo: Cambodia admin areas as four individual masters,
-// seeded by migration 0009_geo_admin from the cam-geo locations.json
-// export (44 provinces, 227 districts, 1,712 communes, 14,858 villages).
-// Provinces/districts/communes are editable with the standard soft-delete
-// + trash flow; villages is a read_only catalog - the windowed list
-// browses it, while inline editors would have to carry the full
-// 1,712-option commune select on every row.
-// =========================================================================
-
 // ---- /pos/provinces -----------------------------------------------------
 
 MD_Column md_provinces_columns[] = {
     {
-        .name     = "prov_id",
-        .label    = "Code",
-        .type     = COL_TYPE_TEXT,
-        .nullable = false
-    }, {
         .name     = "name_kh",
         .label    = "Khmer Name",
         .type     = COL_TYPE_TEXT,
-        .nullable = false
+        .nullable = false,
     }, {
         .name     = "name_en",
         .label    = "English Name",
         .type     = COL_TYPE_TEXT,
         .nullable = false
-    }, {
-        .name     = "created_at",
-        .label    = "Created",
-        .type     = COL_TYPE_DATE,
-        .nullable = false,
-        .computed = 1
     },
 };
+
 const size_t md_provinces_columns_count = ARRAY_LEN(md_provinces_columns);
 
 static bool create_province(db_t *db, String_View *fields, size_t count) {
@@ -135,6 +115,42 @@ defer:
 }
 
 void serve_pos_provinces(Serve_Context *sc) {
+    MD_ChildTab childrens[] = {
+    {
+        .table        = "districts",
+        .title        = "Districts",
+        .fk_column    = "province_id",
+        .fk_subquery  = NULL,
+        .id_column    = "id",
+        .crud_path    = "/pos/districts",
+        .columns      = md_districts_columns,
+        .column_count = md_districts_columns_count,
+    }, {
+        .table        = "communes",
+        .title        = "Communes",
+        .fk_column    = "district_id",
+        .fk_subquery  = "district_id IN ("
+                            "SELECT id FROM districts "
+                            "WHERE province_id = '%s')",
+        .id_column    = "id",
+        .crud_path    = "/pos/communes",
+        .columns      = md_communes_columns,
+        .column_count = md_communes_columns_count,
+    }, {
+        .table        = "villages",
+        .title        = "Villages",
+        .fk_column    = "commune_id",
+        .fk_subquery  = "commune_id IN ("
+                            "SELECT c.id FROM communes c "
+                            "JOIN districts d ON c.district_id = d.id "
+                            "WHERE d.province_id = '%s')",
+        .id_column    = "id",
+        .crud_path    = "/pos/villages",
+        .columns      = md_villages_columns,
+        .column_count = md_villages_columns_count,
+    }
+    };
+
     MD_MasterConfig config = {
         .table          = "provinces",
         .title          = "Provinces",
@@ -143,6 +159,8 @@ void serve_pos_provinces(Serve_Context *sc) {
         .columns        = md_provinces_columns,
         .column_count   = md_provinces_columns_count,
         .soft_delete    = 1,
+        .children       = childrens,
+        .children_count = ARRAY_LEN(childrens)
     };
     serve_master_child(sc, &config);
 }
@@ -157,8 +175,8 @@ SERVE_SOFT_DELETE(pos_provinces, province)
 
 MD_Column md_districts_columns[] = {
     {
-        .name     = "dist_id",
-        .label    = "Code",
+        .name     = "type",
+        .label    = "Type",
         .type     = COL_TYPE_TEXT,
         .nullable = false
     }, {
@@ -171,25 +189,7 @@ MD_Column md_districts_columns[] = {
         .label    = "English Name",
         .type     = COL_TYPE_TEXT,
         .nullable = false
-    }, {
-        .name     = "type",
-        .label    = "Type",
-        .type     = COL_TYPE_TEXT,
-        .nullable = false
-    }, {
-        .name     = "province_id",
-        .label    = "Province",
-        .type     = COL_TYPE_FK_SELECT,
-        .nullable = false,
-        .fk_table = "provinces",
-        .fk_label = "name_kh"
-    }, {
-        .name     = "created_at",
-        .label    = "Created",
-        .type     = COL_TYPE_DATE,
-        .nullable = false,
-        .computed = 1
-    },
+    }
 };
 const size_t md_districts_columns_count = ARRAY_LEN(md_districts_columns);
 
@@ -317,11 +317,6 @@ SERVE_SOFT_DELETE(pos_districts, district)
 
 MD_Column md_communes_columns[] = {
     {
-        .name     = "comm_id",
-        .label    = "Code",
-        .type     = COL_TYPE_TEXT,
-        .nullable = false
-    }, {
         .name     = "name_kh",
         .label    = "Khmer Name",
         .type     = COL_TYPE_TEXT,
@@ -331,20 +326,7 @@ MD_Column md_communes_columns[] = {
         .label    = "English Name",
         .type     = COL_TYPE_TEXT,
         .nullable = false
-    }, {
-        .name     = "district_id",
-        .label    = "District",
-        .type     = COL_TYPE_FK_SELECT,
-        .nullable = false,
-        .fk_table = "districts",
-        .fk_label = "name_kh"
-    }, {
-        .name     = "created_at",
-        .label    = "Created",
-        .type     = COL_TYPE_DATE,
-        .nullable = false,
-        .computed = 1
-    },
+    }
 };
 const size_t md_communes_columns_count = ARRAY_LEN(md_communes_columns);
 
@@ -466,11 +448,6 @@ SERVE_SOFT_DELETE(pos_communes, commune)
 
 MD_Column md_villages_columns[] = {
     {
-        .name     = "vill_id",
-        .label    = "Code",
-        .type     = COL_TYPE_TEXT,
-        .nullable = false
-    }, {
         .name     = "name_kh",
         .label    = "Khmer Name",
         .type     = COL_TYPE_TEXT,
@@ -480,25 +457,7 @@ MD_Column md_villages_columns[] = {
         .label    = "English Name",
         .type     = COL_TYPE_TEXT,
         .nullable = false
-    }, {
-        .name     = "is_not_active",
-        .label    = "Inactive",
-        .type     = COL_TYPE_TEXT,
-        .nullable = true
-    }, {
-        .name     = "commune_id",
-        .label    = "Commune",
-        .type     = COL_TYPE_FK_SELECT,
-        .nullable = false,
-        .fk_table = "communes",
-        .fk_label = "name_kh"
-    }, {
-        .name     = "created_at",
-        .label    = "Created",
-        .type     = COL_TYPE_DATE,
-        .nullable = false,
-        .computed = 1
-    },
+    }
 };
 const size_t md_villages_columns_count = ARRAY_LEN(md_villages_columns);
 
@@ -511,6 +470,62 @@ void serve_pos_villages(Serve_Context *sc) {
         .columns      = md_villages_columns,
         .column_count = md_villages_columns_count,
         .read_only    = 1,
+    };
+    serve_master_child(sc, &config);
+}
+
+// =========================================================================
+// Unified Geo Master View
+// =========================================================================
+MD_Column md_geo_hierarchy_columns[] = {
+    {
+        .name     = "province_name",
+        .label    = "Province",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false,
+    }, {
+        .name     = "district_name",
+        .label    = "District",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false,
+    }, {
+        .name     = "commune_name",
+        .label    = "Commune",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false,
+    }, {
+        .name     = "village_name",
+        .label    = "Village",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false,
+    }, {
+        .name     = "village_code",
+        .label    = "Code",
+        .type     = COL_TYPE_TEXT,
+        .nullable = false,
+    }, {
+        .name     = "created_at",
+        .label    = "Created",
+        .type     = COL_TYPE_DATE,
+        .nullable = false,
+        .computed = 1,
+    },
+};
+
+const size_t md_geo_hierarchy_columns_count = ARRAY_LEN(md_geo_hierarchy_columns);
+
+void serve_pos_geo_workspace(Serve_Context *sc) {
+    MD_MasterConfig config = {
+        .table          = "v_geo_hierarchy",
+        .title          = "Geo Locations",
+        .id_column      = "id",
+        .crud_path      = "/pos/villages",
+        .columns        = md_geo_hierarchy_columns,
+        .column_count   = md_geo_hierarchy_columns_count,
+        .soft_delete    = 1,
+        .read_only      = 1,
+        .children       = NULL,
+        .children_count = 0,
     };
     serve_master_child(sc, &config);
 }

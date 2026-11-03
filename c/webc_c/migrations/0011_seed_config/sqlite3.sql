@@ -16,7 +16,7 @@
 INSERT OR IGNORE INTO system_configs (id, config_key, config_value,
                                       json_payload, is_encrypted, created_at,
                                       updated_at)
-VALUES ('sd-cfg-shop-name', 'pos.shop_name', 'ហាង POS',
+VALUES ('sd-cfg-shop-name', 'pos.shop_name', 'ហាង DELINA DESSERT CAFE',
         NULL, 0,
         strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days'),
         strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-300 days'));
