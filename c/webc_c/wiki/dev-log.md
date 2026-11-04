@@ -12,6 +12,122 @@ Status vocabulary:
 **blocked** = needs something first
 
 ---
+## 2026-11-04 — Incremental build: per-file objects, 11.6 s → 0.5 s — **done**
+
+Every run recompiled all of `src/**` in full even when nothing had changed.
+The single `cc` line carrying the whole tree plus the link took **11.5 s** on
+its own, and `webc dev` paid it on every save. Replaced with per-file objects
+and an exact, compiler-recorded dependency check.
+
+### Numbers
+
+| run | before | after |
+|---|---|---|
+| nothing changed | 11.6 s | **0.51–0.60 s** |
+| one `.c` touched | 11.6 s | **1.74 s** (3 objects) |
+| header all 54 TUs include | 11.6 s | 10.9 s (correct — all stale) |
+| cold | 11.96 s | 11.96 s (same work) |
+
+The `webc dev` watcher ran throughout and competes for CPU, so the no-op run
+lands anywhere in 0.5–1.0 s depending on contention.
+
+### How it decides
+
+Each translation unit gets `build/obj/<src-path>.o` with gcc's `-MMD` `.d`
+beside it. The `.d` lists **every header that file actually pulled in**, so
+the freshness check is exact rather than a heuristic: touch one header and
+only its includers recompile. `obj_needs_rebuild()` stats the object, the
+source and each path in the `.d`; a missing `.d` is treated as *stale* rather
+than fresh, so an object we cannot prove is current always gets rebuilt.
+
+`pkg-config` output is collected once into a list and reused across all 54
+compiles — calling it per file would be 108 spawns a build.
+
+### The fast path, and the header that had to move
+
+When no object, no `tt`, no `h_to_html` and no bundle changed, the build logs
+`up to date (54 objects, nothing to do)` and returns **without** stamping
+`build/build_time.h`. Stamping it would touch `src/webc.c` on every run, so
+the fast path could never fire — the timestamp moved out of `build/bundle.h`
+into its own header.
+
+`bundle.h` is written only when its bytes differ, which doubles as "did
+tailwind emit anything new?". The compiler caught the side effect:
+`display/version.h.tt` renders `STR(WEBC_BUILD_TIME)`, so `version.c` needed
+its own `#include "../../build/build_time.h"`.
+
+Accepted cost: every *real* rebuild re-stamps `build_time.h`, so `version.c`
+and `webc.c` recompile each time — exactly 2 dependents, ~0.3 s — in exchange
+for an accurate build-time banner.
+
+### Deliberately not gated: tailwind
+
+Tailwind v4 auto-detects sources across the whole tree. Probed with unique
+`mt-[1NNpx]` classes: it reads `src/`, `display/`, `js/`, `test/`, `wiki/`,
+`migrations/`, **`build/`**, `nob.c` and `README.md` just as happily as the
+declared `@source` paths. Because `build/` is rewritten on every run, no mtime
+rule can be both exact and stable here. Making it incremental needs
+`@import "tailwindcss" source(none);` plus explicit `@source` entries in
+`css/input.css` — a CSS-side change with its own blast radius, left out of
+this pass. It costs ~0.35–0.56 s and is the floor of the no-op run.
+
+### Two regressions this rework introduced, both fixed
+
+1. **`compile_commands.json` became the link command.** Once objects replaced
+   sources in the link, the recorded command listed `.o` paths — useless to
+   clangd. Now emits **one entry per translation unit** with a real `"file"`
+   (54 entries), sharing `fill_compile_cmd()` with the compile itself so the
+   recorded command cannot drift from the one that runs. The JSON is also
+   escaped exactly once; it used to be escaped twice, invisible only because
+   the command contains no quotes.
+2. **A deleted `.c` stayed in the binary forever.** No timestamp can see a
+   deletion — the orphaned object simply kept linking. Added
+   `build/link_inputs.txt`, written after each link; a changed object set
+   forces a relink. (An *added* source was already caught: no object yet.)
+
+### Correctness evidence
+
+- All **36** generated headers re-run through `tt` into a scratch tree and
+  diffed against `build/h_to_html/` → **byte-identical**. The new
+  per-template skip-gate leaves no stale content.
+- Touching `src/http/serve.h` recompiles **45/54**; replaying the check in
+  Python found **0 unexplained**. An early `grep -l` count of 16 was a
+  substring artifact — gcc records relative forms like
+  `src/pos/../../http/serve.h`. All **54** `.d` files do depend on it.
+- `build/build_time.h` has exactly **2** dependents, as designed.
+- 54 objects + 54 `.d`; three consecutive no-op runs stay stable.
+
+### The suite went red mid-flight — not because of the build
+
+`./test/run.sh` reported **25 failures** while this was landing, and every one
+traced to `ff4fc0ed` (the master-child/geo WIP committed in parallel). None
+involve compilation — the cleanest proof being `golden migration
+0003_pos_eshop`, a pure file-vs-file compare at `test/http_test.py:89` with no
+build in the loop at all.
+
+- **3 fixed today.** `ff4fc0ed` had accidentally deleted
+  `route_new(&routes, "/pos/users", "/update", …)` while editing `route.c`.
+  The handler was still compiled in (`nm` → `T serve_pos_users_update`, it is
+  generated by the `webc_template.h` X-macro) — just unrouted, so the update
+  POST 404'd. Route restored: **25 → 22 failures, 888 → 892 passing**.
+  (`users: row survived its own update` reappeared because
+  `crud_contract_test.py:464` only runs `if ust == 302`.)
+- **22 remaining** are design changes awaiting a decision, not build bugs:
+  `master_child.h.tt` now gates the `Actions` `<th>` on
+  `config->children != NULL && children_count > 0 && crud_path != ""` (7
+  header counts off by one, plus colspan/filter/trash rows); `geo.c` dropped
+  the `Code`/`Created` columns and the Province/District FK selects
+  (provinces: 3 headers vs 5, create form 400 ×3); `sidebar.h.tt` gained an
+  `/accounts` link (32 vs 31); and `test/golden/0003_pos_eshop.sqlite3.sql`
+  needs regenerating against the edited migration.
+
+### Files
+
+`nob.c` (the whole rework), `src/webc.c` + `src/version/version.c` (the
+`WEBC_BUILD_TIME` include move), new generated `build/build_time.h`,
+`build/link_inputs.txt`, `build/obj/**`.
+
+---
 ## 2026-11-03 - 500MB client memory optimization and geo hierarchy drill-down - done
 
 Target: low-spec client deployment (500MB devices) under heavy datasets (15,000+ rows).

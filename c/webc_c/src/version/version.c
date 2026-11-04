@@ -1,4 +1,7 @@
 #include "../../build/bundle.h"
+// The version page renders WEBC_BUILD_TIME (via display/version.h.tt), which
+// moved out of bundle.h so a timestamp change would not recompile serve.c.
+#include "../../build/build_time.h"
 #include "version.h"
 #include "src/layout/header.h"
 #include "src/layout/footer.h"

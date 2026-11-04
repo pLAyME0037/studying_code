@@ -1,8 +1,8 @@
 // template_runtime.h
 #pragma once
 
-#ifndef WEBC_TEMPLATE
-#define WEBC_TEMPLATE
+#ifndef WEBC_TEMPLATE_H
+#define WEBC_TEMPLATE_H
 
 #include "third_party/nob/nob.h"
 #include "src/http/utils.h"
@@ -353,5 +353,5 @@
     SERVE_DELETE(plural, singular)
 
 
-#endif // !WEBC_TEMPLATE
+#endif // !WEBC_TEMPLATE_H
 

@@ -21,7 +21,10 @@
 #include "third_party/nob/nob.h"
 #include "src/http/serve.h"
 #include "src/db/db.h"
-#include "build/bundle.h"
+// Only the startup-banner timestamp is needed here, and it lives in its own
+// header on purpose: bundle.h is #included by serve.c too, so a timestamp
+// inside bundle.h would recompile that file on every run.
+#include "build/build_time.h"
 
 #define STR(x) STR2_ELECTRIC_BOOGALOO(x)
 #define STR2_ELECTRIC_BOOGALOO(x) #x

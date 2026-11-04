@@ -1,7 +1,272 @@
 [
   {
     "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
-    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -o ./build/bin/webc -isystem/usr/include/mysql/ src/version/version.c src/http/route.c src/http/utils.c src/http/serve.c src/report/report.c src/layout/paging.c src/layout/footer.c src/layout/header.c src/layout/dashboard.c src/layout/master_child.c src/helper/cells.c src/auth/auth.c src/webc.c src/i18n/i18n.c src/people/people.c src/user/user.c src/dashboard/dashboard.c src/shop/checkout.c src/shop/cart.c src/shop/shop.c src/pos/pos.c src/pos/ledger.c src/pos/shifts.c src/pos/user_roles.c src/pos/org.c src/pos/stocks.c src/pos/categories.c src/pos/roles.c src/pos/finance.c src/pos/permissions.c src/pos/sale.c src/pos/order_items.c src/pos/staff.c src/pos/config.c src/pos/deliveries.c src/pos/customer_interactions.c src/pos/customers.c src/pos/audit.c src/pos/variants.c src/pos/alerts.c src/pos/translations.c src/pos/orders.c src/pos/geo.c src/pos/i18n.c src/pos/products.c src/pos/role_permissions.c src/pos/payments.c src/notes/notes.c src/db/driver_mysql.c src/db/driver_postgres.c src/db/sql.c src/db/db.c src/db/driver_sqlite.c src/crud/crud.c ./build/sqlite3.o ./build/coroutine.o -L/usr/lib/ -lmariadb -lssl -lcrypto",
-    "file": "nob.c"
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/version/version.c.o src/version/version.c",
+    "file": "src/version/version.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/http/route.c.o src/http/route.c",
+    "file": "src/http/route.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/http/utils.c.o src/http/utils.c",
+    "file": "src/http/utils.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/http/serve.c.o src/http/serve.c",
+    "file": "src/http/serve.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/report/report.c.o src/report/report.c",
+    "file": "src/report/report.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/layout/paging.c.o src/layout/paging.c",
+    "file": "src/layout/paging.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/layout/footer.c.o src/layout/footer.c",
+    "file": "src/layout/footer.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/layout/header.c.o src/layout/header.c",
+    "file": "src/layout/header.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/layout/dashboard.c.o src/layout/dashboard.c",
+    "file": "src/layout/dashboard.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/layout/master_child.c.o src/layout/master_child.c",
+    "file": "src/layout/master_child.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/helper/cells.c.o src/helper/cells.c",
+    "file": "src/helper/cells.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/auth/auth.c.o src/auth/auth.c",
+    "file": "src/auth/auth.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/webc.c.o src/webc.c",
+    "file": "src/webc.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/i18n/i18n.c.o src/i18n/i18n.c",
+    "file": "src/i18n/i18n.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/people/people.c.o src/people/people.c",
+    "file": "src/people/people.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/user/user.c.o src/user/user.c",
+    "file": "src/user/user.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/dashboard/dashboard.c.o src/dashboard/dashboard.c",
+    "file": "src/dashboard/dashboard.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/shop/checkout.c.o src/shop/checkout.c",
+    "file": "src/shop/checkout.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/shop/cart.c.o src/shop/cart.c",
+    "file": "src/shop/cart.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/shop/shop.c.o src/shop/shop.c",
+    "file": "src/shop/shop.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/pos.c.o src/pos/pos.c",
+    "file": "src/pos/pos.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/ledger.c.o src/pos/ledger.c",
+    "file": "src/pos/ledger.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/shifts.c.o src/pos/shifts.c",
+    "file": "src/pos/shifts.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/user_roles.c.o src/pos/user_roles.c",
+    "file": "src/pos/user_roles.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/org.c.o src/pos/org.c",
+    "file": "src/pos/org.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/stocks.c.o src/pos/stocks.c",
+    "file": "src/pos/stocks.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/categories.c.o src/pos/categories.c",
+    "file": "src/pos/categories.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/roles.c.o src/pos/roles.c",
+    "file": "src/pos/roles.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/finance.c.o src/pos/finance.c",
+    "file": "src/pos/finance.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/permissions.c.o src/pos/permissions.c",
+    "file": "src/pos/permissions.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/sale.c.o src/pos/sale.c",
+    "file": "src/pos/sale.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/order_items.c.o src/pos/order_items.c",
+    "file": "src/pos/order_items.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/staff.c.o src/pos/staff.c",
+    "file": "src/pos/staff.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/config.c.o src/pos/config.c",
+    "file": "src/pos/config.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/deliveries.c.o src/pos/deliveries.c",
+    "file": "src/pos/deliveries.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/customer_interactions.c.o src/pos/customer_interactions.c",
+    "file": "src/pos/customer_interactions.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/customers.c.o src/pos/customers.c",
+    "file": "src/pos/customers.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/audit.c.o src/pos/audit.c",
+    "file": "src/pos/audit.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/variants.c.o src/pos/variants.c",
+    "file": "src/pos/variants.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/alerts.c.o src/pos/alerts.c",
+    "file": "src/pos/alerts.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/translations.c.o src/pos/translations.c",
+    "file": "src/pos/translations.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/orders.c.o src/pos/orders.c",
+    "file": "src/pos/orders.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/geo.c.o src/pos/geo.c",
+    "file": "src/pos/geo.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/i18n.c.o src/pos/i18n.c",
+    "file": "src/pos/i18n.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/products.c.o src/pos/products.c",
+    "file": "src/pos/products.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/role_permissions.c.o src/pos/role_permissions.c",
+    "file": "src/pos/role_permissions.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/pos/payments.c.o src/pos/payments.c",
+    "file": "src/pos/payments.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/notes/notes.c.o src/notes/notes.c",
+    "file": "src/notes/notes.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/db/driver_mysql.c.o src/db/driver_mysql.c",
+    "file": "src/db/driver_mysql.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/db/driver_postgres.c.o src/db/driver_postgres.c",
+    "file": "src/db/driver_postgres.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/db/sql.c.o src/db/sql.c",
+    "file": "src/db/sql.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/db/db.c.o src/db/db.c",
+    "file": "src/db/db.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/db/driver_sqlite.c.o src/db/driver_sqlite.c",
+    "file": "src/db/driver_sqlite.c"
+  },
+  {
+    "directory": "/mnt/disk2/mythings/studying_code/c/webc_c",
+    "command": "cc -Wall -Wextra -Wswitch-enum -ggdb -I./build/ -I./third_party/sqlite-amalgamation-3460100/ -I. -isystem/usr/include/mysql/ -MMD -c -o ./build/obj/src/crud/crud.c.o src/crud/crud.c",
+    "file": "src/crud/crud.c"
   }
 ]
