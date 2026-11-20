@@ -28,10 +28,12 @@ int main() {
     /* printf("%d\n", player2.score); */
 
     UserTS A1;
+    size_t user_size = sizeof(A1);
+
     strcpy(A1.a, "hello");
     A1.b = true;
 
-    printf("%s\n", A1.a);
+    printf("%s %d\n", A1.a, A1.b);
     /* printf("%s\n", A1.b); */
     return 0;
 }

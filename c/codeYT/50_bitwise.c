@@ -1,11 +1,18 @@
 #include <stdio.h>
 
 int main(void) {
-    int a = 64;
-    int ssize = 6;
-    int b = a | ssize;
+    size_t a = 8;
+    int sz = 6;
+    int b = a;
 
-    printf("%d | %d: %d",a, ssize, b);
+    a = a << 4;
+    a = a << 4;
+    a = a >> 4;
+
+    a = (a << 1) | (a << 2) | (a << 3) | (a << 4);
+    b = (a << 1) | (a << 2) | (a >> 3) | (a << 4);
+
+    b & a;
 
     return 0;
 }
