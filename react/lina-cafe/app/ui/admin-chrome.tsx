@@ -54,6 +54,8 @@ export function AdminChrome({
       </div>
       <SidebarInit />
       <script src="/js/sidebarSwitcher.js" />
+      <script src="/js/PaginationSwitcher.js" />
+      <script src="/js/ImageUpload.js" />
     </div>
   );
 }

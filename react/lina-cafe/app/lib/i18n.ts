@@ -19,7 +19,7 @@ export type I18n = {
 };
 
 // "km"/"en"-shaped cookie value: lowercase letters, digits, dashes only.
-function langCodeOk(c: string): boolean {
+export function langCodeOk(c: string): boolean {
   if (c.length < 2 || c.length > 15) return false;
   for (const ch of c) {
     const ok =

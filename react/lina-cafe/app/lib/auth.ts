@@ -28,13 +28,15 @@ export type AuthUser = {
 // One join loads the profile + first live role + linked staff row (webc_pos
 // auth_resolve). LEFT JOIN keeps role-less users visible; a soft-deleted
 // account resolves to null (sidebar shows the generic workspace identity).
+// webc reads this row positionally; node:sqlite labels unaliased expressions
+// with the whole expression text, so every computed column needs an alias.
 const USER_SQL =
   "SELECT u.id, u.name, u.email, u.profile_pic, " +
   "u.user_type_dict_id, " +
-  "CASE u.status WHEN 1 THEN 'ACTIVE' WHEN 0 THEN 'INACTIVE' ELSE 'SUSPENDED' END, " +
-  "COALESCE(r.role_name, ''), COALESCE(r.role_code, ''), " +
-  "COALESCE(ur.role_id, ''), COALESCE(s.id, ''), " +
-  "COALESCE(s.org_unit_id, u.org_unit_id, '') " +
+  "CASE u.status WHEN 1 THEN 'ACTIVE' WHEN 0 THEN 'INACTIVE' ELSE 'SUSPENDED' END AS status, " +
+  "COALESCE(r.role_name, '') AS role_name, COALESCE(r.role_code, '') AS role_code, " +
+  "COALESCE(ur.role_id, '') AS role_id, COALESCE(s.id, '') AS staff_id, " +
+  "COALESCE(s.org_unit_id, u.org_unit_id, '') AS org_unit_id " +
   "FROM users u " +
   "LEFT JOIN user_roles ur ON ur.user_id = u.id AND ur.deleted_at IS NULL " +
   "LEFT JOIN roles r ON r.id = ur.role_id AND r.deleted_at IS NULL " +
@@ -141,27 +143,42 @@ export function mintSession(userId: string, group: string | null): string {
   return sid;
 }
 
-// The browser's account group: reuse the switch_group of whatever session is
-// already active on this browser (second login joins it); a session minted
-// before 0010 has none and is stamped here; a fresh browser starts a group.
-export async function browserGroup(): Promise<string | null> {
+// The active session row on this browser (id + account group), or null when
+// the cookie is absent/expired. webc_pos active_session(); powers logout,
+// /accounts and /switch.
+export async function activeSession(): Promise<{
+  sid: string;
+  group: string;
+} | null> {
   const jar = await cookies();
   const sid = jar.get(SID_COOKIE)?.value;
-  if (!sid || sid.length > 64) return randomUUID();
+  if (!sid || sid.length > 64) return null;
   const row = queryOne<{ id: string; switch_group: string | null }>(
     "SELECT id, COALESCE(switch_group, '') AS switch_group " +
       "FROM user_sessions WHERE id = ? " +
       "AND expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now') LIMIT 1;",
     sid,
   );
-  if (!row) return randomUUID();
-  if (row.switch_group) return row.switch_group;
+  if (!row?.id) return null;
+  return {
+    sid: String(row.id),
+    group: row.switch_group ? String(row.switch_group) : "",
+  };
+}
+
+// The browser's account group: reuse the switch_group of whatever session is
+// already active on this browser (second login joins it); a session minted
+// before 0010 has none and is stamped here; a fresh browser starts a group.
+export async function browserGroup(): Promise<string> {
+  const active = await activeSession();
+  if (!active) return randomUUID();
+  if (active.group) return active.group;
   // Active session predates the group column: stamp it now so this login
   // links to it instead of orphaning it.
   const grp = randomUUID();
   db.prepare("UPDATE user_sessions SET switch_group = ? WHERE id = ?;").run(
     grp,
-    sid,
+    active.sid,
   );
   return grp;
 }

@@ -53,9 +53,17 @@ public/      # static assets (js/ ported to tiny client components where needed)
 1. **foundation**: globals.css (catppuccin tokens from css/input.css), db layer +
    migration runner + copied sql, i18n `tr()`, session auth lib, root layout + shop
    chrome (header/sidebar/footer), theme+sidebar client toggles.
-2. **storefront**: `/` index (chips/filters/pagination), `/product/[id]` (gallery,
-   reviews/likes), `/cart` (server-computed money), `/checkout`, `/order/[id]`.
-3. **auth pages**: login/signup/logout/accounts/switch (session mint/verify parity).
+2. **storefront** ✅: `/` index (chips/filters/pagination), `/product/[id]` (gallery,
+   reviews/likes), `/cart` (server-computed money), `/checkout`, `/order/[id]`
+   (build green + HTTP smoke: add/update/remove, checkout txn order/stock/ledger/
+   delivery rows, error `?e=` re-renders, pager/chips/search).
+3. **auth pages** ✅ (build green + HTTP smoke: login ADMIN→/dashboard,
+   CUSTOMER→/, err_fill/err_bad, signup fill/short/phone/taken + claim flow,
+   accounts dedupe/current badge, switch, remove, logout GET+POST deletes
+   switch_group + clears cookie). Errors ride `?e=` + server-action redirect;
+   `/logout` = route handler; `/switch` = `switchAccount` action.
+   Known deviation: anon `/accounts` redirects streamed → 200 + meta-refresh
+   (same PPR tradeoff as empty-cart `/checkout`).
 4. **dashboard + notes + users**: KPI dashboard, notes CRUD, users CRUD (owner-gated).
 5. **perf pass**: `use cache`/`cacheLife` where legal, Suspense boundaries, next/image,
    bundle check (`next build` output), lint clean.
