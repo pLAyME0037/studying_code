@@ -163,7 +163,7 @@
             if (applyEntry(container, cached)) {
                 try {
                     history.pushState(null, '', targetUrl);
-                } catch (err) {}
+                } catch {}
             } else {
                 location.assign(targetUrl);
             }
@@ -205,7 +205,7 @@
                 if (applyEntry(container, entry)) {
                     try {
                         history.pushState(null, '', targetUrl);
-                    } catch (err) {}
+                    } catch {}
                 } else {
                     location.assign(targetUrl);
                 }

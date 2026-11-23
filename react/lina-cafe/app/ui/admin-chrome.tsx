@@ -53,9 +53,11 @@ export function AdminChrome({
         </div>
       </div>
       <SidebarInit />
-      <script src="/js/sidebarSwitcher.js" />
-      <script src="/js/PaginationSwitcher.js" />
-      <script src="/js/ImageUpload.js" />
+      {/* webc loads these at the end of <body> (after the DOM exists);
+          defer keeps that timing without blocking the parse. */}
+      <script src="/js/sidebarSwitcher.js" defer />
+      <script src="/js/PaginationSwitcher.js" defer />
+      <script src="/js/ImageUpload.js" defer />
     </div>
   );
 }

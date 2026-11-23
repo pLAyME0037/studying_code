@@ -1,4 +1,3 @@
-import { getI18n } from "@/app/lib/i18n";
 import { currentPath } from "@/app/lib/request";
 import { LangForm } from "./lang-form";
 
@@ -8,7 +7,6 @@ import { LangForm } from "./lang-form";
 // which React can't render). Async: the language form reads the languages
 // table; streams behind AdminChrome's <Suspense>.
 export async function AdminHeader({ title }: { title: string }) {
-  const { tr } = await getI18n();
   const back = await currentPath();
   const themeBtn =
     "px-2 py-1 rounded text-sm text-subtext0 hover:bg-surface0 hover:text-text";

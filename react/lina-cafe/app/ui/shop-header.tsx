@@ -16,7 +16,7 @@ export async function ShopHeader() {
   const { tr } = await getI18n();
   const jar = await cookies();
   const count = cartEntryCount(jar.get(CART_COOKIE)?.value);
-  const name = shopName();
+  const name = await shopName();
   const back = await currentPath();
 
   // Phase 16 signup: anonymous = admin entry + sign in + sign up;

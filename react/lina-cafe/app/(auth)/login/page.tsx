@@ -55,9 +55,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           <button type="submit" className="bg-blue text-onbase hover:brightness-90 px-2 py-2 text-base w-full">
             {tr("auth.submit", "ចូល")}
           </button>
-          <a href="/" className="text-base text-blue hover:underline text-center">
+          <Link href="/" className="text-base text-blue hover:underline text-center">
             {tr("auth.back", "ត្រឡប់ទៅហាង")}
-          </a>
+          </Link>
           <a href="/signup" className="text-base text-blue hover:underline text-center">
             {tr("auth.signup_link", "បង្កើតគណនីថ្មី")}
           </a>

@@ -1,8 +1,14 @@
 // i18n: port of webc_pos src/i18n/i18n.c — the tr() chain is
 // active-language rows -> default-language rows -> C literal fallback,
 // resolved once per request (React cache() = webc_pos's per-request state).
+//
+// Perf: webc_pos re-reads the languages/translations tables on every
+// request; phase 1 has no UI that edits them, so the row loads cross
+// requests via "use cache" (args = cache key, one entry per language).
+// Phase-2 language/translation CRUD must revalidate or drop the directives.
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { cacheLife } from "next/cache";
 import { queryAll } from "./db";
 
 export const LANG_COOKIE = "webc_lang";
@@ -30,19 +36,36 @@ export function langCodeOk(c: string): boolean {
 }
 
 // One language's rows. Empty values are skipped (webc_pos: an empty value
-// falls through to the default language, then to the literal).
-function loadRows(langId: string): Map<string, string> {
+// falls through to the default language, then to the literal). Cached
+// across requests keyed by langId (see header comment).
+async function loadRows(langId: string): Promise<Record<string, string>> {
+  "use cache";
+  cacheLife("hours");
   const rows = queryAll<{ trans_key: string; trans_value: string | null }>(
     "SELECT trans_key, trans_value FROM translations " +
       "WHERE language_id = ? AND deleted_at IS NULL " +
       "ORDER BY trans_key LIMIT 512;",
     langId,
   );
-  const map = new Map<string, string>();
+  const map: Record<string, string> = {};
   for (const r of rows) {
-    if (r.trans_key && r.trans_value) map.set(r.trans_key, r.trans_value);
+    if (r.trans_key && r.trans_value) map[r.trans_key] = r.trans_value;
   }
   return map;
+}
+
+// The active language list (phase-1 static — see header comment).
+async function loadLangs(): Promise<Lang[]> {
+  "use cache";
+  cacheLife("hours");
+  // node:sqlite rows are null-prototyped — "use cache" only serializes
+  // plain objects, so copy into literals before returning.
+  const rows = queryAll<Lang>(
+    "SELECT id, code, name FROM languages " +
+      "WHERE is_active = 1 AND deleted_at IS NULL " +
+      "ORDER BY is_default DESC, code LIMIT 50;",
+  );
+  return rows.map((l) => ({ id: l.id, code: l.code, name: l.name }));
 }
 
 // One-shot resolve per request: cookie + language list + both row sets.
@@ -51,28 +74,30 @@ export const getI18n = cache(async (): Promise<I18n> => {
   const jar = await cookies();
   const cand = jar.get(LANG_COOKIE)?.value ?? "";
 
-  const langs = queryAll<Lang>(
-    "SELECT id, code, name FROM languages " +
-      "WHERE is_active = 1 AND deleted_at IS NULL " +
-      "ORDER BY is_default DESC, code LIMIT 50;",
-  );
+  const langs = (await loadLangs()).map((l) => ({
+    id: l.id,
+    code: l.code,
+    name: l.name,
+  }));
   const def = langs[0]?.code ?? "";
 
   // Unknown/absent cookie falls back to the default language.
   let active = def;
   if (langCodeOk(cand) && langs.some((l) => l.code === cand)) active = cand;
 
-  let rows = new Map<string, string>();
-  let drows = new Map<string, string>();
+  let rows: Record<string, string> = {};
+  let drows: Record<string, string> = {};
   if (langs.length > 0) {
     const activeLang = langs.find((l) => l.code === active);
-    if (activeLang) rows = loadRows(activeLang.id);
-    if (active !== def) drows = loadRows(langs[0].id);
+    // Cache output is null-prototyped (RSC serialization) — tr()'s lookups
+    // and any client-bound copies need plain objects, so re-wrap here.
+    if (activeLang) rows = { ...(await loadRows(activeLang.id)) };
+    if (active !== def) drows = { ...(await loadRows(langs[0].id)) };
   }
 
   const tr = (key: string, fallback: string): string => {
     if (!key) return fallback;
-    return rows.get(key) ?? drows.get(key) ?? fallback;
+    return rows[key] ?? drows[key] ?? fallback;
   };
 
   return { active, def, langs, htmlLang: active || "km", tr };

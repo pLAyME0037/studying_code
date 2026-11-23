@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { db } from "@/app/lib/db";
 import { SID_COOKIE } from "@/app/lib/auth";
+import { errorPage, idValid } from "@/app/lib/crud";
 
 // Expose the request path/query to Server Components as request headers
 // (the language form's `back` return path needs "the URI exactly as
@@ -17,6 +18,11 @@ import { SID_COOKIE } from "@/app/lib/auth";
 // It also owns the per-page cookie write (an RSC render can't set cookies):
 // a valid ?per_page= on a paged list page stores webc_per_page for 365d,
 // exactly like webc_pos page_info_parse_session.
+// Finally it decides the dynamic detail pages' 404s: Next streams a
+// request-time notFound() only after the shell, fixing the status at 200
+// (Next docs → Status codes: check the slug in Proxy for a real 404), while
+// webc_pos serves its 404 before any body. One indexed PK lookup per
+// matching GET/HEAD URL.
 
 // webc_pos auth_guarded_uri: exact match or one segment deeper.
 function guardedUri(pathname: string): boolean {
@@ -92,10 +98,67 @@ function parsePageSize(v: string): number | null {
   return n > 500 ? 500 : n;
 }
 
-export function proxy(request: NextRequest): NextResponse {
+// The GET pages that 404 on a bad/unknown id (their own notFound() runs
+// too late to set the status): /notes/<id>/edit, /users/<id>/edit,
+// /product/<id>, /order/<id>. Query shape mirrors each page's own lookup
+// (notes/users: idValid + row; shop: row AND deleted_at IS NULL).
+function detailPage404(request: NextRequest): Response | null {
+  if (request.method !== "GET" && request.method !== "HEAD") return null;
+  const path = request.nextUrl.pathname;
+
+  const edit = /^\/(notes|users)\/([^/]+)\/edit$/.exec(path);
+  if (edit) {
+    let id = edit[2];
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      return errorPage(404, "404 Not Found");
+    }
+    if (!idValid(id)) return errorPage(404, "404 Not Found");
+    const table = edit[1] === "notes" ? "Notes" : "users";
+    const row = db
+      .prepare(`SELECT 1 AS one FROM "${table}" WHERE id = ? LIMIT 1;`)
+      .get(id);
+    if (!row) return errorPage(404, "404 Not Found");
+    return null;
+  }
+
+  const detail = /^\/(product|order)\/([^/]+)$/.exec(path);
+  if (detail) {
+    let id = detail[2];
+    try {
+      id = decodeURIComponent(id);
+    } catch {
+      return errorPage(404, "404 Not Found");
+    }
+    if (!idValid(id)) return errorPage(404, "404 Not Found");
+    const row =
+      detail[1] === "product"
+        ? db
+            .prepare(
+              "SELECT 1 AS one FROM products WHERE id = ? AND deleted_at IS NULL LIMIT 1;",
+            )
+            .get(id)
+        : db
+            .prepare(
+              "SELECT 1 AS one FROM orders WHERE id = ? AND deleted_at IS NULL LIMIT 1;",
+            )
+            .get(id);
+    if (!row) return errorPage(404, "404 Not Found");
+    return null;
+  }
+
+  return null;
+}
+
+export function proxy(request: NextRequest): NextResponse | Response {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", request.nextUrl.pathname);
   requestHeaders.set("x-search", request.nextUrl.search);
+
+  // Real 404 status before the shell (see header comment).
+  const missing = detailPage404(request);
+  if (missing) return missing;
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
 

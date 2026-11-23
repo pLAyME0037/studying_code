@@ -3,9 +3,15 @@
 // shop_money(), first-glyph tile placeholder, list query builder, and
 // serve_shop_product's bounded queries (scalar subqueries, LIMITs everywhere).
 import { cache } from "react";
+import { cacheLife } from "next/cache";
 import { queryAll, queryOne } from "./db";
 
-export function shopName(): string {
+// shop_name() = system_configs row (0011 seed + C fallback). Phase 1 has
+// no settings UI, so it crosses requests via "use cache"; a future config
+// editor must revalidate or drop the directive.
+export async function shopName(): Promise<string> {
+  "use cache";
+  cacheLife("hours");
   const row = queryOne<{ config_value: string | null }>(
     "SELECT config_value FROM system_configs " +
       "WHERE config_key = 'pos.shop_name' AND deleted_at IS NULL;",

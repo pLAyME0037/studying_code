@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminChrome } from "@/app/ui/admin-chrome";
 import { getSessionUser, type AuthUser } from "@/app/lib/auth";
 import { getI18n } from "@/app/lib/i18n";
@@ -626,12 +627,12 @@ export default async function DashboardPage() {
                 </a>
               </>
             )}
-            <a
+            <Link
               href="/"
               className="px-2.5 py-1.5 text-xs font-medium bg-surface1 text-text border border-surface0 hover:bg-surface0"
             >
               Shopping
-            </a>
+            </Link>
             {ws.kind === 3 && (
               <span className="text-xs text-subtext0">
                 No workspace assigned - ask a manager for a role.
@@ -900,9 +901,9 @@ export default async function DashboardPage() {
           <div className="border border-surface0 bg-mantle px-2.5 py-3 text-sm text-subtext0">
             This account has no workspace yet. A manager can grant one on the
             Roles page.
-            <a href="/" className="text-blue hover:underline">
+            <Link href="/" className="text-blue hover:underline">
               Open the storefront
-            </a>
+            </Link>
             .
           </div>
         )}

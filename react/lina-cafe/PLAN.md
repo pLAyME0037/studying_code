@@ -33,16 +33,22 @@ public/      # static assets (js/ ported to tiny client components where needed)
 - **PPR / streaming**: `cacheComponents` + `partialPrefetching` already enabled. Chrome
   (sidebar/header shell) = static shell; cookie/session/data-dependent parts stream behind
   `<Suspense>` (idiomatic Next 16: `cookies()` in layout must be inside a boundary).
-- **`use cache`** on read-heavy, low-churn data (nav items, translations table, product
-  catalog reads) with `cacheLife`; `revalidatePath`/`refresh()` after Server Action writes.
+- **`use cache`** on read-heavy, low-churn data (translations/languages rows,
+  `shopName()`) with `cacheLife`; `revalidatePath`/`refresh()` after Server Action
+  writes. Catalog/session data stays request-fresh (parity with webc's per-request
+  reads; checkout mutates stock).
 - **Sync DB** (node:sqlite) = no async overhead in RSC; module-scope singleton connection.
-- **next/image** for product/gallery images; Tailwind 4 (already wired via turbopack).
+- **`<img>` kept over next/image**: webc templates are the source of truth (verbatim
+  class strings + JS `src` swap on the gallery); images are tiny (1×1 seeds, 512px
+  uploads). See slice 5.
 - **Server Actions** replace webc_pos's POST routes (`/cart/add`, `/checkout`, CRUD…),
   auth-checked inside every action (Next 16 rule).
 
 ## Next 16 facts honored (from node_modules/next/dist/docs — AGENTS.md mandate)
 
-- middleware → `proxy.ts` (not used phase 1; auth via layout/action checks).
+- middleware → `proxy.ts` (renamed from middleware in Next 16): session gate for
+  `/pos|/dashboard|/reports`, pre-shell 404 for dynamic detail pages, `webc_per_page`
+  write, `x-pathname`/`x-search` request headers.
 - `params`/`searchParams` are Promises; `LayoutProps<'/'>`/`PageProps<'/'>` typed helpers.
 - Server Functions: `'use server'` in `app/lib/actions.ts`; `refresh()` from `next/cache`.
 - Cache Components model: runtime access (`cookies()`) needs `<Suspense>` or
@@ -64,9 +70,49 @@ public/      # static assets (js/ ported to tiny client components where needed)
    `/logout` = route handler; `/switch` = `switchAccount` action.
    Known deviation: anon `/accounts` redirects streamed → 200 + meta-refresh
    (same PPR tradeoff as empty-cart `/checkout`).
-4. **dashboard + notes + users**: KPI dashboard, notes CRUD, users CRUD (owner-gated).
-5. **perf pass**: `use cache`/`cacheLife` where legal, Suspense boundaries, next/image,
-   bundle check (`next build` output), lint clean.
+4. **dashboard + notes + users** ✅ (build green + HTTP smoke): manager dashboard
+   (SD-MANAGER 6 KPIs, 7-day bars, attention line, recent orders; anon → pre-shell
+   303 `/login?next=`, live non-ADMIN → 303 `/`), notes + users CRUD as **route
+   handlers** on webc's exact paths/statuses (302, 400 missing-key/empty-first,
+   409 unique "Unknown", 413 too-large, GET create/update/delete → 404, plain
+   `<form action>` no $ACTION_ID), image upload → ffmpeg webp served from
+   `/resource/image/upload/<name>` (fake → 400, >2MB → 413), `/api/notes`
+   GET/POST/PUT/DELETE, `?fragment=1` → `#pg-frag` + nav only, `?per_page=`
+   cookie write in proxy (read/clamped in page: 10/99999→500/abc→20), edit
+   pages unguarded like webc. **Proxy owns pre-shell 404** for `/notes|users/<id>/edit`
+   + `/product|order/<id>` (Next docs: page-level `notFound()` streams after the
+   shell → status 200; webc serves real 404). Notes/users get their own
+   Suspense layouts (cacheComponents prerender rule). node:sqlite gotcha fixed:
+   unaliased SELECT expressions label with expression text — every computed
+   column needs `AS` (webc reads positionally); dashboard day-window math uses
+   ms (`DAY_MS`), webc's `now` is seconds.
+   Known deviation: route-handler error pages skip webc's full shell chrome
+   (status + heading match, `Cache-Control: no-store`).
+5. **perf pass** ✅ (build green + lint 0 errors + smoke re-pass):
+   - **`use cache` + `cacheLife('hours')`** on the two phase-1 config readers:
+     i18n `loadLangs`/`loadRows(langId)` (args = cache key) and `shopName()` —
+     webc re-reads these tables every request; phase 1 has no CRUD UI for them,
+     so phase-2 language/settings editors must `revalidatePath`/`revalidateTag`
+     or drop the directives. Catalog/dashboard/notes/users lists stay request-
+     fresh (checkout decrements stock; stale numbers would break parity).
+   - **node:sqlite lesson**: rows are **null-prototyped** — `"use cache"` rejects
+     them ("Classes or null prototypes are not supported", `environmentName:
+     Cache`). Copy into object literals inside the cached fn before returning
+     (and `getI18n` re-wraps `langs`/`rows` plain before handing them out).
+   - **lint clean** (0 errors): internal `<a href="/">` → `<Link>` (prefetch +
+     rule), the 3 admin-chrome `<script>` → `defer` (webc loads them at end of
+     body = same timing, parse no longer blocked), unused vars dropped. The 9
+     `no-img-element` warnings stay on purpose (below).
+   - **`next/image` NOT adopted**: webc markup is `<img>` with verbatim class
+     strings, the product gallery swaps `src` from `data-full` JS, and the
+     images are 1×1 seed PNGs / 512px upload webp — optimization adds risk
+     without measurable win. Deviation kept + documented (lint warnings).
+   - **storefront images fixed**: webc's `resource/image/*.png` copied to
+     `public/resource/image/` (product pics 404'd before this slice).
+   - **numbers** (PORT=3100, warm): TTFB `/` 4.5ms, `/product/[id]` 8.5ms,
+     `/dashboard` 6ms, `/notes` 20ms, `/login` 6ms; static assets 600K JS
+     (36K CSS), home page 85KB. webc_pos :8080 was down — head-to-head
+     comparison pending (needs user OK to start webc_pos server).
 
 ## Verification
 

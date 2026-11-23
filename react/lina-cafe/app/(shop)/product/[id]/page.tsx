@@ -246,9 +246,9 @@ export default async function ProductPage({ params }: PageProps) {
               </form>
             </div>
           )}
-          <a href="/" className="text-sm text-blue hover:underline mt-1">
+          <Link href="/" className="text-sm text-blue hover:underline mt-1">
             {tr("shop.back_list", "« ត្រឡប់ទៅបញ្ជីផលិតផល")}
-          </a>
+          </Link>
         </section>
 
         <section

@@ -134,7 +134,7 @@ function iuBuildModal(state) {
         // has no active pointer, and setPointerCapture would throw before
         // state.drag was ever set.
         state.drag = { x: e.clientX, y: e.clientY, tx: state.tx, ty: state.ty };
-        try { state.viewport.setPointerCapture(e.pointerId); } catch (err) { /* synthetic */ }
+        try { state.viewport.setPointerCapture(e.pointerId); } catch { /* synthetic */ }
     });
     state.viewport.addEventListener('pointermove', (e) => {
         if (!state.drag) return;

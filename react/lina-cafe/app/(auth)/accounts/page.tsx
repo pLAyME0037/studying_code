@@ -69,7 +69,7 @@ export default async function AccountsPage() {
             <div className="text-lg font-semibold">{tr("auth.acct_title", "គណនី")}</div>
             <div className="text-base text-onbase/70">{tr("auth.acct_sub", "ចូលហើយក្នុងកម្មវិធីនេះ")}</div>
           </div>
-          <a href="/" className="text-base text-onbase/80 hover:underline">Store</a>
+          <Link href="/" className="text-base text-onbase/80 hover:underline">Store</Link>
         </div>
         <ul className="divide-y divide-surface0">
           {accts.map((a) => {
