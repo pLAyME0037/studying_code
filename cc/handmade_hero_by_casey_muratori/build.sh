@@ -8,7 +8,7 @@ cd "$PROJECT_ROOT"
 export WINEPREFIX="${WINEPREFIX:-$PROJECT_ROOT/.wine}"
 export WINEDEBUG="${WINEDEBUG:-fixme-all,warn+debugstr,warn+seh}"
 
-SRC_FILE="$PROJECT_ROOT/handmade.cpp"
+SRC_FILE="$PROJECT_ROOT/code/handmade.cpp"
 OUT_DIR="$PROJECT_ROOT/build"
 OUT_EXE="$OUT_DIR/handmade.exe"
 LIBRARY="-user32.lib -Gdi32.lib"
