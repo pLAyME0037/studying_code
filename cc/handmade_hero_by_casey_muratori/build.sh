@@ -11,7 +11,7 @@ export WINEDEBUG="${WINEDEBUG:-fixme-all,warn+debugstr,warn+seh}"
 SRC_FILE="$PROJECT_ROOT/code/handmade.cpp"
 OUT_DIR="$PROJECT_ROOT/build"
 OUT_EXE="$OUT_DIR/handmade.exe"
-LIBRARY="-user32.lib -Gdi32.lib"
+LIBRARY=(-luser32 -lgdi32)
 GDB_PORT="${WINE_GDB_PORT:-31337}"
 
 ensure_wineprefix() {
@@ -27,23 +27,31 @@ compile_binary() {
     rm -f "$OUT_DIR/handmade.exe.so"
 
     x86_64-w64-mingw32-g++ \
-        -Wall \
-        -Wextra \
         -ggdb \
         -gdwarf-4 \
         -O0 \
         -mwindows \
         -static \
-        "${extra_ld_flags[@]}" \
+        ${extra_ld_flags[@]+"${extra_ld_flags[@]}"} \
         -o "$OUT_EXE" \
         "$SRC_FILE" \
-        "$LIBRARY"
+        "${LIBRARY[@]}"
 }
 
 check_port_free() {
-    local port="$1"
+    local port="${1:-}"
+    if [[ ! "$port" =~ ^[1-9][0-9]{0,4}$ ]] || (( port < 1 || port > 65535 )); then
+        echo "Error: Invalid WINE_GDB_PORT '$port'. Expected an integer in 1..65535." >&2
+        exit 1
+    fi
+
     if command -v ss >/dev/null 2>&1; then
-        if ss -ltn "( sport = :$port )" | grep -q ":$port"; then
+        local ss_out
+        if ! ss_out="$(ss -H -ltn "( sport = :$port )")"; then
+            echo "Error: Failed to check TCP port $port with ss." >&2
+            exit 1
+        fi
+        if [ -n "$ss_out" ]; then
             echo "Error: TCP port $port is already in use. Set WINE_GDB_PORT to another port." >&2
             exit 1
         fi
