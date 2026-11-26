@@ -113,6 +113,13 @@ public/      # static assets (js/ ported to tiny client components where needed)
      `/dashboard` 6ms, `/notes` 20ms, `/login` 6ms; static assets 600K JS
      (36K CSS), home page 85KB. webc_pos :8080 was down — head-to-head
      comparison pending (needs user OK to start webc_pos server).
+   - **`connection()` in `dashboardLoad`** (fix, 2026-11-25): dev's
+     blocking-prerender insight flagged `Date.now()` — the dashboard is
+     request-time data, so `await connection()` opts the subtree out of
+     prerendering (build was always green; the insight only fires in dev's
+     on-demand shell prerender). Also: function-action forms dropped their
+     own `method="POST"`/`encType` (React provides both — dev console warning
+     otherwise); rendered HTML unchanged.
 
 ## Verification
 
@@ -120,6 +127,23 @@ public/      # static assets (js/ ported to tiny client components where needed)
 - `npm run dev` smoke: pages render, cart math matches webc_pos (same seeds → same
   numbers), login → dashboard works, km/en switch works.
 - Style: eyeball diff vs webc_pos on :8080 (same tokens/classes).
+
+### Head-to-head vs webc_pos (2026-11-25, both live: :8080 vs :3100)
+
+- **Cart**: `POST /cart/add product_id=sd-prod-001 qty=3` → both 303 `/cart`,
+  line 52.00 / total 156.00 / subtotal 156.00 — identical.
+- **KPI parity**: lina's dashboard SQL run against **both** DBs reproduces each
+  server's rendered HTML exactly (net/avg/today/low/open/pct — e.g. webc DB:
+  `6529.50 $ / 2176.50 $ / 0.00 $ / 6 / 1 / -86.7%` in both SQL and page).
+  Same math, **different data**: the DBs diverged — webc's live DB
+  (`~/sqlite3/webc_c/db`) absorbed the test-suite runs (42 orders / 97 853.00),
+  lina's snapshot has 43 / 98 009.00 (the extra 156.00 = `WEB-261121-5c850f84`).
+- **TTFB** (warm, ×3): `/` webc 0.9ms vs lina 4.5ms; `/product/[id]` webc
+  1.3–5.3ms vs lina 3.9–8.4ms. HTML size `/`: webc 18KB vs lina 85KB (Next
+  inlines the RSC flight payload — the same strings appear twice, e.g. each KPI
+  label once in DOM + once in payload).
+- Login parity: both 303 `/dashboard` (webc `303 Unknown` statusText = its
+  normal redirect; lina `303 See Other`).
 
 ## Out of scope (phase 1)
 

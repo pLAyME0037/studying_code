@@ -180,7 +180,7 @@ export default async function ShopIndex({
                   </div>
                   <div className={stockClass}>{stockText}</div>
                 </div>
-                <form method="POST" action={cartAdd} className="border-t border-surface0 p-1">
+                <form action={cartAdd} className="border-t border-surface0 p-1">
                   <input type="hidden" name="product_id" value={id} />
                   <input type="hidden" name="redirect" value="/" />
                   <button

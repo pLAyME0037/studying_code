@@ -92,7 +92,7 @@ export default async function AccountsPage() {
                     {tCurrent}
                   </span>
                 ) : (
-                  <form method="POST" action={switchAccount} className="flex items-center gap-1.5">
+                  <form action={switchAccount} className="flex items-center gap-1.5">
                     <input type="hidden" name="sid" value={a.sid} />
                     <input type="hidden" name="next" value="/accounts" />
                     <button name="op" value="switch" className="text-base bg-blue text-onbase px-2 py-1">

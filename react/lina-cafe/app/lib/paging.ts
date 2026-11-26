@@ -23,7 +23,7 @@ export type Query = Record<string, string | string[] | undefined>;
 
 // First value of a query key (arrays keep the first entry, like a browser
 // rebuilding the URL).
-function firstOf(q: Query, key: string): string | null {
+export function firstOf(q: Query, key: string): string | null {
   const v = q[key];
   if (Array.isArray(v)) return v.length > 0 ? v[0] : null;
   return v === undefined ? null : v;

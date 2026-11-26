@@ -45,7 +45,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Searc
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base px-4 sm:px-6 lg:px-8 py-6">
-      <form method="POST" action={signupAction} data-signup-form className="w-3/5 bg-mantle border border-surface0">
+      <form action={signupAction} data-signup-form className="w-3/5 bg-mantle border border-surface0">
         <div className="bg-text text-onbase px-3 py-2">
           <div className="text-base font-semibold">{tr("auth.signup_title", "បង្កើតគណនីថ្មី")}</div>
           <div className="text-base text-onbase/70">POS Admin</div>

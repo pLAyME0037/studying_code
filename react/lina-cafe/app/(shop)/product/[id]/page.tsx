@@ -59,7 +59,7 @@ function LikeButton({
     ? "text-sm border border-surface0 px-3 py-1 bg-blue text-onbase"
     : "text-sm border border-surface0 px-3 py-1 text-subtext0 hover:border-blue";
   return (
-    <form method="POST" action={toggleReviewLike}>
+    <form action={toggleReviewLike}>
       <input type="hidden" name="review_id" value={reviewId} />
       <button className={cls}>♥ {likes}</button>
     </form>
@@ -219,7 +219,7 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
           ) : (
             <div className="flex items-center gap-2 flex-wrap">
-              <form method="POST" action={cartAdd} className="flex items-center gap-2">
+              <form action={cartAdd} className="flex items-center gap-2">
                 <input type="hidden" name="product_id" value={idS} />
                 <input
                   type="hidden"
@@ -238,7 +238,7 @@ export default async function ProductPage({ params }: PageProps) {
                   {tAdd}
                 </button>
               </form>
-              <form method="POST" action={cartBuyNow} className="flex items-center gap-2">
+              <form action={cartBuyNow} className="flex items-center gap-2">
                 <input type="hidden" name="product_id" value={idS} />
                 <button className="bg-mauve text-onbase hover:brightness-90 px-5 py-2.5 font-semibold">
                   {tr("shop.buy_now", "ទិញឥឡូវនេះ")}
@@ -311,7 +311,6 @@ export default async function ProductPage({ params }: PageProps) {
 
         {viewer !== null ? (
           <form
-            method="POST"
             action={postReview}
             className="border border-surface0 bg-blue/5 px-3 py-3 flex flex-col gap-2"
           >
@@ -379,7 +378,6 @@ export default async function ProductPage({ params }: PageProps) {
                       {tr("shop.reply", "ឆ្លើយតប")}
                     </summary>
                     <form
-                      method="POST"
                       action={postReview}
                       className="flex flex-col gap-1 mt-1 max-w-2xl"
                     >

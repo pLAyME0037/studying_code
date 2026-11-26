@@ -64,7 +64,7 @@ export default async function CartPage() {
                     )}
                   </div>
                 </div>
-                <form method="POST" action={cartUpdate} className="flex items-center gap-1">
+                <form action={cartUpdate} className="flex items-center gap-1">
                   <input type="hidden" name="product_id" value={it.id} />
                   <input type="hidden" name="redirect" value="/cart" />
                   <input
@@ -81,7 +81,7 @@ export default async function CartPage() {
                 <div className="text-base w-24 text-right font-medium">
                   {money(it.price * it.qty)}
                 </div>
-                <form method="POST" action={cartRemove}>
+                <form action={cartRemove}>
                   <input type="hidden" name="product_id" value={it.id} />
                   <button className="text-red text-sm hover:underline">
                     {tr("cart.remove", "លុប")}

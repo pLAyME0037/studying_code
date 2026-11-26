@@ -95,7 +95,6 @@ export default async function CheckoutPage({
       </div>
 
       <form
-        method="POST"
         action={checkout}
         data-checkout-form
         className="bg-mantle border border-surface0 px-3 py-3 flex flex-col gap-2"

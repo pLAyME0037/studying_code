@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { AdminChrome } from "@/app/ui/admin-chrome";
 import { getSessionUser, type AuthUser } from "@/app/lib/auth";
 import { getI18n } from "@/app/lib/i18n";
@@ -216,7 +217,12 @@ const Q_DEL_LIST =
 
 // ---- loader -------------------------------------------------------------
 
-function dashboardLoad(au: AuthUser | null): Ws {
+async function dashboardLoad(au: AuthUser | null): Promise<Ws> {
+  // The dashboard is request-time data (session, rolling 7-day windows,
+  // live counts) — same as webc recomputing dashboard_load per request.
+  // connection() opts this subtree out of prerendering, so Date.now() below
+  // is legal (Next insight: blocking-prerender-current-time).
+  await connection();
   const ws: Ws = {
     kind: 3,
     greeting: "",
@@ -556,7 +562,7 @@ export async function generateMetadata() {
 
 export default async function DashboardPage() {
   const me = await getSessionUser();
-  const ws = dashboardLoad(me);
+  const ws = await dashboardLoad(me);
   const { tr } = await getI18n();
 
   const kpiGridCls =
