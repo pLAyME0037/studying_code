@@ -1,4 +1,5 @@
 import { cookies, headers } from "next/headers";
+import { notFound } from "next/navigation";
 import { AdminChrome } from "./admin-chrome";
 import { Pagination } from "./pagination";
 import { getI18n } from "@/app/lib/i18n";
@@ -27,7 +28,6 @@ import {
 } from "@/app/lib/master-child";
 import {
   PER_COOKIE,
-  type PageInfo,
   type Query,
   firstOf,
   pageFragmentRequested,
@@ -560,7 +560,9 @@ function MasterRow({
                   }
                   data-tab={c.table}
                 >
-                  {tr(c.title, c.title)}
+                  {/* webc renders the tab button's title raw (only the
+                      tab header runs it through tr()). */}
+                  {c.title}
                 </button>
               ))}
             </div>
@@ -676,13 +678,15 @@ function ChildTabShell({
 function ChildRowExtras({
   child,
   formId,
-  value,
+  codeValue,
+  fkValue,
   fkOptions,
   className,
 }: {
   child: MdChild;
   formId: string;
-  value?: string;
+  codeValue?: string;
+  fkValue?: string;
   fkOptions: MdOption[];
   className: string;
 }) {
@@ -695,7 +699,7 @@ function ChildRowExtras({
         name={child.codeField.name}
         type="text"
         required={child.codeField.required}
-        defaultValue={value === undefined ? undefined : value}
+        defaultValue={codeValue}
         placeholder={child.codeField.label}
         aria-label={child.codeField.label}
         className={className}
@@ -704,7 +708,7 @@ function ChildRowExtras({
         name={child.fkColumn}
         options={fkOptions}
         required
-        value={value === undefined ? undefined : value}
+        value={fkValue}
         formId={formId}
         ariaLabel={child.fkLabel}
         className={className}
@@ -715,16 +719,15 @@ function ChildRowExtras({
 }
 
 // md_child_add_row.h.tt — hidden until the tab's + button is pressed.
+// (No tr() here: webc's plain-input branch carries no labels.)
 function ChildAddRow({
   child,
   masterId,
   fkOptions,
-  tr,
 }: {
   child: MdChild;
   masterId: string;
   fkOptions: MdOption[];
-  tr: Tr;
 }) {
   const formId = `mdf-a-${child.table}-${masterId}`;
   return (
@@ -874,7 +877,10 @@ function ChildRowPair({
             <ChildRowExtras
               child={child}
               formId={formId}
-              value={child.codeField ? row.data[child.codeField.name] : undefined}
+              codeValue={
+                child.codeField ? row.data[child.codeField.name] : undefined
+              }
+              fkValue={row.data[child.fkColumn]}
               fkOptions={fkOptions}
               className={INPUT_SM}
             />
@@ -954,7 +960,7 @@ function ChildTab({
       <table className="w-full text-left border-collapse text-sm">
         <ChildTabHead child={child} tr={tr} />
         <tbody id={container}>
-          <ChildAddRow child={child} masterId={masterId} fkOptions={fkOptions} tr={tr} />
+          <ChildAddRow child={child} masterId={masterId} fkOptions={fkOptions} />
           {rows.length === 0 ? (
             <tr>
               <td
@@ -1149,7 +1155,7 @@ async function MasterFullPage({
                   : "text-subtext0 hover:text-text hover:bg-surface0")
               }
             >
-              Trash (<span data-trash-total>{trashTotal}</span>)
+              Trash (<span data-trash-total="">{trashTotal}</span>)
             </a>
           </div>
         )}
@@ -1284,10 +1290,14 @@ export async function MasterChildPage({
 
   if (pageFragmentRequested(sp)) {
     const childKey = firstOf(sp, "child");
-    const masterId = firstOf(sp, "master");
-    const child =
-      childKey === null ? undefined : config.children.find((c) => c.table === childKey);
-    if (child && masterId !== null && idValid(masterId)) {
+    if (childKey !== null) {
+      // Lazy child fetch: a present ?child= must name a real child of
+      // this page and carry a valid master id. proxy.ts answers the real
+      // pre-shell 404 for GETs (a React page can't return a Response);
+      // notFound() is the in-render backstop.
+      const masterId = firstOf(sp, "master");
+      const child = config.children.find((c) => c.table === childKey);
+      if (!child || masterId === null || !idValid(masterId)) notFound();
       return (
         <ChildTabFragment config={config} child={child} masterId={masterId} sp={sp} />
       );

@@ -57,6 +57,7 @@ export function AdminChrome({
           defer keeps that timing without blocking the parse. */}
       <script src="/js/sidebarSwitcher.js" defer />
       <script src="/js/PaginationSwitcher.js" defer />
+      <script src="/js/ListExpandSwitcher.js" defer />
       <script src="/js/ImageUpload.js" defer />
     </div>
   );

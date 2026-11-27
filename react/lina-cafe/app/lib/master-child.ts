@@ -447,9 +447,8 @@ function mdWhere(
     for (const tok of term.tokens) {
       where += `${joiner}(${cond})`;
       joiner = " AND ";
-      for (const c of cols) {
-        params.push(`%${tok}%`);
-      }
+      // one bind per ORed column (each is a separate ?)
+      params.push(...cols.map(() => `%${tok}%`));
     }
   }
   return { where, params };
@@ -628,7 +627,14 @@ export function childFkFallbackLabel(child: MdChild, id: string): string {
 // Generated from the field list so the SQL matches geo.c/pos.c byte for
 // byte: INSERT binds the cols in write order; UPDATE COALESCE(NULLIF(?,
 // ''), col)s each one (empty keeps the stored value) — webc's update SQL.
-type WriteTarget = { table: string; write: MdWrite };
+export type WriteTarget = { table: string; write: MdWrite };
+
+// Narrow a config for its route handlers: the six configs ship `write`
+// only where webc registers write routes (villages/geo/dict update…).
+export function mdWriteTarget(config: MdConfig): WriteTarget {
+  if (config.write === null) throw new Error(`no write config: ${config.table}`);
+  return { table: config.table, write: config.write };
+}
 
 function buildInsertSql(target: WriteTarget): string {
   const { table, write } = target;

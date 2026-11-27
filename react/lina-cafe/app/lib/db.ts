@@ -27,7 +27,11 @@ function migrationFiles(): { name: string; sql: string }[] {
 // Connection setup — everything SQLite refuses to run inside a transaction
 // (webc_pos driver_sqlite.c: WAL journal, NORMAL sync, 2000 KB page cache,
 // FILE temp tables, no mmap). foreign_keys is handled by the caller.
+// busy_timeout MUST lead: `next build` collects page data in several
+// worker processes that open this file at the same time — without it the
+// WAL pragma (or a migration write) fails with SQLITE_BUSY mid-build.
 function applyConnectionPragmas(db: DatabaseSync): void {
+  db.exec("PRAGMA busy_timeout = 5000;");
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA synchronous = NORMAL;");
   db.exec("PRAGMA cache_size = -2000;");

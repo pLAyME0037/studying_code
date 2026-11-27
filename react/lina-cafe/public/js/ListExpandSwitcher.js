@@ -1,0 +1,523 @@
+// master_child UI controller (vanilla JS, no framework).
+//
+// Every row/panel handler is event-DELEGATED on `document`, so HTML hot
+// swapped in by the fetch submit path (#mc-root) keeps working with no
+// re-initialization and no double-binding.
+//
+// CRUD flow (both phases):
+//   1. submit -> snapshot the visible data-row-id values into sessionStorage
+//      (MD_FLASH_KEY). Ids are random uuids and row order is NOT insertion
+//      order, so the diff is the only exact way to find the new row later.
+//   2. fetch  -> POST the form; the browser invisibly follows the server's
+//      normal 302 PRG (server and no-JS behavior unchanged).
+//   3. swap   -> parse the final page, replace #mc-root, restore open
+//      panels/active tabs, then reveal: reopen the scope, diff the ids and
+//      flash the exact new/edited row.
+//   Fallback  -> network failure: native submit (reveal runs after the
+//      redirect); HTTP error: inline banner, input kept, flash dropped.
+//
+// Slice 6 port delta (everything else above is webc_pos verbatim):
+//   child tabs ship as empty SSR shells and load on first open via
+//   ?child=<table>&master=<id>&fragment=1 (mdTabLoad below). webc renders
+//   every child window eagerly for every master row; the port fetches one
+//   tab-content per master on demand, keyed + deduped per master|tab.
+
+const MD_FLASH_KEY = 'md-flash';
+
+// Quote a value for use inside an attribute selector (ids are uuid/numeric,
+// this is just belt and braces).
+function mdSel(value) {
+    return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function mdChildRows(scope, masterId) {
+    if (!scope || !masterId) return null;
+    const content = document.querySelector(
+        '.tab-content[data-tab="' + mdSel(scope) + '"][data-master-id="' + mdSel(masterId) + '"]');
+    // Scope to the id'd tbody: after a master-page flip a cluster may carry
+    // a nested pagination store (tbody without id) whose rows must not be
+    // counted here.
+    return content ? Array.from(content.querySelectorAll('tbody[id] > tr[data-row-id]')) : null;
+}
+
+function mdMasterRows() {
+    return Array.from(document.querySelectorAll('.master-table tbody > tr[data-row-id]'));
+}
+
+// ---- lazy child tabs (slice 6) ------------------------------------------
+
+const mdTabPending = {};
+
+function mdTabNode(masterId, tab) {
+    return document.querySelector(
+        '.tab-content[data-tab="' + mdSel(tab) + '"][data-master-id="' + mdSel(masterId) + '"]');
+}
+
+// Loaded = the id'd tbody has rows (add row / No records / data), or a
+// non-empty collapse cache is parked on it. An empty shell (or an empty
+// cache left by collapsing before the first load) is NOT loaded.
+function mdTabLoaded(node) {
+    if (!node) return true;
+    const tb = node.querySelector('tbody[id]');
+    if (!tb) return true;
+    if (tb.children.length > 0) return true;
+    const cached = tb.getAttribute('data-cached-html');
+    return cached !== null && cached.length > 0;
+}
+
+// Fetch one child tab-content and swap it in for the shell. Never
+// rejects: a failed request leaves the shell in place (the tab stays
+// open and empty, same as webc's own fetch failures) and clears the
+// pending entry so the next open retries.
+function mdTabLoad(masterId, tab) {
+    if (!masterId || !tab) return Promise.resolve();
+    const key = masterId + '|' + tab;
+    if (mdTabPending[key]) return mdTabPending[key];
+    const node = mdTabNode(masterId, tab);
+    if (!node || mdTabLoaded(node)) return Promise.resolve();
+
+    const p = (async function () {
+        try {
+            const url = new URL(location.href);
+            url.searchParams.set('child', tab);
+            url.searchParams.set('master', masterId);
+            url.searchParams.set('fragment', '1');
+            const res = await fetch(url.toString(), {
+                credentials: 'same-origin',
+                cache: 'no-store'
+            });
+            if (!res.ok) return;
+            const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+            const fresh = doc.querySelector(
+                '.tab-content[data-tab="' + mdSel(tab) + '"][data-master-id="' + mdSel(masterId) + '"]');
+            const cur = mdTabNode(masterId, tab);
+            if (!fresh || !cur) return;
+            const imported = document.importNode(fresh, true);
+            // The fragment always arrives active; keep the shell's
+            // visibility in sync with the active tab button (a background
+            // tab loading in place must stay hidden).
+            const btn = document.querySelector(
+                '.detail-panel-row[data-master-id="' + mdSel(masterId) + '"]' +
+                ' .tab-btn[data-tab="' + mdSel(tab) + '"]');
+            const active = btn
+                ? btn.classList.contains('border-indigo-600')
+                : !cur.classList.contains('hidden');
+            if (!active) imported.classList.add('hidden');
+            cur.replaceWith(imported);
+        } catch {
+            // leave the shell; the next open retries
+        } finally {
+            delete mdTabPending[key];
+        }
+    })();
+    mdTabPending[key] = p;
+    return p;
+}
+
+function mdSnapshot(form) {
+    const d = form.dataset;
+    const snap = {
+        kind: d.mdKind || 'master',
+        scope: d.mdScope || '',
+        op: d.mdOp || '',
+        master: d.mdMaster || '',
+        target: d.mdTarget || '',
+        masterIds: [],
+        childIds: [],
+    };
+    mdMasterRows().forEach(tr => snap.masterIds.push(tr.dataset.rowId));
+    if (snap.kind === 'child') {
+        const rows = mdChildRows(snap.scope, snap.master);
+        if (rows) rows.forEach(tr => snap.childIds.push(tr.dataset.rowId));
+    }
+    return snap;
+}
+
+function mdFlash(el) {
+    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    catch { el.scrollIntoView(); }
+    el.style.transition = 'background-color 900ms ease';
+    el.style.backgroundColor = 'rgba(52, 211, 153, 0.45)';
+    setTimeout(() => { el.style.backgroundColor = 'rgba(52, 211, 153, 0)'; }, 500);
+    setTimeout(() => { el.style.transition = ''; el.style.backgroundColor = ''; }, 1600);
+}
+
+// Consume a pending flash snapshot (runs on page load for the native
+// redirect path, and after every fetch swap). Async in the port: a child
+// flash needs its tab loaded first (mdTabLoad) before the diff can find
+// the new/edited row.
+async function mdReveal() {
+    let raw = null;
+    try { raw = sessionStorage.getItem(MD_FLASH_KEY); }
+    catch { return; }
+    if (!raw) return;
+    try { sessionStorage.removeItem(MD_FLASH_KEY); }
+    catch {}
+    let snap;
+    try { snap = JSON.parse(raw); }
+    catch { return; }
+
+    let row = null;
+    if (snap.kind === 'child') {
+        if (snap.master) {
+            const expand = document.querySelector(
+                '.expand-btn[data-master-id="' + mdSel(snap.master) + '"]');
+            if (expand && expand.getAttribute('aria-expanded') !== 'true') expand.click();
+            const tabBtn = document.querySelector(
+                '.detail-panel-row[data-master-id="' + mdSel(snap.master) + '"]' +
+                ' .tab-btn[data-tab="' + mdSel(snap.scope) + '"]');
+            if (tabBtn) tabBtn.click();
+            await mdTabLoad(snap.master, snap.scope);
+        }
+        const rows = mdChildRows(snap.scope, snap.master);
+        if (snap.op === 'create' && rows) {
+            const before = new Set(snap.childIds || []);
+            row = rows.find(tr => !before.has(tr.dataset.rowId)) || null;
+        } else if (snap.op === 'update' && snap.target && rows) {
+            row = rows.find(tr => tr.dataset.rowId === snap.target) || null;
+        }
+    } else {
+        if (snap.op === 'create') {
+            const before = new Set(snap.masterIds || []);
+            row = mdMasterRows().find(tr => !before.has(tr.dataset.rowId)) || null;
+        } else if (snap.op === 'update' && snap.target) {
+            row = document.querySelector(
+                '.master-table tbody > tr[data-row-id="' + mdSel(snap.target) + '"]');
+        }
+    }
+    if (row) mdFlash(row);
+}
+
+// Swap #mc-root for freshly rendered HTML, restoring which master panels
+// were open and which child tab was active, then reveal. Async in the
+// port: restored panels load their active tab (mdTabLoad) and mdReveal
+// awaits its child tab before diffing.
+async function mdSwap(newRoot) {
+    const openIds = [];
+    document.querySelectorAll('.expand-btn[aria-expanded="true"]')
+        .forEach(b => openIds.push(b.dataset.masterId));
+    const activeTabs = {};
+    document.querySelectorAll('.detail-panel-row').forEach(r => {
+        const active = r.querySelector('.tab-content:not(.hidden)');
+        if (active && r.dataset.masterId) {
+            activeTabs[r.dataset.masterId] = active.dataset.tab;
+        }
+    });
+
+    const root = document.getElementById('mc-root');
+    if (!root) return false;
+    root.replaceWith(document.importNode(newRoot, true));
+
+    openIds.forEach(id => {
+        const btn = document.querySelector('.expand-btn[data-master-id="' + mdSel(id) + '"]');
+        if (btn && btn.getAttribute('aria-expanded') !== 'true') btn.click();
+    });
+    Object.keys(activeTabs).forEach(id => {
+        const tab = document.querySelector(
+            '.detail-panel-row[data-master-id="' + mdSel(id) + '"]' +
+            ' .tab-btn[data-tab="' + mdSel(activeTabs[id]) + '"]');
+        if (tab) tab.click();
+    });
+    await mdReveal();
+    // GeoCascade re-arms on the fresh containers mdSwap just installed.
+    document.dispatchEvent(new CustomEvent('md:swapped'));
+    return true;
+}
+
+function mdBanner(form, status, reason) {
+    const div = document.createElement('div');
+    div.style.cssText = 'border:1px solid #f87171;background:#fef2f2;color:#b91c1c;' +
+        'padding:8px 12px;font-size:14px;margin:8px 0;display:flex;justify-content:space-between;' +
+        'align-items:center;gap:12px;max-width:640px;';
+    const msg = document.createElement('span');
+    // `reason` is the server's plain-text body (e.g. the 409 duplicate
+    // explanation); without it fall back to the generic status text.
+    msg.textContent = (reason ||
+        'Request failed' + (status ? ' (HTTP ' + status + ')' : '')) +
+        ' - your input was kept.';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.textContent = 'x';
+    close.style.cssText = 'border:none;background:none;color:inherit;font-weight:bold;' +
+        'cursor:pointer;padding:0 4px;';
+    close.addEventListener('click', () => div.remove());
+    div.appendChild(msg);
+    div.appendChild(close);
+    if (form.parentElement) form.parentElement.insertBefore(div, form);
+}
+
+async function mdHandleSubmit(e, form) {
+    if ((form.method || 'get').toUpperCase() !== 'POST') return;
+    e.preventDefault();
+
+    // 1. snapshot ids before the DOM changes
+    const snap = mdSnapshot(form);
+    try { sessionStorage.setItem(MD_FLASH_KEY, JSON.stringify(snap)); } catch {}
+
+    // 2. disable confirm buttons while in flight (no double POST)
+    const busy = [];
+    if (form.id) {
+        document.querySelectorAll('button[form="' + form.id + '"]')
+            .forEach(b => busy.push(b));
+    }
+    form.querySelectorAll('button[type="submit"]').forEach(b => {
+        if (!busy.includes(b)) busy.push(b);
+    });
+    busy.forEach(b => { b.disabled = true; });
+
+    try {
+        // 3. POST via fetch; browser follows the server's normal 302 PRG
+        let res;
+        try {
+            res = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                cache: 'no-store', // never swap in a cached page
+            });
+        } catch {
+            form.submit(); // native PRG; mdReveal() runs after the redirect
+            return;
+        }
+
+        if (res.ok) {
+            let newRoot = null;
+            try {
+                const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+                newRoot = doc.querySelector('#mc-root');
+            } catch {}
+            if (newRoot && await mdSwap(newRoot)) {
+                // content came from the redirect target: sync the address bar
+                // to it (drop stale ?page state) and refresh the pagination
+                // store for the swapped DOM
+                try {
+                    if (res.url && window.history.replaceState) {
+                        history.replaceState(null, '', res.url);
+                    }
+                } catch {}
+                if (window.pgReset) window.pgReset();
+                if (window.pgArm) window.pgArm();
+                return;
+            }
+            // redirect landed outside the component: full navigation
+            try { sessionStorage.removeItem(MD_FLASH_KEY); } catch {}
+            window.location.assign(res.url || form.action);
+            return;
+        }
+
+        // HTTP error (400/409/413/500): keep the input, drop the pending
+        // flash. A plain-text body (the 409 duplicate reason) replaces the
+        // generic banner text; styled HTML error pages keep the default.
+        try { sessionStorage.removeItem(MD_FLASH_KEY); } catch {}
+        let reason = '';
+        try {
+            const ctype = res.headers.get('content-type') || '';
+            if (ctype.startsWith('text/plain'))
+                reason = (await res.text()).trim();
+        } catch { /* body gone -> generic text */ }
+        mdBanner(form, res.status, reason);
+    } finally {
+        busy.forEach(b => { b.disabled = false; });
+    }
+}
+
+window.masterDetailController = {
+    initialized: false,
+
+    init() {
+        if (this.initialized) return;
+        this.initialized = true;
+        const EYE_OPEN = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>`;
+
+        const EYE_CLOSE = `
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                          <path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                          <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                          <line x1="2" y1="2" x2="22" y2="22" />
+                        </svg>`;
+        // Expand / collapse master detail panel
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.expand-btn');
+            if (!btn) return;
+            const id = btn.dataset.masterId;
+            const panel = document.querySelector('.detail-panel-row[data-master-id="' + id + '"]');
+            const open = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', String(!open));
+            if (open) {
+                btn.innerHTML = EYE_OPEN;
+                if (panel) {
+                    panel.style.display = 'none';
+                    const tbodies = panel.querySelectorAll('.tab-content tbody[id]');
+                    tbodies.forEach(function (tb) {
+                        tb.setAttribute('data-cached-html', tb.innerHTML);
+                        tb.innerHTML = '';
+                    });
+                }
+            } else {
+                btn.innerHTML = EYE_CLOSE;
+                if (panel) {
+                    panel.style.display = 'table-row';
+                    const tbodies = panel.querySelectorAll('.tab-content tbody[id]');
+                    tbodies.forEach(function (tb) {
+                        const cached = tb.getAttribute('data-cached-html');
+                        if (cached) {
+                            tb.innerHTML = cached;
+                            tb.removeAttribute('data-cached-html');
+                        }
+                    });
+                    // Slice 6: opening the panel loads the active tab if it
+                    // is still an SSR shell (collapse caching above wins
+                    // when content is already parked).
+                    const active = panel.querySelector('.tab-content:not(.hidden)');
+                    if (active) mdTabLoad(id, active.dataset.tab);
+                }
+            }
+        });
+
+        // Tab switching within a panel
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.tab-btn');
+            if (!btn) return;
+            const panel = btn.closest('.detail-panel');
+            if (!panel) return;
+            const tab = btn.dataset.tab;
+            panel.querySelectorAll('.tab-btn').forEach(b => {
+                const active = b === btn;
+                b.classList.toggle('text-indigo-600', active);
+                b.classList.toggle('border-b-2', active);
+                b.classList.toggle('border-indigo-600', active);
+            });
+            panel.querySelectorAll(':scope > .tab-content').forEach(c =>
+                c.classList.toggle('hidden', c.dataset.tab !== tab));
+            // Slice 6: the newly active tab loads on first activation.
+            const active = panel.querySelector('.tab-content:not(.hidden)');
+            if (active) mdTabLoad(active.dataset.masterId, active.dataset.tab);
+        });
+
+        // + Add: reveal inline add-row (no navigation)
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.add-child-btn');
+            if (!btn) return;
+            const content = btn.closest('.tab-content');
+            const addRow = content && content.querySelector('.md-add-row');
+            if (addRow) {
+                addRow.classList.toggle('hidden');
+                return;
+            }
+            // Shell still loading: fetch first, then reveal the add row.
+            if (content && content.dataset.masterId && content.dataset.tab) {
+                mdTabLoad(content.dataset.masterId, content.dataset.tab).then(() => {
+                    const node = mdTabNode(content.dataset.masterId, content.dataset.tab);
+                    const row = node && node.querySelector('.md-add-row');
+                    if (row) row.classList.remove('hidden');
+                });
+            }
+        });
+
+        // Master inline edit: hide master row, show paired edit row
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.master-edit-btn');
+            if (!btn) return;
+            const row = btn.closest('tr');
+            const editRow = row && row.nextElementSibling;
+            if (editRow && editRow.classList.contains('md-master-edit-row')) {
+                row.classList.add('hidden');
+                editRow.classList.remove('hidden');
+            }
+        });
+
+        // Edit: hide display row, show its paired edit row
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.child-edit-btn');
+            if (!btn) return;
+            const row = btn.closest('tr');
+            const editRow = row && row.nextElementSibling;
+            if (editRow && editRow.classList.contains('md-edit-row')) {
+                row.classList.add('hidden');
+                editRow.classList.remove('hidden');
+            }
+        });
+
+        // Discard: reset form, hide row, unhide display row if paired
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest && e.target.closest('.md-discard');
+            if (!btn) return;
+            const tr = btn.closest('tr');
+            if (!tr) return;
+            const form = tr.querySelector('form');
+            if (form) form.reset();
+            tr.classList.add('hidden');
+            const prev = tr.previousElementSibling;
+            if (prev
+                && !prev.classList.contains('md-add-row')
+                && !prev.classList.contains('md-edit-row')
+                && !prev.classList.contains('md-master-edit-row')) {
+                prev.classList.remove('hidden');
+            }
+        });
+
+        // ---- auto calculations (FX 1 USD = 4000 KHR) ----
+        const FX = 4000;
+
+        // Auto Days: room_day = end_date - start_date
+        document.addEventListener('input', (e) => {
+            if (e.target.name !== 'end_date') return;
+            const scope = e.target.closest('tr');
+            if (!scope) return;
+            const start = scope.querySelector('[name="start_date"]');
+            const days = scope.querySelector('[name="room_day"]');
+            if (!start || !days || !start.value || !e.target.value) return;
+            const diff = (new Date(e.target.value) - new Date(start.value)) / 86400000;
+            days.value = diff > 0 ? diff : '';
+        });
+
+        // amount_in_riel <-> amount_in_dollar inside same form/row
+        document.addEventListener('input', (e) => {
+            const n = e.target.name;
+            if (n !== 'amount_in_riel' && n !== 'amount_in_dollar') return;
+            const scope = e.target.closest('tr, form');
+            if (!scope) return;
+            const v = parseFloat(e.target.value);
+            if (isNaN(v)) return;
+            const other = scope.querySelector(
+                n === 'amount_in_riel' ? '[name="amount_in_dollar"]' : '[name="amount_in_riel"]');
+            if (!other || other === e.target) return;
+            other.value = (n === 'amount_in_riel' ? v / FX : v * FX).toFixed(2);
+        });
+
+        // amount = qty * price on detail rows
+        document.addEventListener('input', (e) => {
+            const n = e.target.name;
+            if (n !== 'qty' && n !== 'price') return;
+            const row = e.target.closest('tr');
+            if (!row) return;
+            const qty = parseFloat(row.querySelector('[name="qty"]')?.value);
+            const price = parseFloat(row.querySelector('[name="price"]')?.value);
+            const amount = row.querySelector('[name="amount"]');
+            if (amount && !isNaN(qty) && !isNaN(price)) amount.value = (qty * price).toFixed(2);
+        });
+
+        // master_child CRUD forms: snapshot -> fetch -> swap -> reveal
+        document.addEventListener('submit', (e) => {
+            const form = e.target;
+            if (!form || form.tagName !== 'FORM' || !form.dataset || !form.dataset.mdScope) return;
+            mdHandleSubmit(e, form).catch(err => {
+                // unexpected error after the POST: never re-post, just report
+                console.error('md submit failed', err);
+                try { sessionStorage.removeItem(MD_FLASH_KEY); } catch {}
+                mdBanner(form, 0);
+            });
+        });
+
+        // consume a pending flash from a native PRG redirect (phase 1 path)
+        mdReveal();
+    }
+};
+
+(() => {
+    document.addEventListener('DOMContentLoaded', () => window.masterDetailController.init());
+})();
