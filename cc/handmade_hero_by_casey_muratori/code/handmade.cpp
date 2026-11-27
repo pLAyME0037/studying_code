@@ -2,10 +2,13 @@
 #include <windows.h>
 #include <stdint.h>
 #include <xinput.h>
+#include <dsound.h>
 
 #define internal static
 #define local_persist static
 #define g_var static
+
+typedef int32_t bool32;
 
 struct win32_bitmap_buffer {
     BITMAPINFO Info;
@@ -26,21 +29,33 @@ struct win32_window_dimension {
 
 #define X_Input_Get_State(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE* pState)
 typedef X_Input_Get_State(x_input_get_state);
-X_Input_Get_State(XInputGetStateStub) { return 0; }
+X_Input_Get_State(XInputGetStateStub) { return ERROR_DEVICE_NOT_CONNECTED; }
 g_var x_input_get_state *XInputGetState_ = XInputGetStateStub;
 #define XInputGetState XInputGetState_
 
 #define X_Input_Set_State(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_VIBRATION* pVibration)
 typedef X_Input_Set_State(x_input_set_state);
-X_Input_Set_State(XInputSetStateStub) { return 0; }
+X_Input_Set_State(XInputSetStateStub) { return ERROR_DEVICE_NOT_CONNECTED; }
 g_var x_input_set_state *XInputSetState_ = XInputSetStateStub;
 #define XInputSetState XInputSetState_
 
+#define Direct_Sound_Create(name) HRESULT WINAPI name(LPCGUID lpGUID, LPDIRECTSOUND *ppDS, LPUNKNOWN pUnkOuter);
+typedef Direct_Sound_Create(direct_sound_create);
+// Direct_Sound_Create(DiresctSoundCreateStub) { return 0; }
+// g_var direct_sound_create *DiresctSoundCreate_ = DiresctSoundCreateStub;
+// #define DiresctSoundCreate DiresctSoundCreate_ 
+
 internal void Win32LoadInput(void) {
-    HMODULE XInputLibrary = LoadLibrary("xinput1_3.dll");
+    HMODULE XInputLibrary = LoadLibraryA("xinput1_4.dll");
+    if (!XInputLibrary) {
+        // TODO: Diagnostic
+        XInputLibrary = LoadLibraryA("xinput1_3.dll");
+    }
     if (XInputLibrary) {
         XInputGetState = (x_input_get_state *)GetProcAddress(XInputLibrary, "XInputGetState");
         XInputSetState = (x_input_set_state *)GetProcAddress(XInputLibrary, "XInputSetState");
+    } else {
+        // TODO: Diagnostic
     }
 }
 
@@ -52,6 +67,64 @@ internal win32_window_dimension Win32GetWindowDimension(HWND window) {
     Result.Height = ClientRect.bottom - ClientRect.top;
 
     return Result;
+}
+
+internal void Win32InitDSound(HWND window,
+                              int32_t sample_per_sec,
+                              int32_t buffer_size)
+{
+    // NOTE: Load the library
+    HMODULE DSoundLibrary = LoadLibraryA("dsound.dll");
+    if (DSoundLibrary) {
+        // NOTE: Get a DirectSound Object
+        direct_sound_create *DirectSoundCreate = (direct_sound_create *)GetProcAddress(DSoundLibrary, "DirectSoundCreate");
+        LPDIRECTSOUND DirectSound;
+
+        WAVEFORMATEX WaveFormat = {};
+        WaveFormat.wFormatTag      = WAVE_FORMAT_PCM;
+        WaveFormat.nChannels       = 2;
+        WaveFormat.nSamplesPerSec  = sample_per_sec;
+        WaveFormat.nBlockAlign     = (WaveFormat.nChannels*WaveFormat.wBitsPerSample)/8;
+        WaveFormat.nAvgBytesPerSec = WaveFormat.nSamplesPerSec*WaveFormat.nBlockAlign;
+        WaveFormat.wBitsPerSample  = 16;
+        WaveFormat.cbSize          = 0;
+
+        if (DirectSoundCreate && SUCCEEDED(DirectSoundCreate(0, &DirectSound, 0))) {
+            // NOTE: "Create" a primary buffer
+            if (SUCCEEDED(DirectSound->SetCooperativeLevel(window, DSSCL_PRIORITY))) {
+                DSBUFFERDESC BufferDesc = {};
+                BufferDesc.dwSize  = sizeof(BufferDesc); 
+                BufferDesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
+                LPDIRECTSOUNDBUFFER PrimaryBuffer;
+
+                if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDesc, &PrimaryBuffer, 0))) {
+                    if (SUCCEEDED(PrimaryBuffer->SetFormat(&WaveFormat))) {
+
+                    } else {
+                        // TODO: Diagnostic
+                    }
+                } else {
+                    // TODO: Diagnostic
+                }
+            } else {
+                // TODO: Diagnostic
+            }
+        } else {
+            // TODO: Diagnostic
+        }
+        DSBUFFERDESC BufferDesc = {};
+        BufferDesc.dwSize        = sizeof(BufferDesc); 
+        BufferDesc.dwFlags       = 0;
+        BufferDesc.dwBufferBytes = buffer_size;
+        BufferDesc.lpwfxFormat   = &WaveFormat;
+        LPDIRECTSOUNDBUFFER SecondaryBuffer;
+        if (SUCCEEDED(DirectSound->CreateSoundBuffer(&BufferDesc, &SecondaryBuffer, 0))) {
+            // NOTE: "Create" a seconed buffer
+        }
+        // NOTE: Start playing
+    } else {
+        // TODO: Diagnostic
+    }
 }
 
 /* DIB Device Independent Bitmap is window GDI display that can be write in to
@@ -130,11 +203,11 @@ LRESULT CALLBACK Win32MainWindowCallback(HWND   window,
     case WM_SIZE: {
     } break;
     case WM_DESTROY: {
-        // handle error recreate window
+        // NOTE: handle error recreate window
         G_Running = false;
     } break;
     case WM_CLOSE: {
-        // print message to user
+        // NOTE: print message to user
         G_Running = false;
     } break;
     case WM_SYSKEYUP:
@@ -165,6 +238,10 @@ LRESULT CALLBACK Win32MainWindowCallback(HWND   window,
                     OutputDebugStringA("Was Down\n");
                 }
             }
+        }
+        bool AltKeyWasDown = ((l_param & (1 << 29)) != 0);
+        if (VKCode == VK_F4 && AltKeyWasDown) {
+            G_Running = false;
         }
     } break;
     case WM_ACTIVATEAPP: {
@@ -231,6 +308,8 @@ int CALLBACK WinMain(HINSTANCE instance,
                     TranslateMessage(&Message);
                     DispatchMessageA(&Message);
                 }
+
+                Win32InitDSound(Window, 48000, 48000*sizeof(int16_t)*2);
 
                 for (DWORD ctrl_idx = 0; ctrl_idx < XUSER_MAX_COUNT; ++ctrl_idx) {
                     XINPUT_STATE CtrlState;

@@ -38,55 +38,13 @@ compile_binary() {
         "${LIBRARY[@]}"
 }
 
-check_port_free() {
-    local port="${1:-}"
-    if [[ ! "$port" =~ ^[1-9][0-9]{0,4}$ ]] || (( port < 1 || port > 65535 )); then
-        echo "Error: Invalid WINE_GDB_PORT '$port'. Expected an integer in 1..65535." >&2
-        exit 1
-    fi
-
-    if command -v ss >/dev/null 2>&1; then
-        local ss_out
-        if ! ss_out="$(ss -H -ltn "( sport = :$port )")"; then
-            echo "Error: Failed to check TCP port $port with ss." >&2
-            exit 1
-        fi
-        if [ -n "$ss_out" ]; then
-            echo "Error: TCP port $port is already in use. Set WINE_GDB_PORT to another port." >&2
-            exit 1
-        fi
-    fi
-}
-
 mode="${1:-}"
 
 case "$mode" in
-build-debug)
+d)
     ensure_wineprefix
     compile_binary "-Wl,--disable-dynamicbase"
-    echo "Built debug target: $OUT_EXE"
-    ;;
-debug|--debug|-d)
-    ensure_wineprefix
-    compile_binary "-Wl,--disable-dynamicbase"
-    check_port_free "$GDB_PORT"
-
-    if [ "${WINE_USE_GDBSERVER:-0}" = "1" ]; then
-        if ! command -v gdbserver.exe >/dev/null 2>&1; then
-            echo "Error: WINE_USE_GDBSERVER=1 set, but gdbserver.exe was not found in PATH." >&2
-            exit 1
-        fi
-        echo "Starting MinGW gdbserver.exe on 127.0.0.1:$GDB_PORT..."
-        exec wine gdbserver.exe "127.0.0.1:$GDB_PORT" "$OUT_EXE"
-    fi
-
-    echo "Starting winedbg GDB server on 127.0.0.1:$GDB_PORT..."
-    exec winedbg --gdb --no-start --port "$GDB_PORT" "$OUT_EXE"
-    ;;
-warm)
-    ensure_wineprefix
-    echo "Starting persistent wineserver (600s keep-alive)..."
-    wineserver -p 600
+    echo "Built target: $OUT_EXE"
     ;;
 "")
     ensure_wineprefix
